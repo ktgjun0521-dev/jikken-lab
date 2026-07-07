@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     サッカー戦術スタジオ (soccer-studio.html)
+     tactics-board / soccer-3d / soccer-kids の統合版
+     【1】ボード(つくる)  = tactics-board 2Dエディタ + マイ戦術ライブラリ
+     【2】3Dシアター(みる) = soccer-3d 再生エンジン + 選手視点モード
+     【3】ドリル(まなぶ)   = soccer-kids ポジショニングどうじょう(大人向け文言)
+     単一HTMLファイル。Three.jsのみCDN(importmap)。他の外部依存なし。
+============================================================ -->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>サッカー戦術スタジオ</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%AC</text></svg>">
+<meta name="description" content="2D戦術ボード・3Dシアター・ポジショニングドリルを1つに統合したサッカー戦術スタジオ。ボードで描いた戦術をワンクリックで3D化し、選手視点で確認できます。">
+<meta property="og:title" content="サッカー戦術スタジオ">
+<meta property="og:description" content="2D戦術ボード・3Dシアター・ドリルを統合。描いた戦術を3D化し、各ポジションの選手視点で確認できます。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/soccer-studio.html">
+<meta property="og:site_name" content="実験ラボ">
+<meta name="twitter:card" content="summary">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root{
+    --bg:#0b0e15; --bg2:#0f1318; --panel:#1a212a; --panel2:#222b36; --line:#2e3a47;
+    --txt:#e8edf2; --sub:#93a0b8; --accent:#4ade80; --gold:#f0c649;
+    --red:#e5484d; --blue:#3e7bfa; --purple:#a77bf0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{min-height:100vh;}
+  body{background:var(--bg);color:var(--txt);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Noto Sans JP",Meiryo,sans-serif;}
+
+  /* ---------- ヘッダー / ステップタブ ---------- */
+  header{padding:12px 18px 0;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#141a24,#0b0e15);position:relative;z-index:5;}
+  .htop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .backlink{color:var(--sub);text-decoration:none;font-size:13px;padding:6px 10px;
+    border:1px solid var(--line);border-radius:8px;background:var(--panel);white-space:nowrap;}
+  .backlink:hover{color:var(--accent);border-color:rgba(255,255,255,.25);}
+  h1{font-size:19px;letter-spacing:.05em;display:flex;align-items:center;gap:9px;}
+  h1 .mark{color:var(--gold);}
+  h1 .badge{font-size:10.5px;background:var(--gold);color:#3a2c00;border-radius:20px;padding:2px 9px;font-weight:800;}
+  .steps{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .step{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);color:var(--sub);
+    padding:11px 14px;border-radius:12px 12px 0 0;cursor:pointer;font-size:14px;text-align:left;
+    display:flex;align-items:center;gap:11px;transition:background .15s,color .15s;position:relative;bottom:-1px;}
+  .step:hover{background:var(--panel2);}
+  .step .no{width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--txt);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;}
+  .step .lbl b{display:block;font-size:14.5px;color:var(--txt);}
+  .step .lbl span{font-size:11px;color:var(--sub);}
+  .step.active{background:var(--bg2);color:var(--txt);border-bottom:2px solid var(--accent);}
+  .step.active .no{background:var(--accent);color:#08290f;}
+  .step.active .lbl b{color:var(--accent);}
+
+  .screen{display:none;}
+  .screen.on{display:block;}
+
+  /* ================= 【1】ボード ================= */
+  .b-views{display:flex;gap:8px;padding:12px 18px 0;flex-wrap:wrap;}
+  .vtab{background:var(--panel);border:1px solid var(--line);color:var(--sub);padding:7px 15px;
+    border-radius:8px;cursor:pointer;font-size:13px;}
+  .vtab.active{background:var(--panel2);color:var(--accent);border:1px solid var(--accent);font-weight:700;}
+  .wrap{display:flex;gap:14px;padding:12px 18px;align-items:flex-start;}
+  .left{flex:1;min-width:0;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .tbtn{background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:7px 11px;
+    border-radius:8px;cursor:pointer;font-size:13px;line-height:1;transition:background .15s;}
+  .tbtn:hover{background:var(--panel2);}
+  .tbtn.active{background:#0e3b23;border-color:var(--accent);color:var(--accent);font-weight:700;}
+  .tbtn.warn{color:#ff9d9d;}
+  .tbtn.play{color:var(--gold);}
+  .tbtn.hero{background:linear-gradient(180deg,#1c5cff33,#0e3b8a22);border-color:var(--blue);color:#bcd2ff;font-weight:700;}
+  .tbtn.hero:hover{background:#1c3b6a;}
+  .sep{width:1px;background:var(--line);margin:2px 3px;}
+  #boardBox{position:relative;background:#0a0d10;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  #cv{display:block;width:100%;touch-action:none;cursor:crosshair;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--sub);}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .lin{width:26px;height:0;border-top:3px solid;display:inline-block;}
+  .side{width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .card h2{font-size:13px;color:var(--accent);margin-bottom:10px;letter-spacing:.05em;}
+  .pcat{font-size:10.5px;color:var(--sub);letter-spacing:.12em;margin:10px 0 5px;font-weight:700;}
+  .pcat:first-child{margin-top:0;}
+  .plist{display:flex;flex-direction:column;gap:6px;}
+  .pbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:9px 12px;
+    border-radius:8px;cursor:pointer;font-size:12.5px;text-align:left;transition:border-color .15s;}
+  .pbtn:hover{border-color:var(--accent);}
+  .pbtn.on{border-color:var(--accent);background:#12301f;}
+  #descBox{font-size:13px;line-height:1.75;color:var(--txt);min-height:52px;white-space:pre-wrap;}
+  #descBox .coach{display:block;margin-top:8px;color:var(--gold);font-size:12.5px;}
+  #descTitle{font-weight:700;color:#fff;margin-bottom:6px;font-size:13.5px;}
+  .iorow{display:flex;gap:6px;flex-wrap:wrap;}
+  .iorow .tbtn{flex:1;text-align:center;min-width:76px;}
+  .hint{font-size:11.5px;color:var(--sub);line-height:1.7;margin-top:10px;}
+  .librow{display:flex;gap:6px;margin-bottom:8px;}
+  .librow input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;}
+  #libList{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .libitem{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;font-size:12.5px;}
+  .libitem .nm{flex:1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .libitem .nm:hover{color:var(--accent);}
+  .libitem .vw{font-size:10px;color:var(--sub);}
+  .libitem .del{background:none;border:none;color:#ff8f8f;cursor:pointer;font-size:14px;padding:0 3px;}
+  .libempty{font-size:12px;color:var(--sub);text-align:center;padding:8px;}
+
+  /* 遊び心(ボード) */
+  .cheer{position:absolute;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);
+    pointer-events:none;user-select:none;z-index:6;opacity:0;animation:cheerUp 1.6s ease-out forwards;}
+  @keyframes cheerUp{0%{transform:translateY(0) scale(.7);opacity:0;}18%{opacity:1;}100%{transform:translateY(-90px) scale(1.3);opacity:0;}}
+  #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:90;}
+  #flash.go{animation:flashAnim .55s ease-out;}
+  @keyframes flashAnim{0%{opacity:.85;}100%{opacity:0;}}
+  #golazo{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(0);opacity:0;
+    font-size:min(12vw,86px);font-weight:900;color:var(--gold);
+    text-shadow:0 0 26px rgba(255,210,63,.85),0 5px 0 #6d4f00;letter-spacing:.06em;z-index:91;pointer-events:none;white-space:nowrap;}
+  #golazo.go{animation:golazoPop 1.9s cubic-bezier(.2,1.5,.4,1) forwards;}
+  @keyframes golazoPop{0%{transform:translate(-50%,-50%) scale(0) rotate(-10deg);opacity:0;}16%{transform:translate(-50%,-50%) scale(1.18) rotate(3deg);opacity:1;}28%{transform:translate(-50%,-50%) scale(1) rotate(0);}78%{opacity:1;transform:translate(-50%,-50%) scale(1.03);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1);}}
+
+  @media (max-width:940px){
+    .wrap{flex-direction:column;}
+    .side{width:100%;}
+  }
+
+  /* ================= 【2】3Dシアター ================= */
+  #theater{position:relative;height:calc(100vh - 132px);min-height:460px;overflow:hidden;background:var(--bg);}
+  #stage{position:absolute;inset:0;}
+  #stage canvas{display:block;}
+  #t-panel{position:absolute;top:12px;left:12px;bottom:150px;z-index:15;width:260px;max-width:calc(100vw - 24px);
+    background:rgba(13,17,27,.92);border:1px solid var(--line);border-radius:14px;padding:14px;
+    overflow-y:auto;backdrop-filter:blur(6px);transition:transform .25s,opacity .25s;}
+  #t-panel h3{font-size:11px;color:var(--sub);letter-spacing:.14em;margin:14px 0 7px;font-weight:600;}
+  #t-panel h3:first-child{margin-top:0;}
+  #tSceneName{font-size:15px;font-weight:700;color:var(--gold);margin-bottom:6px;}
+  #tSceneDesc{font-size:12.5px;line-height:1.7;color:var(--txt);}
+  #tSceneCoach{display:block;margin-top:8px;padding:8px 10px;border-radius:8px;
+    background:rgba(240,198,73,.08);border:1px solid rgba(240,198,73,.25);
+    font-size:11.5px;line-height:1.65;color:#f5d87e;}
+  #tSceneCoach:empty{display:none;}
+  #t-panel .pbtn{display:block;width:100%;text-align:left;margin-bottom:6px;background:var(--panel2);
+    color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12.5px;cursor:pointer;}
+  #t-panel .pbtn:hover{border-color:rgba(240,198,73,.5);}
+  #t-panel .pbtn.on{background:rgba(240,198,73,.14);border-color:var(--gold);color:#ffe9a8;}
+  #t-panel .pbtn .tag{color:var(--sub);font-size:10.5px;margin-right:6px;}
+  #tPanelToggle{display:none;position:absolute;top:12px;right:12px;z-index:16;background:rgba(13,17,27,.92);
+    color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;}
+  #theater.panel-hidden #t-panel{transform:translateX(-115%);opacity:0;pointer-events:none;}
+
+  #t-controls{position:absolute;left:0;right:0;bottom:0;z-index:20;
+    background:linear-gradient(to top,rgba(8,10,16,.96) 74%,rgba(8,10,16,0));padding:10px 14px 8px;}
+  .ctrlRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:1000px;margin:0 auto;}
+  .ctrlRow + .ctrlRow{margin-top:8px;}
+  .cbtn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;
+    padding:7px 11px;font-size:12px;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s;}
+  .cbtn:hover{border-color:rgba(255,255,255,.3);}
+  .cbtn.on{background:rgba(240,198,73,.15);border-color:var(--gold);color:#ffe9a8;}
+  .cbtn.big{font-size:15px;padding:7px 14px;min-width:50px;}
+  #seek{flex:1;min-width:110px;accent-color:var(--gold);height:22px;cursor:pointer;}
+  #timeLbl{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums;min-width:74px;text-align:center;}
+  .grpLbl{font-size:10.5px;color:var(--sub);letter-spacing:.08em;}
+  #playerRow{display:none;width:100%;}
+  #playerRow.show{display:flex;}
+  .posgrp{display:flex;align-items:center;gap:5px;padding:2px 8px 2px 4px;border:1px solid var(--line);border-radius:20px;}
+  .posgrp .pg{font-size:10px;color:var(--gold);font-weight:700;margin-right:1px;}
+  .plbtn{min-width:30px;height:30px;padding:0 4px;border-radius:15px;border:2px solid transparent;
+    color:#fff;font-size:12px;font-weight:700;cursor:pointer;}
+  .plbtn.atk{background:var(--red);}
+  .plbtn.def{background:var(--blue);}
+  .plbtn.on{border-color:var(--gold);box-shadow:0 0 8px rgba(240,198,73,.7);}
+  #fpsBtn.on{background:rgba(167,123,240,.2);border-color:var(--purple);color:#e0ccff;}
+
+  #goalFx{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;pointer-events:none;}
+  #goalFx.show{display:flex;}
+  #goalFx .txt{font-size:min(13vw,92px);font-weight:900;letter-spacing:.05em;color:#fff;
+    text-shadow:0 0 24px rgba(240,198,73,.95),0 4px 18px rgba(0,0,0,.6);animation:goalPop 1.9s ease forwards;}
+  @keyframes goalPop{0%{transform:scale(.2) rotate(-8deg);opacity:0;}16%{transform:scale(1.12) rotate(2deg);opacity:1;}26%{transform:scale(1);}78%{transform:scale(1);opacity:1;}100%{transform:scale(1.15);opacity:0;}}
+  #fallback{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+    background:var(--bg);text-align:center;padding:24px;}
+  #fallback.show{display:flex;}
+  #fallback .box{max-width:420px;line-height:1.9;}
+  #fallback .big{font-size:40px;margin-bottom:10px;}
+  #fallback a{color:var(--gold);}
+
+  /* ================= 【3】ドリル ================= */
+  .drill-wrap{max-width:820px;margin:0 auto;padding:14px 16px 30px;}
+  .coach{display:flex;align-items:flex-start;gap:10px;margin:6px 0 14px;}
+  .coach .face{font-size:1.9rem;background:var(--panel);border-radius:50%;width:52px;height:52px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;border:2px solid var(--gold);}
+  .coach .bubble{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 15px;
+    position:relative;flex:1;font-size:14px;line-height:1.6;color:var(--txt);}
+  .coach .bubble::before{content:"";position:absolute;left:-9px;top:18px;border:9px solid transparent;
+    border-right-color:var(--panel);border-left:0;}
+  .coach .name{font-size:11px;color:var(--gold);display:block;margin-bottom:2px;}
+  .dfilters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;}
+  .dfilter{border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-weight:700;font-family:inherit;
+    cursor:pointer;background:var(--panel);color:var(--sub);font-size:13px;}
+  .dfilter.on{background:rgba(240,98,143,.16);color:#ffb0cb;border-color:#f0628f;}
+  .qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .qnum{background:var(--blue);color:#fff;border-radius:999px;padding:6px 15px;font-weight:700;font-size:13px;}
+  .status{background:var(--panel);border:1px solid var(--gold);border-radius:999px;padding:6px 15px;
+    font-weight:700;font-size:13px;color:var(--gold);}
+  #cvD{width:100%;height:auto;display:block;border-radius:14px;touch-action:none;
+    box-shadow:0 3px 12px #0006;background:#25763b;}
+  .poschip{display:inline-block;background:#c2185b;color:#fff;border-radius:8px;padding:2px 9px;margin-right:6px;font-size:12px;}
+  .catchip{display:inline-block;background:#00897b;color:#fff;border-radius:8px;padding:2px 9px;margin-right:6px;font-size:12px;}
+  .qtext{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 15px;
+    font-size:15px;line-height:1.7;color:var(--txt);margin:12px 0;}
+  .dhint-note{font-size:12px;color:var(--sub);text-align:center;margin-top:6px;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:12px 0;}
+  .bigbtn{border:none;border-radius:999px;padding:12px 24px;font-size:15px;font-weight:700;color:#fff;
+    cursor:pointer;font-family:inherit;transition:transform .1s,filter .15s;}
+  .bigbtn:hover{filter:brightness(1.08);}
+  .bigbtn:active{transform:translateY(2px);}
+  .bigbtn.play{background:linear-gradient(180deg,#4ade80,#22a559);color:#062;}
+  .bigbtn.reset{background:linear-gradient(180deg,#607d8b,#455a64);}
+  .bigbtn.next{background:linear-gradient(180deg,#3e7bfa,#2456c8);}
+  .bigbtn.watch3d{background:linear-gradient(180deg,#a77bf0,#7b3fd4);}
+  .bigbtn:disabled{opacity:.45;cursor:default;}
+  .verdict{text-align:center;font-size:18px;font-weight:700;margin:8px 0;min-height:1.5em;}
+  .verdict.good{color:var(--accent);} .verdict.bad{color:#ffb060;}
+  .explain{background:rgba(240,198,73,.07);border:1px dashed var(--gold);border-radius:14px;padding:12px 15px;
+    margin:10px 0;font-size:13.5px;line-height:1.75;color:#f5d87e;display:none;}
+  .explain.on{display:block;}
+  .dmap-title{font-weight:700;text-align:center;margin-top:14px;color:var(--sub);font-size:13px;}
+  .dmap{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0;}
+  @media(max-width:560px){.dmap{grid-template-columns:repeat(4,1fr);}}
+  .dcell{border:1px solid var(--line);border-radius:10px;background:var(--panel);font-family:inherit;
+    font-weight:700;padding:7px 2px;cursor:pointer;font-size:11px;color:var(--sub);line-height:1.3;}
+  .dcell:active{transform:translateY(1px);}
+  .dcell .em{display:block;font-size:1.05rem;}
+  .dcell.cur{outline:2px solid #f0628f;}
+  .finish{text-align:center;background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:20px;
+    font-weight:700;font-size:15px;line-height:1.9;display:none;margin-top:12px;}
+  .finish.on{display:block;}
+  .finish .big{font-size:20px;color:var(--gold);}
+  .star-fly{position:fixed;left:0;top:0;pointer-events:none;font-size:28px;z-index:999;animation:starfly 1.1s ease-out forwards;}
+  @keyframes starfly{0%{transform:translate(var(--x),var(--y)) scale(.4) rotate(0deg);opacity:1;}100%{transform:translate(calc(var(--x) + var(--dx)),calc(var(--y) + var(--dy))) scale(1.5) rotate(340deg);opacity:0;}}
+
+  /* ---------- 共通トースト / フッター ---------- */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);
+    background:rgba(18,22,34,.96);color:var(--accent);border:1px solid var(--accent);padding:9px 18px;
+    border-radius:24px;font-size:13px;opacity:0;pointer-events:none;transition:.3s;z-index:120;max-width:88vw;text-align:center;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast.err{border-color:rgba(229,72,77,.7);color:#ffb3b5;}
+  footer{text-align:center;font-size:11.5px;color:var(--sub);padding:8px 12px 20px;}
+  footer a{color:inherit;}
+  body.theater-mode footer{display:none;}
+</style>
+</head>
+<body>
+<header>
+  <div class="htop">
+    <a class="backlink" href="index.html">&#8592; 実験ラボに戻る</a>
+    <h1><span class="mark">&#127916;</span> サッカー戦術スタジオ <span class="badge">STUDIO</span></h1>
+  </div>
+  <div class="steps" id="steps">
+    <button class="step active" data-screen="board">
+      <span class="no">1</span><span class="lbl"><b>&#9999;&#65039; ボード</b><span>つくる</span></span></button>
+    <button class="step" data-screen="theater">
+      <span class="no">2</span><span class="lbl"><b>&#127916; 3Dシアター</b><span>みる</span></span></button>
+    <button class="step" data-screen="drill">
+      <span class="no">3</span><span class="lbl"><b>&#127919; ドリル</b><span>まなぶ</span></span></button>
+  </div>
+</header>
+
+<!-- ============ 【1】ボード ============ -->
+<section class="screen on" id="screen-board">
+  <div class="b-views" id="bViews">
+    <button class="vtab active" data-view="eight">8人制フルピッチ</button>
+    <button class="vtab" data-view="corner">コーナーキック</button>
+    <button class="vtab" data-view="throwin">スローイン</button>
+  </div>
+  <div class="wrap">
+    <div class="left">
+      <div class="toolbar" id="toolbar">
+        <button class="tbtn active" data-tool="select">&#9995; 選択/移動</button>
+        <button class="tbtn" data-tool="atk">&#128308; 攻撃+</button>
+        <button class="tbtn" data-tool="def">&#128309; 守備+</button>
+        <button class="tbtn" data-tool="ball">&#9917; ボール+</button>
+        <div class="sep"></div>
+        <button class="tbtn" data-tool="move">&#8594; 移動</button>
+        <button class="tbtn" data-tool="pass">&#8674; パス</button>
+        <button class="tbtn" data-tool="dribble">&#8767; ドリブル</button>
+        <button class="tbtn" data-tool="erase">&#9986; 消しゴム</button>
+        <div class="sep"></div>
+        <button class="tbtn warn" id="clearBtn">&#128465; 全消去</button>
+        <button class="tbtn play" id="playBtn2d">&#9654; 再生</button>
+        <button class="tbtn hero" id="to3dBtn">&#127916; この盤面を3Dで見る</button>
+      </div>
+      <div id="boardBox"><canvas id="cv"></canvas></div>
+      <div class="legend">
+        <span><i class="dot" style="background:#e5484d"></i>攻撃</span>
+        <span><i class="dot" style="background:#3e7bfa"></i>守備</span>
+        <span><i class="dot" style="background:#fff"></i>ボール</span>
+        <span><i class="lin" style="border-color:#f0c649"></i>移動</span>
+        <span><i class="lin" style="border-color:#fff;border-top-style:dashed"></i>パス</span>
+        <span><i class="lin" style="border-color:#ff8c42"></i>ドリブル</span>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h2>&#128220; プリセットライブラリ</h2>
+        <div class="plist" id="presetList"></div>
+      </div>
+      <div class="card">
+        <h2>&#128161; 戦術解説</h2>
+        <div id="descTitle"></div>
+        <div id="descBox">プリセットを選ぶと配置と動きが再現され、ここに戦術のポイントが表示されます。「&#127916; この盤面を3Dで見る」で立体再生できます。</div>
+      </div>
+      <div class="card">
+        <h2>&#128190; マイ戦術ライブラリ</h2>
+        <div class="librow">
+          <input type="text" id="libName" placeholder="盤面に名前を付けて保存" maxlength="40">
+          <button class="tbtn" id="libSaveBtn">&#128190; 保存</button>
+        </div>
+        <div id="libList"></div>
+      </div>
+      <div class="card">
+        <h2>&#128228; 共有 / 入出力</h2>
+        <div class="iorow">
+          <button class="tbtn" id="pngBtn">&#128247; PNG</button>
+          <button class="tbtn" id="exportBtn">&#11015; JSON書出</button>
+          <button class="tbtn" id="importBtn">&#11014; JSON読込</button>
+        </div>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+        <div class="hint">追加ツールで空きスペースをタップ／ドラッグで移動／ダブルタップで削除。矢印ツールはドラッグで描画。&#9654;再生で矢印に沿って動きます。書き出したJSONは他の戦術ボードとも互換です。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 【2】3Dシアター ============ -->
+<section class="screen" id="screen-theater">
+  <div id="theater">
+    <div id="stage"></div>
+    <button id="tPanelToggle">&#9776; シーン</button>
+    <aside id="t-panel">
+      <h3>NOW PLAYING</h3>
+      <div id="tSceneName">&mdash;</div>
+      <div id="tSceneDesc">シーンを選んでください。</div>
+      <span id="tSceneCoach"></span>
+      <h3>3Dプリセット</h3>
+      <div id="tPresetList"></div>
+    </aside>
+    <div id="goalFx"><div class="txt">&#9917; ゴール!</div></div>
+    <div id="t-controls">
+      <div class="ctrlRow" id="playerRow">
+        <span class="grpLbl">選手視点:</span>
+        <span id="playerBtns" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></span>
+        <button class="cbtn" id="fpsBtn" title="選んだ選手の目の高さ・一人称視点">&#128064; 一人称</button>
+      </div>
+      <div class="ctrlRow">
+        <span class="grpLbl">カメラ:</span>
+        <button class="cbtn camBtn" data-cam="top">&#128301; 俯瞰</button>
+        <button class="cbtn camBtn on" data-cam="coach">&#127913; 監督</button>
+        <button class="cbtn camBtn" data-cam="goal">&#129349; ゴール裏</button>
+        <button class="cbtn camBtn" data-cam="player">&#127939; 選手視点</button>
+      </div>
+      <div class="ctrlRow">
+        <button class="cbtn big" id="playBtn3d">&#9654;</button>
+        <button class="cbtn big" id="replayBtn" title="リプレイ">&#8635;</button>
+        <input type="range" id="seek" min="0" max="1000" value="0">
+        <span id="timeLbl">0.0 / 0.0s</span>
+        <button class="cbtn spdBtn" data-spd="0.5">0.5x</button>
+        <button class="cbtn spdBtn on" data-spd="1">1x</button>
+        <button class="cbtn spdBtn" data-spd="2">2x</button>
+      </div>
+    </div>
+    <div id="fallback">
+      <div class="box">
+        <div class="big">&#128268;</div>
+        <p><strong>3D表示を開始できませんでした。</strong></p>
+        <p>3D表示にはインターネット接続（Three.jsライブラリの読み込み）とWebGL対応ブラウザが必要です。接続を確認して再読み込みしてください。ボード・ドリルはネット接続なしでも動作します。</p>
+        <p style="margin-top:12px;"><a href="javascript:location.reload()">再読み込み</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 【3】ドリル ============ -->
+<section class="screen" id="screen-drill">
+  <div class="drill-wrap">
+    <div class="coach">
+      <div class="face">&#127941;</div>
+      <div class="bubble"><span class="name">コーチ</span><span id="dCoachText">場面を読んで、あなたの選手（★）を最適な位置にドラッグしましょう。「ここでどう？」で答え合わせです。</span></div>
+    </div>
+    <div class="qhead">
+      <span class="qnum" id="dNum">問題 1</span>
+      <span class="status" id="statusD">&#11088;0 ルーキー</span>
+    </div>
+    <div class="dfilters">
+      <button class="dfilter on" data-f="all">すべて</button>
+      <button class="dfilter" data-f="d">&#128737;&#65039; 守備</button>
+      <button class="dfilter" data-f="o">&#9876;&#65039; 攻撃</button>
+      <button class="dfilter" data-f="t">&#9889; 切替</button>
+    </div>
+    <canvas id="cvD" width="700" height="440"></canvas>
+    <p class="dhint-note">★（あなた）をドラッグして「ここだ」という位置に置きましょう。</p>
+    <div class="qtext" id="dQ"></div>
+    <div class="btnrow">
+      <button class="bigbtn play" id="dCheck">&#128205; ここでどう？</button>
+      <button class="bigbtn reset" id="dReset">&#128260; 位置を戻す</button>
+      <button class="bigbtn watch3d" id="dWatch3d" style="display:none;">&#127916; この動きを3Dで見る</button>
+      <button class="bigbtn next" id="dNext" style="display:none;">次へ &#9654;</button>
+    </div>
+    <div class="verdict" id="dVerdict"></div>
+    <div class="explain" id="dExp"></div>
+    <div class="dmap-title">&#128203; 成績マップ（すべて &#127775; でマスター）</div>
+    <div class="dmap" id="dMap"></div>
+    <div class="finish" id="dFinish"></div>
+  </div>
+</section>
+
+<footer>
+  &#129514; <a href="index.html">実験ラボ</a> | Built with Claude Fable 5 ・ 3D表示にはネット接続が必要です
+</footer>
+
+<div id="toast"></div>
+<div id="flash"></div>
+<div id="golazo">&#9917; ゴラッソ!!</div>
+
+<script>
+"use strict";
+/* ============================================================
+   共通 & タブ切替 & トースト
+============================================================ */
+const $ = id => document.getElementById(id);
+let toastTimer = null;
+function toast(msg, isErr){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.toggle("err", !!isErr);
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+let currentScreen = "board";
+function showScreen(name){
+  currentScreen = name;
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === "screen-" + name));
+  document.querySelectorAll(".step").forEach(s => s.classList.toggle("active", s.dataset.screen === name));
+  document.body.classList.toggle("theater-mode", name === "theater");
+  if (name === "board") requestAnimationFrame(resizeBoard);
+  if (name === "theater") onEnterTheater();
+  if (name === "drill") { renderD(); }
+}
+document.querySelectorAll(".step").forEach(b => {
+  b.addEventListener("click", () => showScreen(b.dataset.screen));
+});
+
+/* ============================================================
+   【1】ボード (2D戦術エディタ) — tactics-board 由来
+   座標系: 各ビューの「メートル座標」で保持し描画時にpx変換
+============================================================ */
+const cv = $("cv");
+const ctx = cv.getContext("2d");
+const boardBox = $("boardBox");
+
+const VIEWS = {
+  eight:   { fw:68,   fh:50, mt:1.6, mb:1.6, ml:3.4, mr:3.4, draw:drawEightPitch,  label:"8人制" },
+  corner:  { fw:56,   fh:34, mt:3.4, mb:1.6, ml:1.6, mr:1.6, draw:drawCornerPitch, label:"コーナーキック" },
+  throwin: { fw:52.5, fh:46, mt:1.8, mb:1.6, ml:1.6, mr:3.4, draw:drawThrowinPitch,label:"スローイン" }
+};
+let view = "eight";
+const boards = {
+  eight:   { players:[], arrows:[] },
+  corner:  { players:[], arrows:[] },
+  throwin: { players:[], arrows:[] }
+};
+let tool = "select";
+let scaleB = 10;
+let tempArrow = null, dragP = null, animating = false, activePresetBtn = null;
+const board = () => boards[view];
+const V = () => VIEWS[view];
+
+function m2x(x){ return (V().ml + x) * scaleB; }
+function m2y(y){ return (V().mt + y) * scaleB; }
+function p2mx(px){ return px / scaleB - V().ml; }
+function p2my(py){ return py / scaleB - V().mt; }
+
+function resizeBoard(){
+  if (!cv.clientWidth && boardBox.clientWidth === 0) return;
+  const v = V();
+  const cssW = boardBox.clientWidth || 640;
+  scaleB = cssW / (v.fw + v.ml + v.mr);
+  const cssH = (v.fh + v.mt + v.mb) * scaleB;
+  const dpr = window.devicePixelRatio || 1;
+  cv.style.height = cssH + "px";
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawBoard();
+}
+window.addEventListener("resize", () => { if (currentScreen === "board") resizeBoard(); });
+
+/* ---------- ピッチ描画 ---------- */
+const GRASS1 = "#2c8a45", GRASS2 = "#25763b", LINE = "rgba(255,255,255,.88)";
+function grassStripes(horizontal, count){
+  const v = V();
+  const W = (v.fw + v.ml + v.mr) * scaleB, H = (v.fh + v.mt + v.mb) * scaleB;
+  ctx.fillStyle = GRASS1; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = GRASS2;
+  if (horizontal){ const bw = H / count; for (let i = 0; i < count; i += 2) ctx.fillRect(0, i * bw, W, bw); }
+  else { const bw = W / count; for (let i = 0; i < count; i += 2) ctx.fillRect(i * bw, 0, bw, H); }
+}
+function lw(){ ctx.lineWidth = Math.max(1.5, scaleB * 0.12); ctx.strokeStyle = LINE; }
+function rectM(x, y, w, h){ ctx.strokeRect(m2x(x), m2y(y), w * scaleB, h * scaleB); }
+function lineM(x1, y1, x2, y2){ ctx.beginPath(); ctx.moveTo(m2x(x1), m2y(y1)); ctx.lineTo(m2x(x2), m2y(y2)); ctx.stroke(); }
+function spotM(x, y){ ctx.beginPath(); ctx.arc(m2x(x), m2y(y), Math.max(2.5, scaleB * 0.22), 0, Math.PI * 2); ctx.fillStyle = LINE; ctx.fill(); }
+function goalRect(x, y, w, h){
+  ctx.save(); ctx.fillStyle = "rgba(255,255,255,.18)";
+  ctx.fillRect(m2x(x), m2y(y), w * scaleB, h * scaleB);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1.5, scaleB * 0.14);
+  ctx.strokeRect(m2x(x), m2y(y), w * scaleB, h * scaleB); ctx.restore();
+}
+function drawCornerPitch(){
+  grassStripes(true, 8); lw();
+  lineM(0, 0, 56, 0); lineM(56, 0, 56, 34);
+  rectM(1.84, 0, 40.32, 16.5); rectM(12.84, 0, 18.32, 5.5); goalRect(18.34, -2, 7.32, 2);
+  spotM(22, 11);
+  ctx.beginPath(); ctx.arc(m2x(22), m2y(11), 9.15 * scaleB, 0.6405, Math.PI - 0.6405); ctx.stroke();
+  ctx.beginPath(); ctx.arc(m2x(56), m2y(0), 1 * scaleB, Math.PI / 2, Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(m2x(56), m2y(0)); ctx.lineTo(m2x(56) + scaleB, m2y(0) - scaleB * 1.2);
+  ctx.strokeStyle = "#f0c649"; ctx.stroke();
+}
+function drawThrowinPitch(){
+  grassStripes(false, 8); lw();
+  lineM(0, 0, 52.5, 0); lineM(52.5, 0, 52.5, 46); lineM(0, 0, 0, 46);
+  ctx.beginPath(); ctx.arc(m2x(0), m2y(34), 9.15 * scaleB, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+  spotM(0, 34);
+  lineM(36, 13.84, 52.5, 13.84); lineM(36, 13.84, 36, 46);
+  rectM(47, 24.84, 5.5, 18.32); goalRect(52.5, 30.34, 2, 7.32);
+  spotM(41.5, 34);
+  ctx.beginPath(); ctx.arc(m2x(41.5), m2y(34), 9.15 * scaleB, 2.216, 2 * Math.PI - 2.216); ctx.stroke();
+  ctx.beginPath(); ctx.arc(m2x(52.5), m2y(0), 1 * scaleB, Math.PI / 2, Math.PI); ctx.stroke();
+  ctx.font = "700 " + Math.max(11, scaleB * 0.8) + "px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.textAlign = "left";
+  ctx.fillText("タッチライン", m2x(2), m2y(0) - scaleB * 0.5);
+}
+function drawEightPitch(){
+  grassStripes(false, 10); lw();
+  rectM(0, 0, 68, 50); lineM(34, 0, 34, 50);
+  ctx.beginPath(); ctx.arc(m2x(34), m2y(25), 7 * scaleB, 0, Math.PI * 2); ctx.stroke();
+  spotM(34, 25);
+  rectM(0, 10.5, 12, 29); rectM(56, 10.5, 12, 29); rectM(0, 18.5, 4, 13); rectM(64, 18.5, 4, 13);
+  goalRect(-1.6, 22.5, 1.6, 5); goalRect(68, 22.5, 1.6, 5);
+  spotM(8, 25); spotM(60, 25);
+  ctx.beginPath(); ctx.arc(m2x(8),  m2y(25), 7 * scaleB, -0.963, 0.963); ctx.stroke();
+  ctx.beginPath(); ctx.arc(m2x(60), m2y(25), 7 * scaleB, Math.PI - 0.963, Math.PI + 0.963); ctx.stroke();
+  const cs = [[0,0,0,Math.PI/2],[68,0,Math.PI/2,Math.PI],[68,50,Math.PI,Math.PI*1.5],[0,50,Math.PI*1.5,Math.PI*2]];
+  for (const c of cs){ ctx.beginPath(); ctx.arc(m2x(c[0]), m2y(c[1]), 0.8 * scaleB, c[2], c[3]); ctx.stroke(); }
+}
+
+/* ---------- 矢印 & マーカー ---------- */
+const ARROW_STYLE = {
+  move:    { color:"#f0c649", dash:[] },
+  pass:    { color:"#ffffff", dash:[9, 7] },
+  dribble: { color:"#ff8c42", dash:[] }
+};
+function drawArrowB(a, ghost){
+  const st = ARROW_STYLE[a.kind];
+  const x1 = m2x(a.x1), y1 = m2y(a.y1), x2 = m2x(a.x2), y2 = m2y(a.y2);
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const ang = Math.atan2(dy, dx);
+  ctx.save(); ctx.globalAlpha = ghost ? 0.55 : 1;
+  ctx.strokeStyle = st.color; ctx.fillStyle = st.color;
+  ctx.lineWidth = Math.max(2.2, scaleB * 0.22); ctx.lineCap = "round";
+  const head = Math.max(9, scaleB * 0.9);
+  const ex = x2 - Math.cos(ang) * head * 0.75, ey = y2 - Math.sin(ang) * head * 0.75;
+  ctx.setLineDash(st.dash);
+  if (a.kind === "dribble"){
+    ctx.beginPath();
+    const amp = Math.max(3, scaleB * 0.35), wl = Math.max(11, scaleB * 1.1);
+    const n = Math.max(8, Math.floor(len / 3));
+    for (let i = 0; i <= n; i++){
+      const t = i / n, bx = x1 + (ex - x1) * t, by = y1 + (ey - y1) * t;
+      const off = Math.sin(t * len / wl * Math.PI * 2) * amp;
+      const px = bx + Math.cos(ang + Math.PI / 2) * off, py = by + Math.sin(ang + Math.PI / 2) * off;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  } else { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(ex, ey); ctx.stroke(); }
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - Math.cos(ang - 0.42) * head, y2 - Math.sin(ang - 0.42) * head);
+  ctx.lineTo(x2 - Math.cos(ang + 0.42) * head, y2 - Math.sin(ang + 0.42) * head);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function markerR(){ return Math.max(11, Math.min(16, scaleB * 1.05)); }
+function drawPlayerB(p){
+  const x = m2x(p.x), y = m2y(p.y), r = p.team === "ball" ? markerR() * 0.72 : markerR();
+  ctx.save(); ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  if (p.team === "atk") ctx.fillStyle = "#e5484d";
+  else if (p.team === "def") ctx.fillStyle = "#3e7bfa";
+  else ctx.fillStyle = "#ffffff";
+  ctx.fill(); ctx.shadowColor = "transparent"; ctx.lineWidth = 2;
+  ctx.strokeStyle = p.team === "ball" ? "#222" : "rgba(255,255,255,.9)"; ctx.stroke();
+  if (p.team === "ball"){ ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, Math.PI * 2); ctx.fillStyle = "#222"; ctx.fill(); }
+  else {
+    ctx.fillStyle = "#fff"; ctx.font = "700 " + Math.round(r * 1.02) + "px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.num, x, y + 0.5);
+  }
+  ctx.restore();
+}
+function drawBoard(){
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  V().draw();
+  for (const a of board().arrows) drawArrowB(a, false);
+  if (tempArrow) drawArrowB(tempArrow, true);
+  for (const p of board().players) drawPlayerB(p);
+}
+
+/* ---------- 入力 ---------- */
+function evPos(e){
+  const rc = cv.getBoundingClientRect();
+  const t = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+  return { x: p2mx(t.clientX - rc.left), y: p2my(t.clientY - rc.top) };
+}
+function hitPlayer(mx, my){
+  const hr = (markerR() + 5) / scaleB, ps = board().players;
+  for (let i = ps.length - 1; i >= 0; i--) if (Math.hypot(ps[i].x - mx, ps[i].y - my) < hr) return ps[i];
+  return null;
+}
+function distToSeg(px, py, a){
+  const dx = a.x2 - a.x1, dy = a.y2 - a.y1, L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - a.x1) * dx + (py - a.y1) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (a.x1 + dx * t), py - (a.y1 + dy * t));
+}
+function hitArrow(mx, my){
+  const hr = 14 / scaleB, as = board().arrows;
+  for (let i = as.length - 1; i >= 0; i--) if (distToSeg(mx, my, as[i]) < hr) return as[i];
+  return null;
+}
+function nextNum(team){ let n = 0; for (const p of board().players) if (p.team === team && p.num > n) n = p.num; return n + 1; }
+function eraseAt(mx, my){
+  const p = hitPlayer(mx, my);
+  if (p){ board().players.splice(board().players.indexOf(p), 1); drawBoard(); return; }
+  const a = hitArrow(mx, my);
+  if (a){ board().arrows.splice(board().arrows.indexOf(a), 1); drawBoard(); }
+}
+function deletePlayerAt(mx, my){
+  const p = hitPlayer(mx, my);
+  if (p){ board().players.splice(board().players.indexOf(p), 1); clearPresetSel(); drawBoard(); }
+}
+let lastTap = { t:0, x:0, y:0 };
+function pointerDown(e){
+  if (animating) return;
+  const m = evPos(e);
+  if (tool === "erase"){ eraseAt(m.x, m.y); dragP = "erasing"; return; }
+  if (tool === "move" || tool === "pass" || tool === "dribble"){ tempArrow = { kind:tool, x1:m.x, y1:m.y, x2:m.x, y2:m.y }; return; }
+  const hit = hitPlayer(m.x, m.y);
+  if (hit){ dragP = hit; return; }
+  if (tool === "atk" || tool === "def" || tool === "ball"){
+    const p = { team:tool, x:m.x, y:m.y, num: tool === "ball" ? 0 : nextNum(tool) };
+    board().players.push(p); dragP = p; clearPresetSel(); drawBoard();
+  }
+}
+function pointerMove(e){
+  if (animating) return;
+  const m = evPos(e);
+  if (tempArrow){ tempArrow.x2 = m.x; tempArrow.y2 = m.y; drawBoard(); return; }
+  if (dragP === "erasing"){ eraseAt(m.x, m.y); return; }
+  if (dragP){
+    dragP.x = Math.max(-V().ml, Math.min(V().fw + V().mr, m.x));
+    dragP.y = Math.max(-V().mt, Math.min(V().fh + V().mb, m.y));
+    drawBoard();
+  }
+}
+function pointerUp(){
+  if (tempArrow){
+    const len = Math.hypot(tempArrow.x2 - tempArrow.x1, tempArrow.y2 - tempArrow.y1);
+    if (len > 1.2){ board().arrows.push(tempArrow); clearPresetSel(); }
+    tempArrow = null; drawBoard();
+  }
+  dragP = null;
+}
+cv.addEventListener("mousedown", pointerDown);
+window.addEventListener("mousemove", e => { if ((dragP || tempArrow) && currentScreen === "board") pointerMove(e); });
+window.addEventListener("mouseup", () => { if (currentScreen === "board") pointerUp(); });
+cv.addEventListener("dblclick", e => { const m = evPos(e); deletePlayerAt(m.x, m.y); });
+cv.addEventListener("touchstart", e => {
+  e.preventDefault();
+  const m = evPos(e), now = Date.now(), rc = cv.getBoundingClientRect(), t = e.touches[0];
+  const sx = t.clientX - rc.left, sy = t.clientY - rc.top;
+  if (now - lastTap.t < 350 && Math.hypot(sx - lastTap.x, sy - lastTap.y) < 24){
+    deletePlayerAt(m.x, m.y); lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; return;
+  }
+  lastTap = { t:now, x:sx, y:sy }; pointerDown(e);
+}, { passive:false });
+cv.addEventListener("touchmove", e => { e.preventDefault(); pointerMove(e); }, { passive:false });
+cv.addEventListener("touchend", e => { e.preventDefault(); pointerUp(); }, { passive:false });
+
+/* ---------- ツールバー / ビュータブ ---------- */
+document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
+  b.addEventListener("click", () => {
+    tool = b.dataset.tool;
+    document.querySelectorAll("#toolbar [data-tool]").forEach(x => x.classList.toggle("active", x === b));
+  });
+});
+$("clearBtn").addEventListener("click", () => {
+  if (animating) return;
+  board().players = []; board().arrows = []; clearPresetSel();
+  setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
+  drawBoard();
+});
+document.querySelectorAll("#bViews .vtab").forEach(t => {
+  t.addEventListener("click", () => {
+    if (animating) return;
+    view = t.dataset.view;
+    document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x === t));
+    buildPresetList(); clearPresetSel();
+    setDesc("", "プリセットを選ぶと配置と動きが再現されます。");
+    resizeBoard();
+  });
+});
+
+/* ============================================================
+   プリセット定義 (tactics-board + soccer-3d を統合しカテゴリ分け)
+   players:[team,x,y] / arrows:[kind,x1,y1,x2,y2]  cat: カテゴリ名
+============================================================ */
+const PRESETS = {
+corner: [
+  { cat:"セットプレー攻撃", name:"ニアゾーンアタック",
+    desc:"ニアポスト前の「ニアゾーン」に複数人が時間差で走り込み、インスイングのボールをワンタッチで合わせる定番の得点パターン。GKと守備ラインの中間に落ちるボールは、触るだけで枠に飛びやすい。",
+    coach:"コーチングポイント：キッカーの助走開始を合図にスタート。ニアの選手は「すらす」だけでOK、後ろの選手がこぼれを狙う。",
+    players:[["atk",54.8,1.2],["atk",25,13],["atk",29,12],["atk",21,14],["atk",16,11],
+             ["def",22,0.9],["def",26,5],["def",23,6.2],["def",19.5,6.2],["def",27,9],["def",22,10.5],["ball",54.1,0.9]],
+    arrows:[["pass",54.3,1.0,27,4],["move",25,13,27.5,4.2],["move",29,12,24.5,5.5],["move",21,14,21,7],["move",16,11,17.8,5]] },
+  { cat:"セットプレー攻撃", name:"ファーサイドオーバーロード",
+    desc:"ファーサイド(遠いポスト側)に選手を密集させて数的優位を作り、山なりのボールをファーで合わせる。GKから最も遠いエリアなので、キャッチされにくく折り返しも狙える。",
+    coach:"コーチングポイント：密集からの「散らばる」動き出しでマークを剥がす。ファーで競り勝てなくても中へ折り返す意識を徹底。",
+    players:[["atk",54.8,1.2],["atk",14,9],["atk",12,12],["atk",17,11],["atk",21,13],
+             ["def",22,0.9],["def",16,5],["def",19,6],["def",23,6],["def",26,4],["ball",54.1,0.9]],
+    arrows:[["pass",54.3,1.0,16.5,5],["move",14,9,16.8,4.5],["move",12,12,14,7],["move",17,11,19,5],["move",21,13,22,6.5]] },
+  { cat:"セットプレー攻撃", name:"ショートコーナー",
+    desc:"近くの味方と2対1を作ってから角度を変えてクロス。守備が出てくれば中の枚数が減り、出てこなければフリーでクロスを上げられる、二択を突きつけるプレー。",
+    coach:"コーチングポイント：受け手はオフサイドラインに注意しつつ深い位置で受ける。中の選手はクロスのタイミングまで動き直しを続ける。",
+    players:[["atk",54.8,1.2],["atk",50.5,4.5],["atk",43,9.5],["atk",24,9],["atk",19,9],
+             ["def",22,0.9],["def",27,4],["def",23,5],["def",19,5],["def",48,4],["ball",54.1,0.9]],
+    arrows:[["pass",54.2,1.0,50.3,4.3],["pass",50.5,4.5,43.5,9.2],["pass",43,9.5,22,5.5],["move",24,9,24,4.5],["move",19,9,20,5],["move",48,4,51,2.8]] },
+  { cat:"セットプレー守備", name:"ゾーンディフェンス配置",
+    desc:"守備側の基本形。マンツーマンではなく、危険なゾーン(ゴールエリア前〜ニアゾーン)を人で埋める配置。相手の動きに釣られず、ボールの落下点に最初に触ることを最優先する。",
+    coach:"コーチングポイント：クリアは「高く・遠く・外へ」。ニアゾーンの選手は絶対に触らせない意識。セカンドボール回収役をPA外に必ず置く。",
+    players:[["def",22,1.2],["def",28.5,3],["def",26,5],["def",23.2,5.8],["def",20.4,5.8],["def",17.6,5],["def",15,3.5],["def",24,10.5],["def",19,10.5],["def",50,3],
+             ["atk",54.8,1.2],["atk",24,8],["atk",20,8],["ball",54.1,0.9]],
+    arrows:[] }
+],
+throwin: [
+  { cat:"スローイン", name:"ロングスロー",
+    desc:"ペナルティエリア内へ直接投げ込み、コーナーキックのような攻撃を仕掛ける。ニアで背の高い選手が「すらし」、ファーとゴール正面で合わせる形が基本。",
+    coach:"コーチングポイント：投げ手は助走をしっかり取り、フラットで速いボールを。PA外にセカンドボール回収役を必ず配置する。",
+    players:[["atk",47.5,1],["atk",48.5,26],["atk",44,30],["atk",41,24],["atk",38,17],
+             ["def",51.5,34],["def",47.5,28],["def",45.5,32],["def",42.5,26],["ball",47.5,2.2]],
+    arrows:[["pass",47.5,2.0,48.5,25],["pass",48.7,26.5,47.5,32],["move",44,30,47.5,33],["move",41,24,45.5,29]] },
+  { cat:"スローイン", name:"サードマン(投げる→落とす→3人目)",
+    desc:"マークされた選手へ一度投げて足元で「落とし」、フリーの3人目が前を向いてスペースで受けるコンビネーション。スローインは密集しやすいので、3人目の関わりが最も効果的。",
+    coach:"コーチングポイント：受け手は投げる瞬間に一歩マークを外す。落としはワンタッチで、3人目は落とす前に走り出す。",
+    players:[["atk",28,1],["atk",31,7],["atk",24.5,9],["atk",34,13],["def",32.5,8.5],["def",26.5,12],["def",38,10],["ball",28,2.2]],
+    arrows:[["pass",28,2.0,31,6.5],["pass",31.3,7.3,25.2,9],["pass",24.7,9.3,39,16],["move",34,13,39.5,16.5]] },
+  { cat:"スローイン", name:"クイックリスタート",
+    desc:"相手の守備が整う前に素早く投げてライン際を突破する。スローインは「止まった時間」を作らないことが最大の武器。ボールを取りに行く速さがそのままチャンスの数になる。",
+    coach:"コーチングポイント：ボール確保から3秒以内を目標。受け手はタッチライン沿いを前向きにスプリント、投げ手はすぐ中へ入って次のプレーに関わる。",
+    players:[["atk",22,1],["atk",27,5],["atk",18,8],["def",30,9],["def",24,13],["ball",22,2.2]],
+    arrows:[["pass",22,2.0,36,3.5],["move",27,5,37,3],["move",18,8,26,7]] }
+],
+eight: [
+  { cat:"ビルドアップ", name:"フォーメーション 2-3-2",
+    desc:"攻守のバランスが良い8人制の王道フォーメーション。中盤3枚で数的優位を作りやすく、2トップで前線からのプレスも掛けやすい。ジュニア年代の導入に最適。",
+    coach:"コーチングポイント：中盤の真ん中(アンカー)がチームのへそ。DF2枚は幅を取りすぎず、中央を閉じることを最優先。",
+    players:[["atk",5,25],["atk",16,16],["atk",16,34],["atk",31,11],["atk",29,25],["atk",31,39],["atk",47,19],["atk",47,31],["ball",34,25]],
+    arrows:[] },
+  { cat:"ビルドアップ", name:"フォーメーション 3-3-1",
+    desc:"守備が安定する3バックの形。後ろに人数がいるためビルドアップの逃げ道が多く、負けない試合運びがしやすい。1トップは孤立しやすいので中盤の追い越しが鍵。",
+    coach:"コーチングポイント：3バックの両脇が攻撃時にサイドへ上がれると一気に厚みが出る。1トップは背負うプレーとプレスバックを両立。",
+    players:[["atk",5,25],["atk",15,12],["atk",14,25],["atk",15,38],["atk",32,12],["atk",30,25],["atk",32,38],["atk",48,25],["ball",34,25]],
+    arrows:[] },
+  { cat:"ビルドアップ", name:"フォーメーション 2-4-1",
+    desc:"中盤4枚でボール支配を狙う攻撃的な形。サイドの高い位置を取りやすく、ポゼッション志向のチームに向く。DF2枚の背後のスペース管理が最大のリスク。",
+    coach:"コーチングポイント：サイドMFは幅を取り、インサイドMFはライン間で受ける。奪われた瞬間の即時奪回(5秒ルール)をチームの約束事に。",
+    players:[["atk",5,25],["atk",15,17],["atk",15,33],["atk",32,8],["atk",30,20],["atk",30,30],["atk",32,42],["atk",48,25],["ball",34,25]],
+    arrows:[] },
+  { cat:"ビルドアップ", name:"GKからのビルドアップ",
+    desc:"GKからDF→アンカー→サイドと相手プレスの逆を取りながら前進し、ライン間で待つFWへ縦パスを打ち込む。GKも「9人目のフィールドプレーヤー」として関わる。",
+    coach:"コーチングポイント：相手FWのプレスの矢印(走る方向)を見て、その逆側から運ぶ。アンカーは常に半身で前を向ける体の向きを作っておく。",
+    players:[["atk",2,25],["atk",13,13],["atk",13,37],["atk",26,25],["atk",30,10],["atk",30,40],["atk",46,20],["atk",46,30],
+             ["def",20,25],["def",30,17],["def",30,33],["ball",3,25]],
+    arrows:[["pass",3,25,13,14],["pass",13,13,26,25],["pass",26,25,42,22],["move",13,37,20,40],["move",46,20,52,18]] },
+  { cat:"トランジション", name:"ショートカウンター",
+    desc:"自陣でのボール奪取から、わずか数本のパスで仕留める速攻。奪った瞬間に前線の選手が一斉にスプリントし、相手の帰陣が間に合う前にフィニッシュまで持ち込む。「奪って3秒」が勝負。",
+    coach:"コーチングポイント：奪った選手は最初の縦パスを最速で。追い越す選手(3人目)がシュートコースを作る。攻め切れない時はキープに切り替える判断も大事。",
+    players:[["atk",22,25],["atk",34,17],["atk",40,33],["atk",30,40],["atk",26,12],
+             ["def",30,25],["def",38,18],["def",44,32],["def",58,25],["ball",22,25]],
+    arrows:[["pass",22,25,40,18],["pass",40,18,56,24],["move",34,17,50,16],["move",40,33,54,30],["dribble",26,12,38,10]] },
+  { cat:"トランジション", name:"即時奪回(ゲーゲンプレス)",
+    desc:"ボールを失った直後に複数人で囲い込み、その場で奪い返す守備戦術。相手が前を向く前にプレスを掛け、縦パスのコースを消しながら追い込む。失った位置が高いほど大きなチャンスに繋がる。",
+    coach:"コーチングポイント：ボール保持者に一番近い選手が全力で寄せ、周りはパスコースを消す。5秒奪い返せなければ全体で後退して守備を整える。",
+    players:[["def",30,25],["def",38,20],["def",36,32],["def",26,25],["def",44,26],
+             ["atk",34,25],["atk",30,15],["atk",30,35],["atk",50,25],["ball",34,25]],
+    arrows:[["move",38,20,35,24],["move",36,32,35,27],["move",26,25,31,25],["move",44,26,38,26]] }
+]
+};
+
+function currentPresets(){ return PRESETS[view]; }
+function buildPresetList(){
+  const list = $("presetList");
+  list.innerHTML = "";
+  const arr = currentPresets();
+  let lastCat = null;
+  arr.forEach((p, i) => {
+    if (p.cat !== lastCat){
+      const h = document.createElement("div");
+      h.className = "pcat"; h.textContent = p.cat; list.appendChild(h); lastCat = p.cat;
+    }
+    const b = document.createElement("button");
+    b.className = "pbtn"; b.textContent = p.name;
+    b.addEventListener("click", () => applyPreset(i, b));
+    list.appendChild(b);
+  });
+}
+function clearPresetSel(){ if (activePresetBtn){ activePresetBtn.classList.remove("on"); activePresetBtn = null; } }
+function setDesc(title, body, coach){
+  $("descTitle").textContent = title;
+  const box = $("descBox"); box.textContent = body;
+  if (coach){ const c = document.createElement("span"); c.className = "coach"; c.textContent = coach; box.appendChild(c); }
+}
+function applyPreset(i, btn){
+  if (animating) return;
+  const p = currentPresets()[i], b = board();
+  b.players = []; const counters = { atk:0, def:0 };
+  for (const pl of p.players){
+    const num = pl[0] === "ball" ? 0 : ++counters[pl[0]];
+    b.players.push({ team:pl[0], x:pl[1], y:pl[2], num });
+  }
+  b.arrows = p.arrows.map(a => ({ kind:a[0], x1:a[1], y1:a[2], x2:a[3], y2:a[4] }));
+  clearPresetSel(); activePresetBtn = btn; btn.classList.add("on");
+  setDesc(p.name, p.desc, p.coach);
+  drawBoard();
+  toast("プリセット「" + p.name + "」を配置しました");
+}
+
+/* ---------- 2D アニメーション再生 ---------- */
+$("playBtn2d").addEventListener("click", startAnim2d);
+function startAnim2d(){
+  if (animating) return;
+  const b = board(), jobs = [], BIND = 3.2;
+  for (const p of b.players){
+    if (p.team === "ball"){
+      let cx = p.x, cy = p.y; const used = new Set(), path = [];
+      for (;;){
+        let best = null, bd = BIND;
+        for (const a of b.arrows){
+          if (a.kind !== "pass" || used.has(a)) continue;
+          const d = Math.hypot(a.x1 - cx, a.y1 - cy);
+          if (d < bd){ bd = d; best = a; }
+        }
+        if (!best) break;
+        used.add(best); path.push(best); cx = best.x2; cy = best.y2;
+      }
+      if (path.length) jobs.push({ p, path, ox:p.x, oy:p.y });
+    } else {
+      let best = null, bd = BIND;
+      for (const a of b.arrows){
+        if (a.kind === "pass") continue;
+        const d = Math.hypot(a.x1 - p.x, a.y1 - p.y);
+        if (d < bd){ bd = d; best = a; }
+      }
+      if (best) jobs.push({ p, path:[best], ox:p.x, oy:p.y });
+    }
+  }
+  if (!jobs.length){ toast("再生できる矢印がありません(矢印の起点をマーカーの近くに)"); return; }
+  for (const j of jobs){
+    j.lens = j.path.map(a => Math.hypot(a.x2 - a.x1, a.y2 - a.y1));
+    j.total = j.lens.reduce((s, l) => s + l, 0) || 1;
+  }
+  animating = true; $("playBtn2d").disabled = true;
+  playCheer(1.7, 0.16); spawnCheers(8);
+  const DUR = 2000, t0 = performance.now();
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  function frame(now){
+    const raw = Math.min(1, (now - t0) / DUR), t = ease(raw);
+    for (const j of jobs){
+      let dist = t * j.total, seg = 0;
+      while (seg < j.path.length - 1 && dist > j.lens[seg]){ dist -= j.lens[seg]; seg++; }
+      const a = j.path[seg], f = j.lens[seg] ? Math.min(1, dist / j.lens[seg]) : 1;
+      j.p.x = a.x1 + (a.x2 - a.x1) * f; j.p.y = a.y1 + (a.y2 - a.y1) * f;
+    }
+    drawBoard();
+    if (raw < 1){ requestAnimationFrame(frame); }
+    else {
+      if (ballInGoal()) golazo();
+      setTimeout(() => {
+        for (const j of jobs){ j.p.x = j.ox; j.p.y = j.oy; }
+        animating = false; $("playBtn2d").disabled = false; drawBoard();
+      }, 900);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- 保存 / 共有 ---------- */
+function downloadFile(name, url){
+  const a = document.createElement("a"); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+$("pngBtn").addEventListener("click", () => { downloadFile("tactics-" + view + ".png", cv.toDataURL("image/png")); toast("PNG画像を保存しました"); });
+$("exportBtn").addEventListener("click", () => {
+  const data = { app:"tactics-board", version:1, activeView:view, boards };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+  downloadFile("tactics-board.json", URL.createObjectURL(blob)); toast("JSONをエクスポートしました");
+});
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { loadBoardData(JSON.parse(r.result), true); toast("JSONを読み込みました"); }
+    catch (err){ toast("読み込みに失敗しました（形式が不正です）", true); }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+});
+/* 戦術ボードJSON形式を boards に取り込む */
+function loadBoardData(d, switchView){
+  if (!d || !d.boards) throw new Error("bad format");
+  for (const k of ["corner", "throwin", "eight"]){
+    if (d.boards[k]){
+      boards[k].players = (d.boards[k].players || []).filter(p =>
+        ["atk","def","ball"].includes(p.team) && isFinite(p.x) && isFinite(p.y)
+      ).map(p => ({ team:p.team, x:+p.x, y:+p.y, num:+p.num || 0 }));
+      boards[k].arrows = (d.boards[k].arrows || []).filter(a =>
+        ["move","pass","dribble"].includes(a.kind) && [a.x1,a.y1,a.x2,a.y2].every(isFinite)
+      ).map(a => ({ kind:a.kind, x1:+a.x1, y1:+a.y1, x2:+a.x2, y2:+a.y2 }));
+    }
+  }
+  if (switchView && d.activeView && VIEWS[d.activeView]){
+    view = d.activeView;
+    document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x.dataset.view === view));
+    buildPresetList();
+  }
+  clearPresetSel(); resizeBoard();
+}
+
+/* ---------- マイ戦術ライブラリ (localStorage) ---------- */
+const LIB_KEY = "soccerStudio_lib_v1";
+function loadLib(){ try { return JSON.parse(localStorage.getItem(LIB_KEY)) || []; } catch(e){ return []; } }
+function saveLib(arr){ try { localStorage.setItem(LIB_KEY, JSON.stringify(arr)); } catch(e){} }
+function renderLib(){
+  const box = $("libList"), arr = loadLib();
+  box.innerHTML = "";
+  if (!arr.length){ box.innerHTML = '<div class="libempty">保存した戦術はまだありません。</div>'; return; }
+  arr.forEach((item, i) => {
+    const row = document.createElement("div"); row.className = "libitem";
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = item.name;
+    nm.title = "クリックで読み込み"; nm.addEventListener("click", () => loadFromLib(i));
+    const vw = document.createElement("span"); vw.className = "vw"; vw.textContent = VIEWS[item.activeView] ? VIEWS[item.activeView].label : "";
+    const del = document.createElement("button"); del.className = "del"; del.innerHTML = "&#128465;"; del.title = "削除";
+    del.addEventListener("click", () => { const a = loadLib(); a.splice(i, 1); saveLib(a); renderLib(); toast("削除しました"); });
+    row.appendChild(nm); row.appendChild(vw); row.appendChild(del); box.appendChild(row);
+  });
+}
+$("libSaveBtn").addEventListener("click", () => {
+  const nameEl = $("libName");
+  const name = (nameEl.value || "").trim() || (VIEWS[view].label + " " + new Date().toLocaleString("ja-JP", {month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}));
+  const snapshot = { corner:JSON.parse(JSON.stringify(boards.corner)), throwin:JSON.parse(JSON.stringify(boards.throwin)), eight:JSON.parse(JSON.stringify(boards.eight)) };
+  const arr = loadLib();
+  arr.unshift({ name, activeView:view, boards:snapshot, ts:Date.now() });
+  saveLib(arr); nameEl.value = ""; renderLib(); toast("「" + name + "」を保存しました");
+});
+function loadFromLib(i){
+  const item = loadLib()[i]; if (!item) return;
+  loadBoardData({ boards:item.boards, activeView:item.activeView }, true);
+  toast("「" + item.name + "」を読み込みました");
+}
+
+/* ---------- ゴラッソ判定 & 演出 (2D) ---------- */
+const GOALS = {
+  corner:  [{ x1:18.1, y1:-2.3, x2:25.9, y2:0.4 }],
+  throwin: [{ x1:52.3, y1:30.1, x2:54.8, y2:37.9 }],
+  eight:   [{ x1:-1.9, y1:22.2, x2:0.4, y2:27.8 }, { x1:67.6, y1:22.2, x2:69.9, y2:27.8 }]
+};
+function ballInGoal(){
+  for (const p of board().players){
+    if (p.team !== "ball") continue;
+    for (const g of GOALS[view]) if (p.x >= g.x1 && p.x <= g.x2 && p.y >= g.y1 && p.y <= g.y2) return true;
+  }
+  return false;
+}
+function golazo(){
+  const f = $("flash"), g = $("golazo");
+  f.classList.remove("go"); g.classList.remove("go"); void f.offsetWidth;
+  f.classList.add("go"); g.classList.add("go");
+  playCheer(2.4, 0.24); spawnCheers(16);
+  setTimeout(() => { f.classList.remove("go"); g.classList.remove("go"); }, 2000);
+}
+const CHEER_WORDS = ["ワァァァ!", "ウォォォ!", "わーっ!", "オオォー!", "いけーっ!", "ワァー!"];
+function spawnCheers(n){
+  for (let i = 0; i < n; i++){
+    const s = document.createElement("span"); s.className = "cheer";
+    s.textContent = CHEER_WORDS[Math.floor(Math.random() * CHEER_WORDS.length)];
+    s.style.left = (6 + Math.random() * 84) + "%"; s.style.bottom = (5 + Math.random() * 35) + "%";
+    s.style.fontSize = (13 + Math.random() * 15) + "px"; s.style.animationDelay = (Math.random() * 0.55).toFixed(2) + "s";
+    boardBox.appendChild(s); setTimeout(() => s.remove(), 2400);
+  }
+}
+/* 歓声(Web Audio) */
+let soundOn = true, audioCtx = null;
+function playCheer(duration, peak){
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const sr = audioCtx.sampleRate;
+    const buf = audioCtx.createBuffer(1, Math.max(1, Math.floor(sr * duration)), sr);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const filt = audioCtx.createBiquadFilter(); filt.type = "bandpass"; filt.frequency.value = 850; filt.Q.value = 0.5;
+    const gain = audioCtx.createGain(); const t = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(peak, t + duration * 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    src.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
+    src.start(t); src.stop(t + duration + 0.05);
+  } catch (e) {}
+}
+
+/* ============================================================
+   タブ間連携ブリッジ (ボード→3D / ドリル→3D)
+   3D module 側が window.Studio3D にAPIを公開する。
+   pendingScene: 3D未初期化でも予約できるよう保持
+============================================================ */
+window.Studio3D = null;
+let pending3D = null;        // { type:"board"|"scene", ... }
+function requestTheater(payload){
+  pending3D = payload;
+  showScreen("theater");
+}
+function onEnterTheater(){
+  if (window.Studio3D && window.Studio3D.ready){
+    window.Studio3D.onResize();
+    if (pending3D){ window.Studio3D.consume(pending3D); pending3D = null; }
+  }
+  // 未初期化なら 3D module 側が ready 時に pending を処理する
+}
+/* ボード→3D: 現在の盤面を戦術ボードJSON形式にして渡す */
+$("to3dBtn").addEventListener("click", () => {
+  const b = board();
+  const hasMarker = b.players.some(p => ["atk","def","ball"].includes(p.team));
+  if (!hasMarker){ toast("先に選手やボールを配置してください", true); return; }
+  const data = { app:"tactics-board", version:1, activeView:view, boards:{ [view]: JSON.parse(JSON.stringify(b)) } };
+  requestTheater({ type:"board", data, title:"ボードの戦術" });
+});
+
+/* ---------- ボード初期化 ---------- */
+buildPresetList();
+renderLib();
+requestAnimationFrame(resizeBoard);
+
+/* ============================================================
+   【3】ドリル (ポジショニングどうじょう) — soccer-kids タブD 由来
+   文言は「です・ます」の通常表記。8問以上。
+   座標: %系。自分ゴール=左、攻撃=右向き(全シナリオ共通)
+============================================================ */
+const DW = 700, DH = 440;
+const dpx = v => v / 100 * DW, dpy = v => v / 100 * DH;
+
+/* セーブデータ(★・成績) */
+let dState = { stars:0, d:[] };
+try { const s = localStorage.getItem("soccerStudio_drill_v1"); if (s) dState = Object.assign(dState, JSON.parse(s)); } catch(e){}
+function dSave(){ try { localStorage.setItem("soccerStudio_drill_v1", JSON.stringify(dState)); } catch(e){} }
+function drankName(s){ return s>=18?"レジェンド 👑":s>=14?"エース 🔥":s>=9?"キャプテン 🎖️":s>=4?"レギュラー ⚽":"ルーキー 🌱"; }
+function dUpdateStatus(){ $("statusD").textContent = "⭐" + dState.stars + " " + drankName(dState.stars); }
+function dAwardStar(){ dState.stars++; dSave(); dUpdateStatus(); }
+function dCoachSay(t){ $("dCoachText").textContent = t; }
+
+/* ★演出・効果音 */
+let dActx = null;
+function dAudio(){ if (!dActx){ try { dActx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; } } if (dActx.state === "suspended") dActx.resume(); return dActx; }
+function dTone(freq, delay, dur, type, vol){
+  const a = dAudio(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || "sine"; o.frequency.value = freq;
+  const t0 = a.currentTime + delay;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol || 0.16, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function dFanfare(){ [[523,0],[659,.12],[784,.24],[1047,.36]].forEach(n=>dTone(n[0],n[1],.35,"triangle",.18)); dTone(1319,.5,.5,"triangle",.14); }
+function dSad(){ dTone(392,0,.25,"sine",.11); dTone(330,.18,.35,"sine",.11); }
+function dPop(){ dTone(880,0,.08,"sine",.09); }
+function spawnStars(x, y, n){
+  for (let i = 0; i < (n || 10); i++){
+    const s = document.createElement("span"); s.className = "star-fly"; s.textContent = ["⭐","🌟","✨"][i%3];
+    s.style.setProperty("--x", x + "px"); s.style.setProperty("--y", y + "px");
+    s.style.setProperty("--dx", (Math.random()*260-130) + "px"); s.style.setProperty("--dy", (-60-Math.random()*200) + "px");
+    document.body.appendChild(s); setTimeout(() => s.remove(), 1200);
+  }
+}
+function starsFromEl(el){ const r = el.getBoundingClientRect(); spawnStars(r.left + r.width/2, r.top + r.height/2, 10); }
+
+/* ---------- ドリル用おえかき ---------- */
+const ctxD = $("cvD").getContext("2d");
+function dDrawPitch(c){
+  for (let i = 0; i < 10; i++){ c.fillStyle = i%2 ? "#2c8a45" : "#25763b"; c.fillRect(i*70, 0, 70, DH); }
+  c.strokeStyle = "#ffffffcc"; c.lineWidth = 3;
+  c.strokeRect(22, 22, DW-44, DH-44);
+  c.beginPath(); c.moveTo(DW/2, 22); c.lineTo(DW/2, DH-22); c.stroke();
+  c.beginPath(); c.arc(DW/2, DH/2, 52, 0, Math.PI*2); c.stroke();
+  c.strokeRect(22, DH/2-95, 92, 190); c.strokeRect(DW-22-92, DH/2-95, 92, 190);
+  c.fillStyle = "#e8f5e9"; c.fillRect(10, DH/2-38, 12, 76); c.fillRect(DW-22, DH/2-38, 12, 76);
+  c.strokeStyle = "#777"; c.lineWidth = 2; c.strokeRect(10, DH/2-38, 12, 76); c.strokeRect(DW-22, DH/2-38, 12, 76);
+}
+function dDrawStar(c, cx, cy, r, fill, stroke){
+  c.beginPath();
+  for (let i = 0; i < 10; i++){
+    const ang = -Math.PI/2 + i*Math.PI/5, rr = i%2===0 ? r : r*0.45;
+    const x = cx+Math.cos(ang)*rr, y = cy+Math.sin(ang)*rr;
+    i===0 ? c.moveTo(x,y) : c.lineTo(x,y);
+  }
+  c.closePath(); c.fillStyle = fill; c.fill(); c.lineWidth = 2; c.strokeStyle = stroke; c.stroke();
+}
+function dDrawPlayer(c, x, y, color, you){
+  c.beginPath(); c.arc(x, y+3, 15, 0, Math.PI*2); c.fillStyle = "#00000030"; c.fill();
+  c.beginPath(); c.arc(x, y, 16, 0, Math.PI*2);
+  c.fillStyle = color === "b" ? "#3e7bfa" : "#e5484d"; c.fill();
+  c.lineWidth = 3; c.strokeStyle = "#fff"; c.stroke();
+  if (you) dDrawStar(c, x, y, 10, "#ffd600", "#e07f00");
+}
+function dDrawBall(c, x, y, r){
+  r = r || 9;
+  c.beginPath(); c.arc(x, y, r, 0, Math.PI*2); c.fillStyle = "#fff"; c.fill();
+  c.lineWidth = 2; c.strokeStyle = "#222"; c.stroke();
+  c.beginPath(); c.arc(x, y, r*0.4, 0, Math.PI*2); c.fillStyle = "#222"; c.fill();
+}
+function dDrawArrow(c, x1, y1, x2, y2, color, widthPx, dash, progress){
+  progress = progress === undefined ? 1 : progress;
+  const xe = x1+(x2-x1)*progress, ye = y1+(y2-y1)*progress;
+  c.save(); c.strokeStyle = color; c.fillStyle = color; c.lineWidth = widthPx || 4;
+  if (dash) c.setLineDash([10,7]);
+  c.beginPath(); c.moveTo(x1,y1); c.lineTo(xe,ye); c.stroke(); c.setLineDash([]);
+  if (progress > 0.2){
+    const ang = Math.atan2(ye-y1, xe-x1);
+    c.beginPath(); c.moveTo(xe,ye);
+    c.lineTo(xe-16*Math.cos(ang-0.45), ye-16*Math.sin(ang-0.45));
+    c.lineTo(xe-16*Math.cos(ang+0.45), ye-16*Math.sin(ang+0.45));
+    c.closePath(); c.fill();
+  }
+  c.restore();
+}
+function dDrawScene(c, spec){
+  dDrawPitch(c);
+  (spec.arrows || []).forEach(a => dDrawArrow(c, dpx(a[0]), dpy(a[1]), dpx(a[2]), dpy(a[3]), "#ffffffaa", 4, true));
+  (spec.players || []).forEach(p => dDrawPlayer(c, dpx(p[0]), dpy(p[1]), p[2], p[3]==="you"));
+  if (spec.ball) dDrawBall(c, dpx(spec.ball[0]), dpy(spec.ball[1]));
+}
+
+/* ---------- ドリル シナリオ (12問, 通常表記) ---------- */
+/* cat:'d'守備 'o'攻撃 't'切替 / pos:ポジション / players:[x%,y%,'b'|'r'](自分は含まない)
+   you:開始位置 / ideal:理想位置 / geo:線上条件{a,b,perp,hint} / hint,exp / anim:正解プレー */
+const dQuiz = [
+{ cat:"d", pos:"DF",
+  q:"相手GKがボールを持ち、大きくパントキックを蹴ります。ボールは頭上を越えて飛んできます。どこで待ちますか？",
+  players:[[92,48,"r"],[32,38,"r"],[20,32,"b"],[20,68,"b"],[45,60,"b"]],
+  ball:[90,47], arrows:[[90,47,35,48]],
+  you:[48,55], ideal:[24,50],
+  hint:"飛んでくるボールの「落下点より後ろ」で待つと、前向きにヘディングできます。",
+  exp:"パントキックは遠くまで飛びます。前に残っているとボールが頭を越えて大ピンチ。ラインを下げ、落下点より後ろで待てば、前向きにヘディングクリアできます。",
+  anim:{ball:[[90,47],[26,50],[52,28]], you:[[26,50],[24,49]], movers:[[1,30,44]], text:"ラインを下げてヘディングクリア成功。"} },
+{ cat:"d", pos:"DF",
+  q:"相手のスローインです。あなたは近くの相手(赤い選手)をマークします。自分のゴールは左。どこに立ちますか？",
+  players:[[35,3,"r"],[30,24,"r"],[45,40,"r"],[20,50,"b"],[6,50,"b"]],
+  ball:[35,2],
+  you:[45,38], ideal:[24,30],
+  geo:{a:[30,24], b:[5,48], perp:70, hint:"マークする相手と自分のゴールの「間」に立ちましょう。"},
+  hint:"ボールとマークする相手の両方が見えて、自分のゴール側に立つのがマークの基本です。",
+  exp:"マークの基本は「相手とゴールの間」かつ「ボールと相手が両方見える」こと。これならパスが来てもすぐ守れ、裏に走られてもついていけます。",
+  anim:{ball:[[35,2],[29,25],[18,48]], you:[[27,26],[27,26]], text:"ゴール側でマーク。自由にさせませんでした。"} },
+{ cat:"o", pos:"FW",
+  q:"味方のコーナーキック(右上から)です。ニア(近いポスト)へ走り込む「スタート位置」につきましょう。どこですか？",
+  players:[[97,4,"b"],[80,48,"b"],[85,40,"r"],[87,55,"r"],[93,50,"r"]],
+  ball:[97,3],
+  you:[60,55], ideal:[79,27],
+  hint:"ゴールから少し離れた位置から、スピードをつけてニアに飛び込みます。",
+  exp:"ニアへの飛び込みは、少し離れた位置からスピードに乗って走り込むのがコツ。止まって待つより、動きながらの方がずっと合わせやすいです。",
+  anim:{ball:[[97,3],[88,38],[95,47]], you:[[88,38],[90,41]], text:"ニアに飛び込んでヘディングシュート。"} },
+{ cat:"d", pos:"DF",
+  q:"相手のコーナーキック(左上から)です。あなたは「ニアポストのカバー」を任されました。どこに立ちますか？",
+  players:[[3,4,"r"],[15,42,"r"],[18,56,"r"],[14,44,"b"],[17,57,"b"],[6,52,"b"]],
+  ball:[3,3],
+  you:[30,30], ideal:[7,40],
+  hint:"ニアポスト(ボールに近いゴールポスト)の横は、速いボールが飛び込む危険な場所です。",
+  exp:"ニアポストの横は、速いボールが飛び込む最も危険な場所。ここに1人立ってカバーするだけで、ゴールはぐっと守りやすくなります。",
+  anim:{ball:[[3,3],[8,41],[30,18]], you:[[8,41],[11,38]], text:"ニアポストでクリア。ゴールを守りました。"} },
+{ cat:"o", pos:"MF",
+  q:"味方のサイドバックが下のサイドをドリブルで前進しています。斜め前のパスコースでサポートしましょう。どこに動きますか？",
+  players:[[55,80,"b"],[63,78,"r"],[70,50,"r"],[93,50,"r"],[50,35,"b"]],
+  ball:[57,80], arrows:[[52,80,63,80]],
+  you:[48,60], ideal:[70,62],
+  hint:"ドリブルする味方の「斜め前」にいると、パスを受けてすぐゴールへ向かえます。",
+  exp:"ドリブルする味方の「斜め前」は、パスを受けてすぐ前を向ける絶好の位置。相手DFは2人を同時に見られず対応に困ります。",
+  anim:{ball:[[57,80],[70,62],[82,52]], you:[[70,62],[82,52]], movers:[[0,60,75]], text:"斜め前で受けてチャンス。"} },
+{ cat:"o", pos:"FW",
+  q:"味方がシュートを打ちます。GKが弾くかもしれません。「こぼれ球」を狙う位置はどこですか？",
+  players:[[72,62,"b"],[93,50,"r"],[84,38,"r"],[65,30,"b"]],
+  ball:[74,61], arrows:[[74,60,90,52]],
+  you:[60,40], ideal:[85,47],
+  hint:"シュートの後、GKが弾いたボールを最も速く触れるゴール前です。",
+  exp:"シュートはGKが弾くことが多いです。ゴール前に詰めておけば、こぼれ球を押し込むだけでゴール。「シュートで終わらず詰める」が得点の秘訣です。",
+  anim:{ball:[[74,61],[91,50],[85,46],[95,49]], you:[[85,47],[85,46],[88,47]], movers:[[1,92,54]], text:"詰めていたのでこぼれ球でゴール。"} },
+{ cat:"t", pos:"DF",
+  q:"相手がカウンターでドリブル。味方のDFが1人で遅らせています。あなたはもう1人のDFです。自分のゴールは左。どこに動きますか？",
+  players:[[45,52,"r"],[35,50,"b"],[50,25,"r"],[6,50,"b"]],
+  ball:[43,52], arrows:[[45,52,35,52]],
+  you:[45,15], ideal:[27,44],
+  hint:"ボールに寄せた味方の「斜め後ろ」がカバーの位置。抜かれてもあなたが止められます。",
+  exp:"寄せる味方が「チャレンジ」、あなたが「カバー」。斜め後ろにいれば、味方が抜かれた瞬間にすぐ止められます。2人で1つのドアに鍵を2つ掛けるイメージです。",
+  anim:{ball:[[43,52],[31,57],[45,35]], you:[[31,56],[35,50]], movers:[[0,32,58]], text:"カバー成功。2つ目の鍵が効きました。"} },
+{ cat:"o", pos:"DF",
+  q:"味方のGKがボールを持ちました。マイボールです。ビルドアップの合言葉は「広がる」。どこでパスを受けますか？",
+  players:[[7,50,"b"],[20,25,"b"],[28,45,"r"],[40,60,"r"],[40,40,"b"]],
+  ball:[9,50],
+  you:[18,40], ideal:[20,82],
+  hint:"コートを広く使いましょう。サイドいっぱいに広がれば、相手から遠い場所で受けられます。",
+  exp:"マイボールになったら「広がる」。サイドいっぱいに広がれば、相手から遠くで安全にパスを受けられ、攻撃のスタートが切れます。",
+  anim:{ball:[[9,50],[21,81],[38,78]], you:[[21,81],[38,78]], text:"広がって受けた。ビルドアップ成功。"} },
+{ cat:"o", pos:"FW",
+  q:"逆サイド(上の方)で味方が1対1を仕掛けています。クロスに備えて、あなたはどこに走り込みますか？",
+  players:[[78,14,"b"],[83,18,"r"],[85,45,"r"],[93,50,"r"],[70,35,"b"]],
+  ball:[79,15],
+  you:[65,50], ideal:[88,60],
+  hint:"全員の頭上を越えたボールが落ちてくる「ファーポスト(遠い方のポスト)」が狙い目です。",
+  exp:"クロスはニアだけではありません。全員の頭を越えたボールが落ちてくるファーポストは、フリーになりやすいゴールへの近道です。",
+  anim:{ball:[[79,15],[89,58],[95,52]], you:[[89,58],[91,55]], movers:[[0,82,20]], text:"ファーポストでどんぴしゃ。ゴール。"} },
+{ cat:"t", pos:"MF",
+  q:"相手が縦パスを狙っています。パスカット(インターセプト)できる位置につきましょう。自分のゴールは左。どこですか？",
+  players:[[60,30,"r"],[35,30,"r"],[55,60,"r"],[30,55,"b"]],
+  ball:[58,30], arrows:[[56,30,38,30]],
+  you:[50,58], ideal:[44,30],
+  geo:{a:[56,30], b:[37,30], perp:60, hint:"パスの通り道(ボールと相手を結ぶ線)の上に立ちましょう。"},
+  hint:"相手がパスしたい「道」を予測して、その途中で待ち伏せします。",
+  exp:"パスカットのコツは、相手が蹴りたい「パスの道」の上で待ち伏せすること。奪った瞬間に攻撃へ切り替わる、最も価値の高い守備です。",
+  anim:{ball:[[58,30],[44,30],[60,18]], you:[[44,30],[52,24]], text:"インターセプト。攻撃へ切り替えです。"} },
+{ cat:"t", pos:"MF",
+  q:"味方がドリブルでボールを失った瞬間です。あなたは最も近いMF。5秒が勝負。どこへ行きますか？",
+  players:[[62,55,"r"],[57,58,"b"],[50,30,"r"],[40,60,"b"]],
+  ball:[61,55],
+  you:[38,30], ideal:[56,51],
+  hint:"失った瞬間、相手はまだ準備ができていません。すぐ近寄ってプレッシャーです。",
+  exp:"ボールを失った後の5秒は、相手もまだ準備ができていません。最も近い人がすぐプレスに行けば、奪い返せるチャンスが大きくなります。",
+  anim:{ball:[[61,55],[59,53],[45,40]], you:[[60,54],[56,50]], movers:[[3,44,45]], text:"すぐプレスで奪い返し。良い切り替えです。"} },
+{ cat:"d", pos:"MF",
+  q:"相手のフリーキックです。味方が壁を作っています。壁の横で「セカンドボール」を拾う位置につきましょう。自分のゴールは左。",
+  players:[[30,42,"r"],[21,44,"b"],[21,49,"b"],[21,54,"b"],[6,54,"b"],[26,68,"r"],[28,25,"r"]],
+  ball:[29,42],
+  you:[13,25], ideal:[16,62],
+  hint:"シュートは壁やGKに弾かれることが多いです。跳ね返りが落ちてきそうな壁の横で待ちましょう。",
+  exp:"フリーキックのシュートは壁やGKに跳ね返って「セカンドボール」になりやすいです。壁の横で待てば、いち早く拾ってピンチを脱出できます。",
+  anim:{ball:[[29,42],[8,48],[16,61],[36,75]], you:[[16,61],[16,61],[20,68]], movers:[[4,7,50]], text:"セカンドボールを回収。ピンチ脱出です。"} }
+];
+const dCatName = { d:"🛡️ 守備", o:"⚔️ 攻撃", t:"⚡ 切替" };
+const D = { order: dQuiz.map((q,i)=>i), ptr:0, filter:"all", you:{x:0,y:0}, drag:false, phase:"place", attempts:0, reveal:null, lastGrade:0 };
+const cvD = $("cvD");
+const dRad = q => q.rad || [40,75,125];
+function easeOutD(t){ return 1-(1-t)*(1-t); }
+function pathPosD(pts, t){
+  const segs = pts.length-1;
+  if (segs <= 0) return { x:pts[0].x, y:pts[0].y, st:0 };
+  const ft = Math.min(0.99999, Math.max(0, t))*segs, i = Math.floor(ft), st = ft-i;
+  return { x:pts[i].x+(pts[i+1].x-pts[i].x)*st, y:pts[i].y+(pts[i+1].y-pts[i].y)*st, st:st };
+}
+function nearLineD(p, geo){
+  const a = { x:dpx(geo.a[0]), y:dpy(geo.a[1]) }, b = { x:dpx(geo.b[0]), y:dpy(geo.b[1]) };
+  const abx = b.x-a.x, aby = b.y-a.y;
+  const t = ((p.x-a.x)*abx+(p.y-a.y)*aby)/(abx*abx+aby*aby);
+  if (t < 0 || t > 1) return false;
+  return Math.hypot(p.x-(a.x+abx*t), p.y-(a.y+aby*t)) <= geo.perp;
+}
+function dirHintD(q, ideal){
+  const you = D.you, atk = q.cat === "o";
+  const goal = { x:dpx(atk?97:3), y:dpy(50) }, ball = { x:dpx(q.ball[0]), y:dpy(q.ball[1]) };
+  const gYou = Math.hypot(you.x-goal.x, you.y-goal.y), gId = Math.hypot(ideal.x-goal.x, ideal.y-goal.y);
+  const bYou = Math.hypot(you.x-ball.x, you.y-ball.y), bId = Math.hypot(ideal.x-ball.x, ideal.y-ball.y);
+  const gname = atk ? "相手のゴール" : "自分のゴール";
+  if (gId < gYou-40) return "もう少し" + gname + "の近くです。";
+  if (gId > gYou+40) return gname + "から少し離れてみましょう。";
+  if (bId < bYou-40) return "もっとボールに寄りましょう。";
+  if (bId > bYou+40) return "ボールから少し離れてみましょう。";
+  const dx = ideal.x-you.x, dy = ideal.y-you.y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx>0 ? "もう少し右の方です。" : "もう少し左の方です。";
+  return dy>0 ? "もう少し下の方です。" : "もう少し上の方です。";
+}
+function setFilterD(f){
+  D.filter = f;
+  document.querySelectorAll(".dfilter").forEach(b => b.classList.toggle("on", b.dataset.f === f));
+  D.order = dQuiz.map((q,i)=>i).filter(i => f === "all" || dQuiz[i].cat === f);
+  D.ptr = 0; renderD();
+}
+function renderDMap(){
+  const box = $("dMap"); box.innerHTML = "";
+  dQuiz.forEach((q, i) => {
+    const btn = document.createElement("button");
+    const cur = D.ptr < D.order.length && D.order[D.ptr] === i;
+    btn.className = "dcell" + (cur ? " cur" : "");
+    const g = dState.d[i] || 0;
+    btn.innerHTML = '<span class="em">' + (g>=3?"🌟":g===2?"⭕":g===1?"😅":"⬜") + "</span>" + (i+1) + ". " + dCatName[q.cat].slice(2);
+    btn.title = q.pos;
+    btn.addEventListener("click", () => jumpD(i));
+    box.appendChild(btn);
+  });
+}
+function jumpD(i){
+  if (D.reveal && !D.reveal.done) return;
+  if (D.order.indexOf(i) === -1){
+    D.filter = "all";
+    document.querySelectorAll(".dfilter").forEach(b => b.classList.toggle("on", b.dataset.f === "all"));
+    D.order = dQuiz.map((q,idx)=>idx);
+  }
+  D.ptr = D.order.indexOf(i); dPop(); renderD();
+}
+function renderD(){
+  if (D.ptr >= D.order.length){ showFinishD(); return; }
+  $("dFinish").classList.remove("on");
+  const q = dQuiz[D.order[D.ptr]];
+  $("dNum").textContent = "問題 " + (D.ptr+1) + "/" + D.order.length;
+  $("dQ").innerHTML = '<span class="poschip">あなたは ' + q.pos + '</span><span class="catchip">' + dCatName[q.cat] + "</span>" + q.q;
+  $("dVerdict").textContent = ""; $("dVerdict").className = "verdict";
+  $("dExp").classList.remove("on"); $("dExp").textContent = "";
+  $("dNext").style.display = "none"; $("dWatch3d").style.display = "none";
+  $("dCheck").style.display = "inline-block"; $("dCheck").disabled = false;
+  $("dReset").style.display = "inline-block";
+  D.you = { x:dpx(q.you[0]), y:dpy(q.you[1]) };
+  D.phase = "place"; D.attempts = 0; D.reveal = null; D.drag = false;
+  if (currentScreen === "drill") dCoachSay("あなたは " + q.pos + " です。" + q.q + " ★を動かして決めましょう。");
+  renderDMap(); dUpdateStatus();
+}
+function drawD(){
+  if (D.ptr >= D.order.length) return;
+  const q = dQuiz[D.order[D.ptr]], now = performance.now();
+  const idealX = dpx(q.ideal[0]), idealY = dpy(q.ideal[1]);
+  let ballPos = { x:dpx(q.ball[0]), y:dpy(q.ball[1]) };
+  let youPos = { x:D.you.x, y:D.you.y };
+  const players = q.players.map(p => p.slice());
+  let circT = 0;
+  if (D.reveal){
+    const el = now - D.reveal.start;
+    circT = Math.min(1, el/700);
+    const animT = Math.max(0, Math.min(1, (el-900)/1700));
+    if (el >= 2750 && !D.reveal.done){ D.reveal.done = true; finishRevealD(q); }
+    if (animT > 0){
+      const bp = q.anim.ball.map(w => ({ x:dpx(w[0]), y:dpy(w[1]) }));
+      const b = pathPosD(bp, animT);
+      ballPos = { x:b.x, y:b.y - Math.sin(b.st*Math.PI)*24 };
+      const yp = [D.reveal.youStart].concat(q.anim.you.map(w => ({ x:dpx(w[0]), y:dpy(w[1]) })));
+      const yy = pathPosD(yp, animT); youPos = { x:yy.x, y:yy.y };
+      (q.anim.movers || []).forEach(m => {
+        players[m[0]][0] += (m[1]-players[m[0]][0])*animT;
+        players[m[0]][1] += (m[2]-players[m[0]][1])*animT;
+      });
+    }
+  }
+  dDrawScene(ctxD, { players:players, arrows:q.arrows });
+  ctxD.save(); ctxD.font = "bold 16px sans-serif"; ctxD.fillStyle = "#ffffff88";
+  if (q.cat === "o"){ ctxD.textAlign = "right"; ctxD.fillText("攻撃 →", DW-34, 46); }
+  else { ctxD.textAlign = "left"; ctxD.fillText("← 守るゴール", 34, 46); }
+  ctxD.restore();
+  if (D.phase === "place" && D.attempts > 0){
+    const gp = 0.5+0.5*Math.sin(now/300);
+    ctxD.save(); ctxD.globalAlpha = 0.10+0.16*gp;
+    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRad(q)[1], 0, Math.PI*2); ctxD.fillStyle = "#fff176"; ctxD.fill();
+    ctxD.globalAlpha = 0.25+0.3*gp; ctxD.setLineDash([8,8]); ctxD.strokeStyle = "#fff176"; ctxD.lineWidth = 3; ctxD.stroke();
+    ctxD.restore();
+  }
+  if (D.reveal){
+    const e2 = easeOutD(circT);
+    ctxD.save(); ctxD.globalAlpha = 0.85*circT;
+    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRad(q)[1]*e2, 0, Math.PI*2); ctxD.fillStyle = "#ffd60030"; ctxD.fill();
+    ctxD.lineWidth = 4; ctxD.strokeStyle = "#ffd600"; ctxD.stroke();
+    ctxD.font = "28px sans-serif"; ctxD.textAlign = "center"; ctxD.textBaseline = "middle";
+    ctxD.fillText("⭕", idealX, idealY - dRad(q)[1]*e2 - 18);
+    ctxD.restore();
+  }
+  dDrawBall(ctxD, ballPos.x, ballPos.y);
+  dDrawPlayer(ctxD, youPos.x, youPos.y, "b", true);
+  if (D.phase === "place"){
+    ctxD.fillStyle = "#fff"; ctxD.font = "bold 12px sans-serif"; ctxD.textAlign = "center";
+    ctxD.fillText("あなた（ドラッグ）", youPos.x, youPos.y+34);
+  }
+}
+function finishRevealD(q){
+  D.phase = "done";
+  $("dExp").textContent = "解説： " + q.exp;
+  $("dExp").classList.add("on");
+  $("dNext").style.display = "inline-block";
+  $("dWatch3d").style.display = "inline-block";
+  dCoachSay(q.anim.text + " その場所が正解です。「🎬 この動きを3Dで見る」で立体でも確認できます。");
+  dPop();
+}
+function posD(e){ const r = cvD.getBoundingClientRect(); return { x:(e.clientX-r.left)*DW/r.width, y:(e.clientY-r.top)*DH/r.height }; }
+cvD.addEventListener("pointerdown", e => {
+  if (D.phase !== "place" || D.ptr >= D.order.length) return;
+  const p = posD(e);
+  if (Math.hypot(p.x-D.you.x, p.y-D.you.y) < 48){ D.drag = true; try { cvD.setPointerCapture(e.pointerId); } catch(err){} }
+  e.preventDefault();
+});
+cvD.addEventListener("pointermove", e => {
+  if (!D.drag) return;
+  const p = posD(e);
+  D.you.x = Math.max(35, Math.min(DW-35, p.x)); D.you.y = Math.max(35, Math.min(DH-35, p.y));
+  e.preventDefault();
+});
+["pointerup","pointercancel"].forEach(ev => cvD.addEventListener(ev, () => { D.drag = false; }));
+$("dReset").addEventListener("click", () => {
+  if (D.phase !== "place" || D.ptr >= D.order.length) return;
+  const q = dQuiz[D.order[D.ptr]]; D.you = { x:dpx(q.you[0]), y:dpy(q.you[1]) }; dPop();
+});
+$("dCheck").addEventListener("click", () => {
+  if (D.phase !== "place" || D.ptr >= D.order.length) return;
+  dAudio();
+  const gi = D.order[D.ptr], q = dQuiz[gi];
+  const ideal = { x:dpx(q.ideal[0]), y:dpy(q.ideal[1]) };
+  const dist = Math.hypot(D.you.x-ideal.x, D.you.y-ideal.y), rad = dRad(q);
+  let grade;
+  if (q.geo && !nearLineD(D.you, q.geo)) grade = -1;
+  else grade = dist<=rad[0] ? 3 : dist<=rad[1] ? 2 : dist<=rad[2] ? 1 : 0;
+  const v = $("dVerdict");
+  if (grade >= 2){
+    const prev = dState.d[gi] || 0;
+    dState.d[gi] = Math.max(prev, grade); dSave();
+    v.textContent = grade === 3 ? "🌟 大正解！完璧なポジションです！" : "⭕ 正解！良い場所です！";
+    v.className = "verdict good";
+    D.phase = "reveal";
+    D.reveal = { start:performance.now(), grade:grade, youStart:{ x:D.you.x, y:D.you.y }, done:false };
+    D.lastGrade = grade;
+    $("dCheck").disabled = true;
+    dFanfare(); starsFromEl(v);
+    if (prev < 2) dAwardStar();
+    renderDMap();
+  } else {
+    D.attempts++;
+    if (grade === 1){
+      dState.d[gi] = Math.max(dState.d[gi]||0, 1); dSave(); renderDMap();
+      v.textContent = "😅 惜しい！あと少し！"; v.className = "verdict bad";
+      dCoachSay("💡 " + dirHintD(q, ideal) + " ★を置き直してもう一度。");
+    } else {
+      v.textContent = "🤔 もう一度！"; v.className = "verdict bad";
+      dCoachSay("💡 " + (grade === -1 ? q.geo.hint : q.hint) + " ★を動かして再挑戦です。");
+    }
+    dSad();
+  }
+});
+$("dNext").addEventListener("click", () => { D.ptr++; dPop(); renderD(); });
+document.querySelectorAll(".dfilter").forEach(b => {
+  b.addEventListener("click", () => { if (D.reveal && !D.reveal.done) return; dPop(); setFilterD(b.dataset.f); });
+});
+/* ドリル→3D: 正解シナリオを肩越し視点で再生 */
+$("dWatch3d").addEventListener("click", () => {
+  const gi = D.order[D.ptr], q = dQuiz[gi];
+  requestTheater({ type:"drill", q, title:"ドリル " + (gi+1) + "：" + q.pos + "の動き" });
+});
+function showFinishD(){
+  $("dQ").innerHTML = ""; $("dVerdict").textContent = "";
+  $("dExp").classList.remove("on"); $("dNext").style.display = "none"; $("dWatch3d").style.display = "none";
+  $("dCheck").style.display = "none"; $("dReset").style.display = "none";
+  $("dNum").textContent = "クリア！";
+  const master = dQuiz.every((q,i) => (dState.d[i]||0) >= 3);
+  const f = $("dFinish");
+  f.innerHTML = '<div class="big">' + (master ? "👑 ポジショニングマスター！" : "🏆 すべて終わりました！") + "</div>"
+    + (master ? "全問 🌟 大正解！本物のマスターです。<br>" : "マップの ⬜ や 😅 をタップして、🌟 をそろえましょう。<br>")
+    + "⭐ 集めた星： " + dState.stars + " 個<br>いまのランク： <span class=\"big\">" + drankName(dState.stars) + "</span><br>"
+    + '<button class="bigbtn next" id="dRetry">🔄 もう一度挑戦</button>';
+  f.classList.add("on");
+  dDrawScene(ctxD, { players:[[50,50,"b","you"]], ball:[54,50] });
+  dCoachSay(master ? "全問マスター、おめでとうございます！" : "良いポジションはチームを助けます。🌟 を目指してもう一度！");
+  $("dRetry").addEventListener("click", () => { D.ptr = 0; dPop(); renderD(); });
+  renderDMap();
+}
+
+/* ドリル描画ループ (ドリル画面表示中のみ) */
+function drillTick(){
+  if (currentScreen === "drill") drawD();
+  requestAnimationFrame(drillTick);
+}
+dUpdateStatus(); renderD(); requestAnimationFrame(drillTick);
+</script>
+
+<!-- ============ 3Dシアター フォールバック監視 ============ -->
+<script>
+window.__T3D_OK = false;
+window.__showFallback = function(){ $("fallback").classList.add("show"); };
+setTimeout(function(){ if (!window.__T3D_OK) window.__showFallback(); }, 9000);
+</script>
+
+<!-- ============ 【2】3Dシアター (Three.js module) ============ -->
+<script type="module">
+/* 座標系: ピッチ中心が原点。X=長辺(-34..+34, ゴールX=±34)、Z=短辺(-25..+25)。攻撃(赤)は+X方向へ攻める。 */
+let THREE, OrbitControls;
+try {
+  THREE = await import("three");
+  ({ OrbitControls } = await import("three/addons/controls/OrbitControls.js"));
+} catch (e) { window.__showFallback(); throw e; }
+{
+  const c = document.createElement("canvas");
+  const gl = c.getContext("webgl2") || c.getContext("webgl");
+  if (!gl){ window.__showFallback(); throw new Error("WebGL unavailable"); }
+}
+const $$ = id => document.getElementById(id);
+
+const PITCH_L = 68, PITCH_W = 50;
+const HALF_L = PITCH_L/2, HALF_W = PITCH_W/2;
+const GOAL_W = 5, GOAL_H = 2.15, BALL_R = 0.28;
+
+const stage = $$("stage");
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:"high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+function stageSize(){ return { w: stage.clientWidth || window.innerWidth, h: stage.clientHeight || (window.innerHeight-132) }; }
+{ const s = stageSize(); renderer.setSize(s.w, s.h); }
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+{
+  const c = document.createElement("canvas"); c.width = 2; c.height = 256;
+  const g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, "#101830"); gr.addColorStop(0.55, "#28406e");
+  gr.addColorStop(0.8, "#5a6f97"); gr.addColorStop(1, "#8c9bb8");
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  scene.background = tex;
+}
+scene.fog = new THREE.Fog(0x28406e, 130, 320);
+
+const camera = new THREE.PerspectiveCamera(50, (stageSize().w/stageSize().h) || 1.6, 0.1, 500);
+camera.position.set(0, 30, 46);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.target.set(0, 0, 0); controls.maxPolarAngle = 1.48;
+controls.minDistance = 8; controls.maxDistance = 140;
+
+scene.add(new THREE.HemisphereLight(0xbcc8e8, 0x2c5a34, 0.85));
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
+sun.position.set(34, 55, 22); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -46; sun.shadow.camera.right = 46;
+sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+sun.shadow.camera.far = 140; sun.shadow.bias = -0.002;
+scene.add(sun);
+
+/* ---------- ピッチ ---------- */
+function makePitchTexture(){
+  const PPM = 14, MG = 3;
+  const W = (PITCH_L + MG*2)*PPM, H = (PITCH_W + MG*2)*PPM;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const mx = m => (m + HALF_L + MG)*PPM, mz = m => (m + HALF_W + MG)*PPM;
+  g.fillStyle = "#2c8a45"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#25763b";
+  const stripes = 8, sw = PITCH_L*PPM/stripes;
+  for (let i = 0; i < stripes; i += 2) g.fillRect(mx(-HALF_L)+i*sw, 0, sw, H);
+  g.strokeStyle = "rgba(255,255,255,.92)"; g.lineWidth = Math.max(2, PPM*0.13); g.lineCap = "round";
+  const rect = (x, z, w, h) => g.strokeRect(mx(x), mz(z), w*PPM, h*PPM);
+  const line = (x1, z1, x2, z2) => { g.beginPath(); g.moveTo(mx(x1), mz(z1)); g.lineTo(mx(x2), mz(z2)); g.stroke(); };
+  rect(-HALF_L, -HALF_W, PITCH_L, PITCH_W);
+  line(0, -HALF_W, 0, HALF_W);
+  g.beginPath(); g.arc(mx(0), mz(0), 7*PPM, 0, Math.PI*2); g.stroke();
+  g.fillStyle = "rgba(255,255,255,.92)";
+  g.beginPath(); g.arc(mx(0), mz(0), PPM*0.28, 0, Math.PI*2); g.fill();
+  for (const s of [-1, 1]){
+    const gx = s*HALF_L;
+    rect(Math.min(gx, gx-s*12), -12, 12, 24);
+    rect(Math.min(gx, gx-s*4), -5, 4, 10);
+    g.beginPath(); g.arc(mx(gx-s*8), mz(0), PPM*0.28, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(mx(gx), mz(-HALF_W), PPM, 0, Math.PI*2); g.stroke();
+    g.beginPath(); g.arc(mx(gx), mz(HALF_W), PPM, 0, Math.PI*2); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return { tex, size:[PITCH_L+6, PITCH_W+6] };
+}
+{
+  const { tex, size } = makePitchTexture();
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(size[0], size[1]), new THREE.MeshLambertMaterial({ map: tex }));
+  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(320, 320), new THREE.MeshLambertMaterial({ color: 0x1c4f2c }));
+  apron.rotation.x = -Math.PI/2; apron.position.y = -0.02; scene.add(apron);
+}
+{
+  const mat = new THREE.MeshLambertMaterial({ color: 0x171d2c });
+  const mk = (w, d, x, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 3.2, d), mat); m.position.set(x, 1.6, z); scene.add(m); };
+  mk(PITCH_L+16, 6, 0, -(HALF_W+8)); mk(PITCH_L+16, 6, 0, (HALF_W+8));
+  mk(6, PITCH_W+4, -(HALF_L+8), 0); mk(6, PITCH_W+4, (HALF_L+8), 0);
+}
+function makeGoal(sign){
+  const grp = new THREE.Group();
+  const postMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const r = 0.07, post = new THREE.CylinderGeometry(r, r, GOAL_H, 8);
+  for (const z of [-GOAL_W/2, GOAL_W/2]){ const p = new THREE.Mesh(post, postMat); p.position.set(0, GOAL_H/2, z); p.castShadow = true; grp.add(p); }
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(r, r, GOAL_W+r*2, 8), postMat);
+  bar.rotation.x = Math.PI/2; bar.position.set(0, GOAL_H, 0); bar.castShadow = true; grp.add(bar);
+  const netMat = new THREE.MeshBasicMaterial({ color: 0xdddddd, wireframe: true, transparent: true, opacity: 0.3 });
+  const depth = 1.7;
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_W, GOAL_H, 10, 5), netMat);
+  back.rotation.y = Math.PI/2; back.position.set(depth, GOAL_H/2, 0); grp.add(back);
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(depth, GOAL_W, 4, 10), netMat);
+  top.rotation.z = Math.PI/2; top.rotation.y = Math.PI/2; top.position.set(depth/2, GOAL_H, 0); grp.add(top);
+  for (const z of [-GOAL_W/2, GOAL_W/2]){ const side = new THREE.Mesh(new THREE.PlaneGeometry(depth, GOAL_H, 4, 5), netMat); side.position.set(depth/2, GOAL_H/2, z); grp.add(side); }
+  grp.position.x = sign*HALF_L; grp.rotation.y = sign > 0 ? 0 : Math.PI; scene.add(grp);
+}
+makeGoal(1); makeGoal(-1);
+
+function makeBallTexture(){
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d");
+  g.fillStyle = "#f4f4f4"; g.fillRect(0, 0, 128, 128); g.fillStyle = "#1a1a1a";
+  const spots = [[20,26],[64,14],[108,30],[38,64],[86,66],[16,96],[62,108],[106,98]];
+  for (const [x, y] of spots){ g.beginPath(); g.arc(x, y, 11, 0, Math.PI*2); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const ball = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 16, 12), new THREE.MeshLambertMaterial({ map: makeBallTexture() }));
+ball.castShadow = true; scene.add(ball);
+
+const bodyGeo = new THREE.CapsuleGeometry(0.32, 0.72, 4, 10);
+const headGeo = new THREE.SphereGeometry(0.235, 12, 10);
+const teamMat = { atk: new THREE.MeshLambertMaterial({ color: 0xe5484d }), def: new THREE.MeshLambertMaterial({ color: 0x3e7bfa }) };
+const headMat = new THREE.MeshLambertMaterial({ color: 0xf0c8a0 });
+const ringGeo = new THREE.RingGeometry(0.55, 0.75, 24);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xf0c649, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+function makeNumberSprite(num, team){
+  const c = document.createElement("canvas"); c.width = c.height = 96;
+  const g = c.getContext("2d");
+  g.beginPath(); g.arc(48, 48, 42, 0, Math.PI*2);
+  g.fillStyle = team === "atk" ? "rgba(180,30,36,.92)" : "rgba(30,80,200,.92)"; g.fill();
+  g.lineWidth = 5; g.strokeStyle = "rgba(255,255,255,.9)"; g.stroke();
+  g.fillStyle = "#fff"; g.font = "700 46px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(String(num), 48, 51);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  sp.scale.set(0.95, 0.95, 1); sp.position.y = 2.35; return sp;
+}
+let playerObjs = [];
+function clearPlayers(){
+  for (const p of playerObjs){
+    scene.remove(p.grp);
+    p.grp.traverse(o => { if (o.isSprite){ o.material.map.dispose(); o.material.dispose(); } });
+  }
+  playerObjs = [];
+}
+function buildPlayers(defs){
+  clearPlayers();
+  for (const d of defs){
+    const grp = new THREE.Group();
+    const body = new THREE.Mesh(bodyGeo, teamMat[d.team]); body.position.y = 0.72; body.castShadow = true; grp.add(body);
+    const head = new THREE.Mesh(headGeo, headMat); head.position.y = 1.6; head.castShadow = true; grp.add(head);
+    grp.add(makeNumberSprite(d.num, d.team));
+    const ring = new THREE.Mesh(ringGeo, ringMat); ring.rotation.x = -Math.PI/2; ring.position.y = 0.03; ring.visible = false; grp.add(ring);
+    scene.add(grp);
+    playerObjs.push({ def: d, grp, ring, body, rotY: d.team === "atk" ? Math.PI/2 : -Math.PI/2 });
+  }
+}
+
+/* ---------- waypoint 補間 ---------- */
+function samplePlayer(wp, t){
+  if (t <= wp[0].t) return { x: wp[0].x, z: wp[0].z };
+  const last = wp[wp.length-1];
+  if (t >= last.t) return { x: last.x, z: last.z };
+  for (let i = 0; i < wp.length-1; i++){
+    const a = wp[i], b = wp[i+1];
+    if (t >= a.t && t <= b.t){ let u = (t-a.t)/Math.max(b.t-a.t, 1e-6); u = u*u*(3-2*u); return { x: a.x+(b.x-a.x)*u, z: a.z+(b.z-a.z)*u }; }
+  }
+  return { x: last.x, z: last.z };
+}
+function sampleBall(wp, t){
+  const yOf = p => (p.y !== undefined ? p.y : BALL_R);
+  if (t <= wp[0].t) return { x: wp[0].x, z: wp[0].z, y: yOf(wp[0]) };
+  const last = wp[wp.length-1];
+  if (t >= last.t) return { x: last.x, z: last.z, y: yOf(last) };
+  for (let i = 0; i < wp.length-1; i++){
+    const a = wp[i], b = wp[i+1];
+    if (t >= a.t && t <= b.t){
+      const u = (t-a.t)/Math.max(b.t-a.t, 1e-6), h = b.h || 0;
+      return { x: a.x+(b.x-a.x)*u, z: a.z+(b.z-a.z)*u, y: yOf(a)+(yOf(b)-yOf(a))*u + 4*h*u*(1-u) };
+    }
+  }
+  return { x: last.x, z: last.z, y: yOf(last) };
+}
+
+/* ---------- 3D プリセット (5種) ---------- */
+const PRESETS3D = [
+{
+  name: "CK ニアゾーンアタック", tag: "セットプレー",
+  desc: "コーナーキックからニアポスト前の「ニアゾーン」に3人が時間差で走り込み、インスイングのボールをワンタッチで合わせる定番の得点パターン。GKと守備ラインの中間に落ちるボールは、触るだけで枠に飛ぶ。",
+  coach: "コーチングポイント：キッカーの助走開始が全員のスタート合図。最初に入る選手は「すらす」だけでOK。後続の2人がこぼれ球とファーへの流れを狙う。",
+  duration: 6, goalAt: 2.75,
+  ball: [{t:0,x:33.4,z:24.4},{t:1.05,x:33.4,z:24.4},{t:2.2,x:29.5,z:3.2,h:6.5},{t:2.75,x:33.6,z:-0.9,h:1.4,y:0.5},{t:3.1,x:35.2,z:-1.2,h:0.2}],
+  players: [
+    { team:"atk", num:7,  wp:[{t:0,x:31.4,z:22.4},{t:1.0,x:33.0,z:23.8},{t:6,x:33.0,z:23.8}] },
+    { team:"atk", num:9,  wp:[{t:0,x:24,z:-3},{t:0.9,x:24.2,z:-2.6},{t:2.2,x:29.2,z:2.8},{t:3.0,x:31,z:1.2},{t:4.4,x:27,z:4},{t:6,x:27,z:4}] },
+    { team:"atk", num:10, wp:[{t:0,x:23,z:5},{t:1.15,x:23.4,z:5},{t:2.6,x:27.8,z:4.6},{t:6,x:27.8,z:4.6}] },
+    { team:"atk", num:11, wp:[{t:0,x:21,z:0},{t:1.3,x:21.4,z:0},{t:2.8,x:26,z:-1.4},{t:6,x:26,z:-1.4}] },
+    { team:"atk", num:8,  wp:[{t:0,x:18,z:2},{t:6,x:18.5,z:2}] },
+    { team:"def", num:1,  wp:[{t:0,x:33.2,z:0},{t:2.2,x:32.9,z:1.0},{t:2.75,x:33.3,z:-0.6},{t:3.1,x:33.5,z:-1.6},{t:6,x:33.5,z:-1.6}] },
+    { team:"def", num:2,  wp:[{t:0,x:32.4,z:2.6},{t:2.2,x:31.6,z:3.0},{t:6,x:31.6,z:3.0}] },
+    { team:"def", num:3,  wp:[{t:0,x:31.6,z:-2.4},{t:2.4,x:31.2,z:-1.6},{t:6,x:31.2,z:-1.6}] },
+    { team:"def", num:4,  wp:[{t:0,x:30.2,z:0.6},{t:2.3,x:29.7,z:1.8},{t:6,x:29.7,z:1.8}] },
+    { team:"def", num:5,  wp:[{t:0,x:29.4,z:4.4},{t:2.2,x:29.8,z:3.4},{t:6,x:29.8,z:3.4}] },
+    { team:"def", num:6,  wp:[{t:0,x:25,z:1},{t:6,x:24.6,z:1.4}] }
+  ]
+},
+{
+  name: "パントキック対応", tag: "守備の基本",
+  desc: "相手GKのパントキックに対する守備の基本。ボールが蹴られた瞬間にDFラインが一度下がって落下点を見極め、落下点の後ろから前向きに入ってヘディングでクリアする。下がらずに待つと頭の上を越される。",
+  coach: "コーチングポイント：蹴られた瞬間に全員で「下がれ！」の声掛け。クリアは「高く・遠く・外へ」。セカンドボールの回収役(アンカー)を必ず用意する。",
+  duration: 6.5,
+  ball: [{t:0,x:-32.4,z:0,y:0.9},{t:0.9,x:-32.4,z:0,y:0.9},{t:2.9,x:7,z:3,h:13,y:1.75},{t:4.3,x:-8,z:11,h:8},{t:5.6,x:-9.6,z:11.9,h:0.4}],
+  players: [
+    { team:"atk", num:1,  wp:[{t:0,x:-33.4,z:0},{t:0.9,x:-32.2,z:0},{t:6.5,x:-32.6,z:0.3}] },
+    { team:"atk", num:9,  wp:[{t:0,x:1,z:-3},{t:1.0,x:1.2,z:-2.6},{t:2.9,x:6.4,z:1.2},{t:4.0,x:8,z:2.4},{t:6.5,x:8,z:2.4}] },
+    { team:"atk", num:10, wp:[{t:0,x:-1,z:7},{t:1.0,x:-0.6,z:7},{t:2.9,x:5,z:6},{t:4.5,x:6,z:7.4},{t:6.5,x:6,z:7.4}] },
+    { team:"atk", num:8,  wp:[{t:0,x:-8,z:-10},{t:3,x:-2,z:-8.4},{t:5,x:0,z:-7.4},{t:6.5,x:0,z:-7.4}] },
+    { team:"atk", num:7,  wp:[{t:0,x:-10,z:12},{t:3,x:-5,z:11},{t:5.4,x:-7.4,z:11.4},{t:6.5,x:-7.4,z:11.4}] },
+    { team:"def", num:2,  wp:[{t:0,x:5,z:-12},{t:1.1,x:5,z:-12},{t:2.2,x:11,z:-10},{t:3.0,x:9.4,z:-9},{t:6.5,x:9.4,z:-9}] },
+    { team:"def", num:3,  wp:[{t:0,x:5,z:-4},{t:1.1,x:5,z:-4},{t:2.2,x:10.5,z:-3},{t:3.0,x:9,z:-2.4},{t:6.5,x:9,z:-2.4}] },
+    { team:"def", num:4,  wp:[{t:0,x:5,z:2},{t:1.05,x:5,z:2},{t:2.1,x:10.5,z:3.2},{t:2.55,x:8.6,z:3.1},{t:2.9,x:7.1,z:3.0},{t:3.5,x:6.4,z:3.7},{t:6.5,x:6.4,z:3.7}] },
+    { team:"def", num:5,  wp:[{t:0,x:5,z:10},{t:1.1,x:5,z:10},{t:2.2,x:11,z:11},{t:3.0,x:10,z:10.2},{t:6.5,x:10,z:10.2}] },
+    { team:"def", num:6,  wp:[{t:0,x:-3,z:7},{t:1.6,x:-3,z:7},{t:3.2,x:-4,z:8.6},{t:4.4,x:-7.4,z:10.6},{t:5.6,x:-9.2,z:11.7},{t:6.5,x:-9.2,z:11.7}] },
+    { team:"def", num:1,  wp:[{t:0,x:32.7,z:0},{t:6.5,x:32.7,z:0}] }
+  ]
+},
+{
+  name: "スローイン サードマン", tag: "セットプレー",
+  desc: "マークされている選手へ一度投げて、ワンタッチで足元へ「落とし」、フリーの3人目が前を向いてスペースへ抜け出すコンビネーション。密集しやすいスローインでは「3人目の動き」が最も効果的な崩し方。",
+  coach: "コーチングポイント：受け手は投げる瞬間にマークを一歩外す(チェックの動き)。落としはワンタッチ、3人目は落とす前に走り出しておく。",
+  duration: 6,
+  ball: [{t:0,x:3.4,z:24.7,y:1.9},{t:0.85,x:3.4,z:24.7,y:1.9},{t:1.5,x:5.5,z:20.7,h:1.0,y:0.4},{t:1.85,x:5.5,z:20.6},{t:2.45,x:1.9,z:19.6,h:0.2},{t:2.95,x:1.9,z:19.6},{t:3.9,x:8.6,z:16.0,h:0.9},{t:5.2,x:13.8,z:15.0}],
+  players: [
+    { team:"atk", num:2,  wp:[{t:0,x:2.4,z:25.6},{t:1.4,x:2.4,z:25.6},{t:3.4,x:4,z:22},{t:6,x:4.6,z:21}] },
+    { team:"atk", num:9,  wp:[{t:0,x:6.6,z:19.4},{t:0.8,x:5.7,z:20.6},{t:1.9,x:5.5,z:20.4},{t:2.8,x:6.6,z:19.2},{t:6,x:6.6,z:19.2}] },
+    { team:"atk", num:8,  wp:[{t:0,x:0,z:18.6},{t:1.4,x:0.7,z:19.2},{t:2.45,x:1.8,z:19.4},{t:3.4,x:2.6,z:18.6},{t:4.6,x:4.4,z:17.6},{t:6,x:4.4,z:17.6}] },
+    { team:"atk", num:10, wp:[{t:0,x:-2,z:13.5},{t:2.3,x:-1.4,z:13.8},{t:3.9,x:8.4,z:16.1},{t:5.2,x:13.5,z:15.1},{t:6,x:14.6,z:15}] },
+    { team:"def", num:4,  wp:[{t:0,x:6.8,z:18.3},{t:0.9,x:6.1,z:19.6},{t:1.9,x:5.9,z:19.4},{t:2.8,x:6.5,z:18.4},{t:6,x:6.5,z:18.4}] },
+    { team:"def", num:6,  wp:[{t:0,x:1.5,z:16.6},{t:2.5,x:1.8,z:18.2},{t:3.4,x:2.8,z:17.2},{t:6,x:2.8,z:17.2}] },
+    { team:"def", num:3,  wp:[{t:0,x:9,z:11.5},{t:3.9,x:9.5,z:12.5},{t:5.2,x:12.4,z:13.6},{t:6,x:13,z:13.8}] },
+    { team:"def", num:5,  wp:[{t:0,x:3.5,z:22},{t:1.2,x:4.2,z:21.6},{t:6,x:4.2,z:21.6}] }
+  ]
+},
+{
+  name: "8人制ビルドアップ 2-3-2", tag: "ポゼッション",
+  desc: "8人制の王道フォーメーション2-3-2でのビルドアップ。GKからDF→アンカー→サイドMFと相手プレスの逆を取りながら前進し、最後はライン間で待つFWへ縦パスを打ち込む。GKも「9人目のフィールドプレーヤー」。",
+  coach: "コーチングポイント：相手FWのプレスの矢印(走る方向)を見て、その逆側から運ぶ。アンカーは常に半身で「前を向ける体の向き」を作っておく。",
+  duration: 8,
+  ball: [{t:0,x:-32.2,z:0},{t:0.8,x:-32.2,z:0},{t:1.6,x:-24.6,z:-11.4,h:0.5},{t:2.3,x:-24.6,z:-11.4},{t:3.1,x:-17.6,z:-3.2,h:0.4},{t:3.9,x:-17.6,z:-3.2},{t:5.0,x:-5.6,z:-17.4,h:1.6},{t:5.2,x:-5.6,z:-17.4},{t:6.4,x:2.4,z:-15.6},{t:7.2,x:6.4,z:-6.2,h:0.5},{t:8,x:6.6,z:-6}],
+  players: [
+    { team:"atk", num:1,  wp:[{t:0,x:-32.6,z:0},{t:0.8,x:-32.3,z:0},{t:2.2,x:-33,z:0.6},{t:8,x:-33,z:0.6}] },
+    { team:"atk", num:2,  wp:[{t:0,x:-25,z:-10},{t:1.6,x:-24.8,z:-11.2},{t:2.5,x:-24.6,z:-11.2},{t:4,x:-22,z:-9},{t:8,x:-21.5,z:-9}] },
+    { team:"atk", num:3,  wp:[{t:0,x:-25,z:10},{t:2.5,x:-23,z:7},{t:8,x:-22.5,z:7}] },
+    { team:"atk", num:6,  wp:[{t:0,x:-15,z:0},{t:1.2,x:-15.4,z:-0.6},{t:2.4,x:-17.8,z:-3.4},{t:3.2,x:-17.6,z:-3},{t:4.4,x:-14,z:-4},{t:5.8,x:-11.5,z:-4.4},{t:8,x:-10,z:-4.4}] },
+    { team:"atk", num:7,  wp:[{t:0,x:-13,z:-16},{t:3.5,x:-7.6,z:-17.4},{t:5.0,x:-5.8,z:-17.2},{t:6.4,x:2.2,z:-15.8},{t:7.4,x:3.6,z:-14},{t:8,x:4.4,z:-13}] },
+    { team:"atk", num:8,  wp:[{t:0,x:-13,z:16},{t:4,x:-8,z:14},{t:8,x:-4,z:12}] },
+    { team:"atk", num:9,  wp:[{t:0,x:-2,z:-6},{t:5.4,x:1,z:-7},{t:6.6,x:4.6,z:-6.8},{t:7.2,x:6.2,z:-6.2},{t:8,x:7.6,z:-5.2}] },
+    { team:"atk", num:10, wp:[{t:0,x:-2,z:6},{t:5,x:2,z:4},{t:8,x:5,z:2}] },
+    { team:"def", num:9,  wp:[{t:0,x:-24,z:4},{t:0.9,x:-27,z:2},{t:1.8,x:-28.4,z:-3},{t:3.4,x:-22,z:-6},{t:8,x:-20,z:-5}] },
+    { team:"def", num:10, wp:[{t:0,x:-20,z:-8},{t:1.6,x:-22.4,z:-10.4},{t:2.6,x:-21.4,z:-9.4},{t:4,x:-18,z:-7},{t:8,x:-17,z:-6}] },
+    { team:"def", num:7,  wp:[{t:0,x:-8,z:-15},{t:4.5,x:-7,z:-16.4},{t:5.6,x:-3,z:-16},{t:6.6,x:1,z:-14.6},{t:8,x:3,z:-13.6}] },
+    { team:"def", num:6,  wp:[{t:0,x:-9,z:0},{t:4,x:-11,z:-3},{t:6,x:-6,z:-6},{t:7.4,x:3,z:-6},{t:8,x:4.4,z:-5.8}] },
+    { team:"def", num:8,  wp:[{t:0,x:-8,z:13},{t:5,x:-6,z:10},{t:8,x:-3,z:8}] },
+    { team:"def", num:2,  wp:[{t:0,x:8,z:-8},{t:6,x:6,z:-9},{t:8,x:4.4,z:-8.4}] },
+    { team:"def", num:3,  wp:[{t:0,x:8,z:8},{t:6,x:6,z:6},{t:8,x:4.4,z:5}] },
+    { team:"def", num:1,  wp:[{t:0,x:32.6,z:0},{t:8,x:32.6,z:0}] }
+  ]
+},
+{
+  name: "カウンター攻撃", tag: "トランジション",
+  desc: "自陣でのボール奪取から、わずか3本のパスで仕留める速攻。奪った瞬間に前線の選手が一斉にスプリントし、相手の帰陣が間に合う前にフィニッシュまで持ち込む。「奪って3秒」が勝負。",
+  coach: "コーチングポイント：奪った選手は最初の縦パスを最速で。追い越す選手(3人目)がシュートコースを作る。攻め切れない時は無理せずキープに切り替える判断も大事。",
+  duration: 6.5, goalAt: 5.3,
+  ball: [{t:0,x:-12,z:8},{t:0.6,x:-6.4,z:4.6,h:0.2},{t:1.1,x:-6.4,z:4.6},{t:1.9,x:3.8,z:0.8,h:0.8},{t:2.0,x:3.8,z:0.8},{t:3.6,x:17.8,z:2.0},{t:4.3,x:23.8,z:-6.8,h:0.9},{t:4.8,x:23.8,z:-6.8},{t:5.3,x:34.4,z:-1.4,h:0.5},{t:5.6,x:35.3,z:-1.6}],
+  players: [
+    { team:"atk", num:6,  wp:[{t:0,x:-7.6,z:3},{t:0.6,x:-6.6,z:4.4},{t:1.2,x:-6.4,z:4.4},{t:2.6,x:-2,z:3},{t:6.5,x:0,z:3}] },
+    { team:"atk", num:9,  wp:[{t:0,x:1.5,z:-1},{t:1.0,x:2.2,z:-0.2},{t:1.9,x:3.9,z:0.7},{t:3.6,x:17.6,z:1.9},{t:4.6,x:20,z:3.4},{t:6.5,x:20,z:3.4}] },
+    { team:"atk", num:10, wp:[{t:0,x:7,z:-14},{t:1.6,x:10,z:-13},{t:3.6,x:21.4,z:-8},{t:4.3,x:23.9,z:-6.9},{t:4.8,x:24.3,z:-6.7},{t:5.4,x:26,z:-5.4},{t:6.0,x:28,z:-4.4},{t:6.5,x:28,z:-4.4}] },
+    { team:"atk", num:7,  wp:[{t:0,x:-4,z:-6},{t:2.5,x:4,z:-9},{t:4.5,x:12,z:-11},{t:6.5,x:14,z:-11}] },
+    { team:"atk", num:8,  wp:[{t:0,x:-12,z:-2},{t:3,x:-4,z:-1},{t:6.5,x:0,z:0}] },
+    { team:"def", num:2,  wp:[{t:0,x:1,z:10},{t:1.5,x:4,z:7},{t:3.6,x:14,z:3},{t:5,x:20,z:0},{t:6.5,x:21,z:0}] },
+    { team:"def", num:3,  wp:[{t:0,x:-1,z:-4},{t:2,x:6,z:-4},{t:3.8,x:14,z:-4.4},{t:5,x:19,z:-4},{t:6.5,x:20,z:-4}] },
+    { team:"def", num:4,  wp:[{t:0,x:-9,z:-11},{t:2.5,x:0,z:-11},{t:4.5,x:10,z:-10},{t:6.5,x:12,z:-10}] },
+    { team:"def", num:5,  wp:[{t:0,x:-13,z:9},{t:1.5,x:-8,z:7},{t:4,x:0,z:5},{t:6.5,x:2,z:4}] },
+    { team:"def", num:1,  wp:[{t:0,x:32.6,z:0},{t:4.3,x:31.6,z:-0.6},{t:4.9,x:31.2,z:-1.4},{t:5.3,x:32.4,z:-2.6},{t:6.5,x:32.6,z:-2.8}] }
+  ]
+}
+];
+
+/* ---------- 戦術ボードJSON → シーン変換 (soccer-3d と同一) ---------- */
+const VIEW_LABEL = { corner:"コーナーキック", throwin:"スローイン", eight:"8人制" };
+const CONV = {
+  corner: (x, y) => { const s = 25/34; return { x: HALF_L - y*s, z: (x-22)*s }; },
+  throwin: (x, y) => ({ x: x-26.25, z: y-25 }),
+  eight: (x, y) => ({ x: x-HALF_L, z: y-HALF_W })
+};
+const clampPitch = p => ({ x: Math.max(-HALF_L-1.5, Math.min(HALF_L+1.5, p.x)), z: Math.max(-HALF_W-1.5, Math.min(HALF_W+1.5, p.z)) });
+const dist2 = (a, b) => { const dx = a.x-b.x, dz = a.z-b.z; return dx*dx+dz*dz; };
+function buildImportedScene(d){
+  if (!d || typeof d !== "object" || !d.boards) throw new Error("boards missing");
+  const keys = ["corner", "throwin", "eight"];
+  const hasContent = k => { const b = d.boards[k]; return b && Array.isArray(b.players) && b.players.some(p => ["atk","def","ball"].includes(p.team)); };
+  let key = (keys.includes(d.activeView) && hasContent(d.activeView)) ? d.activeView : keys.find(hasContent);
+  if (!key) throw new Error("no markers");
+  const b = d.boards[key], conv = CONV[key];
+  const valid = v => typeof v === "number" && isFinite(v);
+  const rawPlayers = (b.players || []).filter(p => ["atk","def","ball"].includes(p.team) && valid(+p.x) && valid(+p.y));
+  const rawArrows = (b.arrows || []).filter(a => ["move","pass","dribble"].includes(a.kind) && [a.x1,a.y1,a.x2,a.y2].every(v => valid(+v)));
+  const arrows = rawArrows.map(a => ({ kind: a.kind, s: clampPitch(conv(+a.x1, +a.y1)), e: clampPitch(conv(+a.x2, +a.y2)), used: false }));
+  const players = [];
+  const counters = { atk:0, def:0 };
+  const T_MOVE_START = 0.7, T_MOVE_END = 3.6;
+  for (const p of rawPlayers){
+    if (p.team === "ball") continue;
+    const pos = clampPitch(conv(+p.x, +p.y));
+    counters[p.team]++;
+    const num = (+p.num > 0 && +p.num < 100) ? +p.num : counters[p.team];
+    let best = null, bd = 16;
+    for (const a of arrows){ if (a.used || a.kind === "pass") continue; const dd = dist2(a.s, pos); if (dd < bd){ bd = dd; best = a; } }
+    const wp = [{ t:0, x:pos.x, z:pos.z }];
+    if (best){ best.used = true; wp.push({ t:T_MOVE_START, x:pos.x, z:pos.z }); wp.push({ t:T_MOVE_END, x:best.e.x, z:best.e.z }); }
+    players.push({ team:p.team, num, wp });
+  }
+  if (!players.length) throw new Error("no players");
+  const ballMarker = rawPlayers.find(p => p.team === "ball");
+  let ballWp, lastT = 0, goalAt;
+  if (ballMarker){
+    let cur = clampPitch(conv(+ballMarker.x, +ballMarker.y));
+    ballWp = [{ t:0, x:cur.x, z:cur.z }];
+    let t = 0.9; ballWp.push({ t, x:cur.x, z:cur.z });
+    for (let i = 0; i < 12; i++){
+      let best = null, bd = 36;
+      for (const a of arrows){ if (a.used && a.kind === "pass") continue; if (a.kind === "move") continue; const dd = dist2(a.s, cur); if (dd < bd){ bd = dd; best = a; } }
+      if (!best) break;
+      best.used = true;
+      const d0 = Math.sqrt(dist2(best.s, best.e)), dt = Math.max(0.5, Math.min(1.6, d0/12));
+      t += dt;
+      const h = best.kind === "pass" ? Math.max(0.25, Math.min(5, d0*0.15)) : 0;
+      ballWp.push({ t, x:best.e.x, z:best.e.z, h }); t += 0.25; ballWp.push({ t, x:best.e.x, z:best.e.z });
+      cur = best.e;
+    }
+    lastT = t;
+    if (Math.abs(cur.x) > HALF_L-1 && Math.abs(cur.z) < GOAL_W/2+0.6) goalAt = lastT-0.25;
+  } else { ballWp = [{ t:0, x:0, z:0 }]; }
+  const duration = Math.max(4.5, T_MOVE_END+0.9, lastT+1.2);
+  return {
+    name: (d.__title || "インポート戦術") + "（" + VIEW_LABEL[key] + "）",
+    tag: "ボード連携",
+    desc: "ボードから読み込んだ配置です。マーカー" + players.length + "人・矢印" + arrows.length + "本を3Dに変換しました。移動/ドリブルは選手の走行、パスはボールの飛行として再生されます。「選手視点」で各ポジションからの見え方を確認できます。",
+    coach: "", duration, goalAt, ball: ballWp, players, focusIdx: players.findIndex(p => p.team === "atk")
+  };
+}
+
+/* ---------- ドリルシナリオ → シーン変換 ---------- */
+/* ドリル座標: %系, 自ゴール左(x%→ワールドX), 攻撃右。 mapX/mapZ で変換し、
+   自分(★=青DF/MF/FW)を1選手として追加。正解の動き(anim.you)を辿らせ、肩越し視点で追う。 */
+function drillToScene(q){
+  const mapX = xp => (xp/100)*PITCH_L - HALF_L;      // 0..100% -> -34..34
+  const mapZ = yp => (yp/100)*PITCH_W - HALF_W;      // 0..100% -> -25..25
+  const dur = 6;
+  // ボール waypoint (anim.ball を等間隔時間で)
+  const bpts = q.anim.ball;
+  const ballWp = bpts.map((w, i) => {
+    const t = 0.9 + (dur-1.4) * (bpts.length>1 ? i/(bpts.length-1) : 0);
+    const isPassSeg = i > 0;
+    return { t, x: mapX(w[0]), z: mapZ(w[1]), h: isPassSeg ? 0.8 : 0 };
+  });
+  ballWp.unshift({ t:0, x: mapX(bpts[0][0]), z: mapZ(bpts[0][1]) });
+  const players = [];
+  // 自分(★) = 青。ポジションで team は def/atk 相当だが色は青(=def)にして「自分」を表現
+  const youTeam = q.cat === "o" ? "atk" : "def";
+  const youStart = { x: mapX(q.you[0]), z: mapZ(q.you[1]) };
+  const youPath = [{ t:0, x: youStart.x, z: youStart.z }];
+  const yw = q.anim.you;
+  yw.forEach((w, i) => {
+    const t = 0.9 + (dur-1.4) * (yw.length>1 ? i/(yw.length-1) : 1);
+    youPath.push({ t, x: mapX(w[0]), z: mapZ(w[1]) });
+  });
+  players.push({ team: youTeam, num: 1, wp: youPath, you:true });
+  // 他選手 (静止 or movers で移動)
+  q.players.forEach((p, i) => {
+    const wp = [{ t:0, x: mapX(p[0]), z: mapZ(p[1]) }];
+    const mover = (q.anim.movers || []).find(m => m[0] === i);
+    if (mover){ wp.push({ t:0.9, x: mapX(p[0]), z: mapZ(p[1]) }); wp.push({ t:dur-0.6, x: mapX(mover[1]), z: mapZ(mover[2]) }); }
+    players.push({ team: p[2] === "b" ? "def" : "atk", num: (p[2]==="b"?10:20)+i, wp });
+  });
+  return {
+    name: q.pos + "の正解ポジション", tag: "ドリル",
+    desc: q.exp + " ── 自分(青の★選手)の肩越し視点で、正解の動きを確認しましょう。",
+    coach: q.anim.text, duration: dur, ball: ballWp, players, focusIdx: 0, forcePlayerCam: true
+  };
+}
+
+/* ---------- 再生エンジン ---------- */
+const state = { scene:null, t:0, playing:false, speed:1, camMode:"coach", followIdx:0, goalShownAt:-1, firstPerson:false };
+const playBtn = $$("playBtn3d"), seekEl = $$("seek"), timeLbl = $$("timeLbl");
+
+function loadScene(sc, autoplay = true){
+  state.scene = sc; state.t = 0; state.goalShownAt = -1;
+  buildPlayers(sc.players);
+  $$("tSceneName").textContent = sc.name;
+  $$("tSceneDesc").textContent = sc.desc;
+  $$("tSceneCoach").textContent = sc.coach || "";
+  buildPlayerButtons();
+  const fi = (typeof sc.focusIdx === "number" && sc.focusIdx >= 0) ? sc.focusIdx : sc.players.findIndex(p => p.team === "atk");
+  state.followIdx = fi >= 0 ? fi : 0;
+  syncPlayerButtons();
+  if (sc.forcePlayerCam){ setCamMode("player"); }
+  state.playing = autoplay;
+  playBtn.innerHTML = state.playing ? "&#10074;&#10074;" : "&#9654;";
+  updateWorld(0);
+}
+function updateWorld(t){
+  const sc = state.scene; if (!sc) return;
+  const bp = sampleBall(sc.ball, t);
+  ball.position.set(bp.x, Math.max(bp.y, BALL_R), bp.z);
+  for (let i = 0; i < playerObjs.length; i++){
+    const po = playerObjs[i], p = samplePlayer(po.def.wp, t);
+    po.grp.position.set(p.x, 0, p.z);
+    const p2 = samplePlayer(po.def.wp, t+0.12);
+    const dx = p2.x-p.x, dz = p2.z-p.z;
+    let target;
+    if (dx*dx+dz*dz > 0.0004) target = Math.atan2(dx, dz);
+    else target = Math.atan2(bp.x-p.x, bp.z-p.z);
+    let diff = target-po.rotY;
+    while (diff > Math.PI) diff -= Math.PI*2;
+    while (diff < -Math.PI) diff += Math.PI*2;
+    po.rotY += diff*0.14; po.grp.rotation.y = po.rotY;
+    po.ring.visible = (state.camMode === "player" && i === state.followIdx);
+    po.body.visible = !(state.camMode === "player" && state.firstPerson && i === state.followIdx);
+  }
+  ball.rotation.x -= 0.15; ball.rotation.z += 0.02;
+}
+const goalFx = $$("goalFx");
+let goalTimer = null;
+function fireGoal(){
+  goalFx.classList.remove("show"); void goalFx.offsetWidth; goalFx.classList.add("show");
+  clearTimeout(goalTimer); goalTimer = setTimeout(() => goalFx.classList.remove("show"), 2000);
+}
+/* ---------- カメラ ---------- */
+const camVec = new THREE.Vector3(), lookVec = new THREE.Vector3();
+function applyCamera(dt){
+  controls.enabled = state.camMode === "coach";
+  if (state.camMode === "coach"){ controls.update(); return; }
+  const k = 1 - Math.pow(0.0018, dt);
+  if (state.camMode === "top"){
+    camVec.set(0, 88, 0.1); camera.position.lerp(camVec, k); camera.lookAt(0, 0, 0);
+  } else if (state.camMode === "goal"){
+    const side = ball.position.x >= 0 ? 1 : -1;
+    camVec.set(side*(HALF_L+9), 6.5, 0); camera.position.lerp(camVec, k);
+    camera.lookAt(ball.position.x*0.4, 1, ball.position.z*0.4);
+  } else if (state.camMode === "player"){
+    const po = playerObjs[state.followIdx]; if (!po) return;
+    const rot = po.rotY, fx = Math.sin(rot), fz = Math.cos(rot);
+    if (state.firstPerson){
+      /* 一人称: 目の高さ、視線は自動でボール方向 */
+      const kk = 1 - Math.pow(0.0006, dt);
+      camVec.set(po.grp.position.x + fx*0.15, 1.68, po.grp.position.z + fz*0.15);
+      camera.position.lerp(camVec, kk);
+      lookVec.set(ball.position.x, Math.max(ball.position.y, 0.6), ball.position.z);
+      camera.lookAt(lookVec);
+    } else {
+      /* 三人称・肩越し近距離 */
+      camVec.set(po.grp.position.x - fx*7.5, 4.6, po.grp.position.z - fz*7.5);
+      camera.position.lerp(camVec, k);
+      lookVec.set(po.grp.position.x + fx*7, 1.2, po.grp.position.z + fz*7);
+      camera.lookAt(lookVec);
+    }
+  }
+}
+let prevMs = performance.now();
+function loop(ms){
+  requestAnimationFrame(loop);
+  const dt = Math.min((ms-prevMs)/1000, 0.06); prevMs = ms;
+  const sc = state.scene;
+  if (sc){
+    if (state.playing){
+      const prevT = state.t; state.t += dt*state.speed;
+      if (sc.goalAt !== undefined && prevT < sc.goalAt && state.t >= sc.goalAt && state.goalShownAt !== sc.goalAt){ state.goalShownAt = sc.goalAt; fireGoal(); }
+      if (state.t >= sc.duration){ state.t = sc.duration; state.playing = false; playBtn.innerHTML = "&#9654;"; }
+    }
+    updateWorld(state.t);
+    seekEl.value = Math.round(state.t/sc.duration*1000);
+    timeLbl.textContent = state.t.toFixed(1) + " / " + sc.duration.toFixed(1) + "s";
+  }
+  applyCamera(dt);
+  if (currentScreen === "theater") renderer.render(scene, camera);
+}
+
+/* ---------- UI 配線 ---------- */
+const tPresetList = $$("tPresetList");
+let activePreset3dBtn = null;
+function addPreset3dButton(sc, label){
+  const btn = document.createElement("button");
+  btn.className = "pbtn";
+  btn.innerHTML = '<span class="tag">' + label + "</span>" + sc.name;
+  btn.addEventListener("click", () => {
+    loadScene(sc, true);
+    if (activePreset3dBtn) activePreset3dBtn.classList.remove("on");
+    activePreset3dBtn = btn; btn.classList.add("on");
+    if (window.innerWidth <= 760) $$("theater").classList.add("panel-hidden");
+  });
+  tPresetList.appendChild(btn); return btn;
+}
+PRESETS3D.forEach((sc, i) => { const b = addPreset3dButton(sc, sc.tag); if (i === 0) activePreset3dBtn = b; });
+
+playBtn.addEventListener("click", () => {
+  if (!state.scene) return;
+  if (!state.playing && state.t >= state.scene.duration) state.t = 0;
+  state.playing = !state.playing;
+  playBtn.innerHTML = state.playing ? "&#10074;&#10074;" : "&#9654;";
+});
+$$("replayBtn").addEventListener("click", () => {
+  if (!state.scene) return;
+  state.t = 0; state.goalShownAt = -1; state.playing = true; playBtn.innerHTML = "&#10074;&#10074;";
+});
+seekEl.addEventListener("input", () => {
+  if (!state.scene) return;
+  state.t = seekEl.value/1000*state.scene.duration; state.goalShownAt = -1; updateWorld(state.t);
+});
+document.querySelectorAll(".spdBtn").forEach(b => {
+  b.addEventListener("click", () => {
+    state.speed = parseFloat(b.dataset.spd);
+    document.querySelectorAll(".spdBtn").forEach(x => x.classList.toggle("on", x === b));
+  });
+});
+function setCamMode(mode){
+  state.camMode = mode;
+  document.querySelectorAll(".camBtn").forEach(x => x.classList.toggle("on", x.dataset.cam === mode));
+  $$("playerRow").classList.toggle("show", mode === "player");
+  if (mode === "coach"){ controls.target.set(0, 0, 0); camera.position.set(0, 30, 46); }
+}
+document.querySelectorAll(".camBtn").forEach(b => { b.addEventListener("click", () => setCamMode(b.dataset.cam)); });
+$$("fpsBtn").addEventListener("click", () => {
+  state.firstPerson = !state.firstPerson;
+  $$("fpsBtn").classList.toggle("on", state.firstPerson);
+  if (state.firstPerson && state.camMode !== "player") setCamMode("player");
+});
+
+/* 選手ボタン: GK/DF/MF/FW ポジショングループ別に並べる */
+function posGroupOf(po){
+  // GK=背番号1相当 or チーム最深, それ以外は攻撃方向のX位置で DF/MF/FW を推定
+  const wp = po.wp;
+  const avgX = wp.reduce((s, w) => s + w.x, 0) / wp.length;
+  const atk = po.team === "atk";
+  if (po.num === 1) return "GK";
+  // 攻撃は+X方向へ攻める。守備は-X方向のゴールを守る想定
+  const rel = atk ? avgX : -avgX;   // 自ゴールからの前進量
+  if (rel < -12) return "GK";
+  if (rel < 2) return "DF";
+  if (rel < 18) return "MF";
+  return "FW";
+}
+function buildPlayerButtons(){
+  const box = $$("playerBtns"); box.innerHTML = "";
+  const sc = state.scene; if (!sc) return;
+  const groups = { GK:[], DF:[], MF:[], FW:[] };
+  sc.players.forEach((p, i) => { const g = posGroupOf(p); (groups[g] || groups.FW).push({ p, i }); });
+  ["GK","DF","MF","FW"].forEach(gname => {
+    if (!groups[gname].length) return;
+    const wrap = document.createElement("span"); wrap.className = "posgrp";
+    const lbl = document.createElement("span"); lbl.className = "pg"; lbl.textContent = gname; wrap.appendChild(lbl);
+    groups[gname].forEach(({ p, i }) => {
+      const b = document.createElement("button");
+      b.className = "plbtn " + p.team; b.textContent = (p.you ? "★" : p.num);
+      b.dataset.idx = i;
+      b.title = (p.you ? "あなた " : (p.team === "atk" ? "攻撃 " : "守備 ")) + gname + " #" + p.num;
+      b.addEventListener("click", () => {
+        state.followIdx = i; syncPlayerButtons();
+        if (state.camMode !== "player") setCamMode("player");
+      });
+      wrap.appendChild(b);
+    });
+    box.appendChild(wrap);
+  });
+}
+function syncPlayerButtons(){
+  document.querySelectorAll("#playerBtns .plbtn").forEach(b => b.classList.toggle("on", +b.dataset.idx === state.followIdx));
+}
+$$("tPanelToggle").addEventListener("click", () => { $$("theater").classList.toggle("panel-hidden"); });
+
+/* ---------- リサイズ ---------- */
+function onResize3d(){
+  const s = stageSize();
+  camera.aspect = (s.w/s.h) || 1.6; camera.updateProjectionMatrix();
+  renderer.setSize(s.w, s.h);
+}
+window.addEventListener("resize", () => { if (currentScreen === "theater") onResize3d(); });
+
+/* ---------- 外部ブリッジ API ---------- */
+window.Studio3D = {
+  ready: true,
+  onResize: onResize3d,
+  consume(payload){
+    onResize3d();
+    try {
+      if (payload.type === "board"){
+        const data = Object.assign({}, payload.data, { __title: payload.title });
+        const sc = buildImportedScene(data);
+        loadScene(sc, true);
+        if (activePreset3dBtn){ activePreset3dBtn.classList.remove("on"); activePreset3dBtn = null; }
+        window.__studioToast && window.__studioToast("ボードの戦術を3D化しました。「選手視点」で各ポジションから確認できます。");
+      } else if (payload.type === "drill"){
+        const sc = drillToScene(payload.q);
+        loadScene(sc, true);
+        if (activePreset3dBtn){ activePreset3dBtn.classList.remove("on"); activePreset3dBtn = null; }
+        setCamMode("player");
+        window.__studioToast && window.__studioToast("正解の動きを、あなたの選手の肩越し視点で再生します。");
+      }
+    } catch (err){
+      window.__studioToast && window.__studioToast("3D変換に失敗しました：" + (err && err.message ? err.message : "形式エラー"), true);
+    }
+  }
+};
+
+/* 起動: プリセット0を初期表示。ただし描画は theater 表示時のみ */
+loadScene(PRESETS3D[0], false);
+requestAnimationFrame(loop);
+window.__T3D_OK = true;
+
+/* 起動時に既に theater が要求されていれば処理 */
+if (currentScreen === "theater" && typeof window.__studioPending === "function") window.__studioPending();
+</script>
+
+<script>
+/* toast を module から呼べるよう公開 & 3D準備完了時に pending を消化 */
+window.__studioToast = toast;
+window.__studioPending = function(){ if (window.Studio3D && window.Studio3D.ready && pending3D){ window.Studio3D.consume(pending3D); pending3D = null; } };
+/* module 読み込みが currentScreen=theater 後に終わる場合の保険 */
+(function(){
+  let tries = 0;
+  const iv = setInterval(() => {
+    tries++;
+    if (window.Studio3D && window.Studio3D.ready){
+      clearInterval(iv);
+      if (currentScreen === "theater" && pending3D){ window.Studio3D.consume(pending3D); pending3D = null; }
+    }
+    if (tries > 120) clearInterval(iv);
+  }, 200);
+})();
+</script>
+</body>
+</html>
+
