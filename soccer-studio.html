@@ -1279,7 +1279,13 @@ $("bkTplDel").addEventListener("click", () => {
 /* ---------- ボード初期化 ---------- */
 buildPresetList();
 renderLib();
-requestAnimationFrame(resizeBoard);
+/* レイアウト確定前だとcanvasが既定サイズ(300x150)に取り残されるため、
+   実サイズになるまで数回リトライして確実にフィットさせる */
+(function ensureBoardSized(tries){
+  resizeBoard();
+  const fitted = boardBox.clientWidth > 0 && cv.width >= boardBox.clientWidth;
+  if (!fitted && tries < 30) requestAnimationFrame(() => ensureBoardSized(tries + 1));
+})(0);
 
 /* ============================================================
    【3】ドリル (ポジショニングどうじょう) — soccer-kids タブD 由来
