@@ -403,6 +403,78 @@
   footer{text-align:center;font-size:11.5px;color:var(--sub);padding:8px 12px 20px;}
   footer a{color:inherit;}
   body.theater-mode footer{display:none;}
+
+  /* ================= 練習ボックス(練習メニュー) ================= */
+  .card h2 .h2sub{font-size:10.5px;color:var(--sub);font-weight:400;letter-spacing:0;margin-left:6px;}
+  #menuCard .menurow{display:flex;gap:6px;margin-bottom:8px;}
+  #menuCard .menurow select{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;}
+  #menuCard input,#menuCard textarea,#menuCard select{font-family:inherit;}
+  #menuNameRow{display:flex;gap:6px;margin-bottom:8px;}
+  #menuNameRow input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:8px 10px;font-size:13px;}
+  #menuTotal{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--sub);
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;margin-bottom:8px;}
+  #menuTotal b{color:var(--gold);font-size:15px;font-variant-numeric:tabular-nums;}
+  #menuTotal .mt-cnt{color:var(--txt);}
+  #menuItems{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;margin-bottom:10px;}
+  .mi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;position:relative;}
+  .mi .mi-top{display:flex;align-items:flex-start;gap:8px;}
+  .mi .mi-ord{display:flex;flex-direction:column;gap:2px;flex-shrink:0;padding-top:1px;}
+  .mi .mi-ord button{background:var(--panel);border:1px solid var(--line);color:var(--sub);border-radius:5px;
+    width:22px;height:18px;line-height:1;font-size:11px;cursor:pointer;padding:0;}
+  .mi .mi-ord button:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .mi .mi-ord button:disabled{opacity:.3;cursor:default;}
+  .mi .mi-main{flex:1;min-width:0;}
+  .mi .mi-kind{display:inline-block;font-size:10px;font-weight:800;border-radius:5px;padding:2px 7px;
+    letter-spacing:.03em;vertical-align:middle;margin-right:6px;color:#fff;}
+  .mi .mi-title{font-weight:700;font-size:13.5px;color:#fff;word-break:break-word;vertical-align:middle;}
+  .mi .mi-meta{font-size:11px;color:var(--sub);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;}
+  .mi .mi-meta .mi-vw{color:var(--sub);}
+  .mi .mi-coach{margin-top:7px;font-size:12px;line-height:1.65;color:#f5d87e;white-space:pre-wrap;word-break:break-word;
+    background:rgba(240,198,73,.06);border-left:2px solid rgba(240,198,73,.5);border-radius:0 6px 6px 0;padding:6px 9px;}
+  .mi .mi-equip{margin-top:5px;font-size:11px;color:var(--sub);white-space:pre-wrap;word-break:break-word;}
+  .mi .mi-acts{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap;}
+  .mi .mi-acts button{flex:1;min-width:60px;background:var(--panel);border:1px solid var(--line);color:var(--txt);
+    border-radius:7px;padding:6px 4px;font-size:11.5px;cursor:pointer;font-family:inherit;line-height:1.2;}
+  .mi .mi-acts button:hover{border-color:var(--accent);}
+  .mi .mi-acts button.mi-load{color:var(--accent);}
+  .mi .mi-acts button.mi-del{color:#ff8f8f;}
+  .kw-warmup{background:#c98a2b;} .kw-drill{background:#2b8fc9;} .kw-game{background:#c94a2b;}
+  .kw-set{background:#7b3fd4;} .kw-cond{background:#2b9d6a;} .kw-cool{background:#5a7d8c;}
+  .menuempty{font-size:12px;color:var(--sub);text-align:center;padding:10px 8px;line-height:1.7;}
+  .menu-privacy{font-size:10.5px;color:var(--sub);line-height:1.6;margin-top:4px;}
+
+  /* 練習項目 追加/編集モーダル */
+  #miMask{position:fixed;inset:0;background:rgba(4,7,11,.62);z-index:130;display:none;
+    align-items:center;justify-content:center;padding:16px;}
+  #miMask.on{display:flex;}
+  #miModal{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    width:min(500px,100%);max-height:90vh;overflow-y:auto;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.6);}
+  #miModal h2{font-size:15px;color:var(--accent);margin-bottom:4px;}
+  #miModal .mi-sub{font-size:11.5px;color:var(--sub);line-height:1.6;margin-bottom:14px;}
+  #miModal label{font-size:11.5px;color:var(--sub);display:block;margin:11px 0 4px;font-weight:700;}
+  #miModal input[type=text],#miModal input[type=number],#miModal textarea,#miModal select{
+    width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:8px 10px;font-size:13.5px;font-family:inherit;}
+  #miModal textarea{resize:vertical;line-height:1.6;}
+  #miModal input:focus,#miModal textarea:focus,#miModal select:focus{outline:none;border-color:var(--accent);}
+  #miModal .mi-2col{display:flex;gap:10px;}
+  #miModal .mi-2col > div{flex:1;}
+  #miBoardNote{font-size:11px;color:var(--sub);background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;padding:8px 10px;margin-top:6px;line-height:1.6;}
+  #miBoardNote b{color:var(--accent);}
+  #miModal .mi-foot{display:flex;gap:8px;margin-top:16px;}
+  #miModal .mi-foot .tbtn{flex:1;text-align:center;}
+
+  /* 共有カード */
+  #shareCard .iorow{margin-bottom:8px;}
+  #shareCard .share-scope{display:flex;gap:6px;margin-bottom:10px;}
+  #shareCard .share-scope button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--sub);
+    border-radius:8px;padding:8px 6px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.3;}
+  #shareCard .share-scope button.on{border-color:var(--accent);color:var(--accent);background:#12301f;font-weight:700;}
+  #shareCard .tbtn.wide{width:100%;text-align:center;margin-bottom:8px;}
+  #shareCard .share-sub{font-size:11px;color:var(--sub);letter-spacing:.08em;font-weight:700;margin:12px 0 6px;}
 </style>
 </head>
 <body>
@@ -584,6 +656,44 @@
         <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
         <div class="hint">追加ツールで空きスペースをタップ／ドラッグで移動／ダブルクリック（ダブルタップ）で選手名を編集／削除は&#9986;消しゴム。矢印ツールはドラッグで描画。&#9654;再生で矢印に沿って動きます。書き出したJSONは他の戦術ボードとも互換です。</div>
       </div>
+
+      <!-- ============ 🧰 練習ボックス(練習メニュー) ============ -->
+      <div class="card" id="menuCard">
+        <h2>&#129520; 練習ボックス<span class="h2sub">練習メニューをまとめる</span></h2>
+        <div class="menurow">
+          <select id="menuSel" title="編集する練習メニューを選択"></select>
+          <button class="tbtn" id="menuNewBtn" title="新しい練習メニューを作る">&#10133; 新規</button>
+        </div>
+        <div id="menuNameRow">
+          <input type="text" id="menuName" placeholder="メニュー名（例：火曜の全体練習）" maxlength="48">
+          <button class="tbtn warn" id="menuDelBtn" title="このメニューを削除">&#128465;</button>
+        </div>
+        <div id="menuTotal">
+          <span class="mt-cnt" id="menuCount">0 項目</span>
+          <span>合計 <b id="menuMinutes">0</b> 分</span>
+        </div>
+        <button class="tbtn hero" id="menuAddBtn" style="width:100%;text-align:center;margin-bottom:10px;">&#10133; 現在の盤面をメニューに追加</button>
+        <div id="menuItems"></div>
+        <div class="menu-privacy">&#128274; メニューはこの端末のブラウザ内にのみ保存されます。共有はカード下の「共有」から。</div>
+      </div>
+
+      <!-- ============ 📤 共有(リンク / ファイル) ============ -->
+      <div class="card" id="shareCard">
+        <h2>&#128228; 共有</h2>
+        <div class="share-scope" id="shareScope">
+          <button data-scope="board" class="on">&#9999;&#65039; 現在の盤面</button>
+          <button data-scope="menu">&#129520; 練習メニュー</button>
+        </div>
+        <div class="share-sub">&#128279; リンクで共有</div>
+        <button class="tbtn wide" id="shareLinkBtn">&#128279; 共有リンクをコピー</button>
+        <div class="share-sub">&#128193; ファイルで共有</div>
+        <div class="iorow">
+          <button class="tbtn" id="shareFileBtn">&#11015; ファイル書出</button>
+          <button class="tbtn" id="shareImportBtn">&#11014; ファイル読込</button>
+        </div>
+        <input type="file" id="shareImportFile" accept=".json,application/json" style="display:none;">
+        <div class="menu-privacy">端末内で処理されます。データはコピーしたURLや書き出したファイルにのみ含まれ、サーバには送信されません。LINE・メールに貼って（またはファイルを添付して）送れます。</div>
+      </div>
     </div>
   </div>
 </section>
@@ -699,6 +809,42 @@
     <div class="bk-foot">
       <button class="tbtn" id="bkCancel">キャンセル</button>
       <button class="tbtn hero" id="bkApply">&#9989; 反映</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 練習項目 追加/編集モーダル ============ -->
+<div id="miMask">
+  <div id="miModal">
+    <h2 id="miModalTitle">&#10133; 練習メニューに追加</h2>
+    <div class="mi-sub">この項目に含める盤面は「現在の全ビュー（8人制・コーナー・スローイン）」です。読み込むと盤面が完全に復元されます。</div>
+    <label for="miTitle">タイトル</label>
+    <input type="text" id="miTitle" maxlength="60" placeholder="例：3対2 突破からのシュート">
+    <div class="mi-2col">
+      <div>
+        <label for="miKind">種別</label>
+        <select id="miKind">
+          <option value="warmup">ウォームアップ</option>
+          <option value="drill" selected>ドリル</option>
+          <option value="game">ゲーム形式</option>
+          <option value="set">セットプレー</option>
+          <option value="cond">フィジカル</option>
+          <option value="cool">クールダウン</option>
+        </select>
+      </div>
+      <div>
+        <label for="miMin">所要時間（分）</label>
+        <input type="number" id="miMin" min="0" max="180" step="1" value="10">
+      </div>
+    </div>
+    <label for="miCoach">コーチングポイント（留意点・複数行OK）</label>
+    <textarea id="miCoach" rows="4" maxlength="800" placeholder="例：・ファーストタッチで前を向く / ・DFの背後のスペースを常に意識（改行OK）"></textarea>
+    <label for="miEquip">用意する物（任意）</label>
+    <textarea id="miEquip" rows="2" maxlength="300" placeholder="例：マーカー8、ビブス2色、ボール6"></textarea>
+    <div id="miBoardNote">&#128196; この項目の盤面: <b id="miBoardSummary">—</b></div>
+    <div class="mi-foot">
+      <button class="tbtn" id="miCancel">キャンセル</button>
+      <button class="tbtn hero" id="miSave">&#9989; 保存</button>
     </div>
   </div>
 </div>
@@ -2407,9 +2553,407 @@ $("bkTplDel").addEventListener("click", () => {
   const a = loadTpls(); a.splice(+idx, 1); saveTpls(a); refreshTplSelect(); toast("名前セットを削除しました");
 });
 
+/* ============================================================
+   🧰 練習ボックス(練習メニュー) + 共有(URL/ファイル)
+   ・練習メニュー = 順序付き項目リスト。各項目は現在の全ビュー boards を丸ごと保持し、
+     読み込みで完全復元(loadBoardData を再利用)。
+   ・localStorageキーは既存(soccerStudio_lib_v1 等)と衝突しない専用キー。
+   ・共有は端末内処理。URLハッシュ(#data=)またはJSONファイル。
+============================================================ */
+const MENU_KEY = "soccerStudio_menus_v1";      // 練習メニュー配列
+const MENU_CUR_KEY = "soccerStudio_menuCur_v1"; // 選択中インデックス
+const KIND_META = {
+  warmup: { label:"ウォームアップ", cls:"kw-warmup" },
+  drill:  { label:"ドリル",         cls:"kw-drill"  },
+  game:   { label:"ゲーム形式",     cls:"kw-game"   },
+  set:    { label:"セットプレー",   cls:"kw-set"    },
+  cond:   { label:"フィジカル",     cls:"kw-cond"   },
+  cool:   { label:"クールダウン",   cls:"kw-cool"   }
+};
+function kindMeta(k){ return KIND_META[k] || KIND_META.drill; }
+
+/* 現在の全ビュー boards を丸ごとスナップショット(マイ戦術ライブラリと同形式) */
+function snapshotBoards(){
+  return {
+    eight:   JSON.parse(JSON.stringify(boards.eight)),
+    corner:  JSON.parse(JSON.stringify(boards.corner)),
+    throwin: JSON.parse(JSON.stringify(boards.throwin))
+  };
+}
+/* boards スナップショットの中身概要(項目カード用) */
+function boardsSummary(bs){
+  let mk = 0, ar = 0, an = 0;
+  for (const k of ["eight","corner","throwin"]){
+    const b = bs && bs[k]; if (!b) continue;
+    mk += (b.players || []).length; ar += (b.arrows || []).length; an += (b.annotations || []).length;
+  }
+  return "駒" + mk + " / 矢印" + ar + " / 注釈" + an;
+}
+
+/* ---------- メニューの読み書き ---------- */
+function loadMenus(){ try { const a = JSON.parse(localStorage.getItem(MENU_KEY)); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+function saveMenus(a){ try { localStorage.setItem(MENU_KEY, JSON.stringify(a)); } catch(e){} }
+function getCurIdx(){ let i = parseInt(localStorage.getItem(MENU_CUR_KEY), 10); if (!(i >= 0)) i = 0; return i; }
+function setCurIdx(i){ try { localStorage.setItem(MENU_CUR_KEY, String(i)); } catch(e){} }
+/* 空メニューの雛形 */
+function blankMenu(name){ return { app:"soccer-studio-menu", version:1, name: name || "新しい練習メニュー", items:[] }; }
+/* 常に最低1つのメニューが存在するよう保証し、選択中メニューを返す */
+function ensureMenus(){
+  let menus = loadMenus();
+  if (!menus.length){ menus = [blankMenu("わたしの練習メニュー")]; saveMenus(menus); setCurIdx(0); }
+  let idx = getCurIdx(); if (idx >= menus.length) { idx = menus.length - 1; setCurIdx(idx); }
+  return { menus, idx };
+}
+function curMenu(){ const { menus, idx } = ensureMenus(); return menus[idx]; }
+function commitCurMenu(menu){ const { menus, idx } = ensureMenus(); menus[idx] = menu; saveMenus(menus); }
+
+/* 項目を検証・正規化(壊れた読み込みデータでもクラッシュしない) */
+function normalizeMenuItem(it){
+  if (!it || typeof it !== "object") return null;
+  const bs = { eight:null, corner:null, throwin:null };
+  const src = it.boards && typeof it.boards === "object" ? it.boards : {};
+  let any = false;
+  for (const k of ["eight","corner","throwin"]){
+    const b = src[k];
+    if (b && typeof b === "object"){
+      bs[k] = { players: Array.isArray(b.players) ? b.players : [],
+                arrows:  Array.isArray(b.arrows)  ? b.arrows  : [],
+                annotations: Array.isArray(b.annotations) ? b.annotations : [] };
+      any = true;
+    } else {
+      bs[k] = { players:[], arrows:[], annotations:[] };
+    }
+  }
+  if (!any) return null;
+  const kind = KIND_META[it.kind] ? it.kind : "drill";
+  let mins = Number(it.minutes); if (!isFinite(mins) || mins < 0) mins = 0; mins = Math.min(180, Math.round(mins));
+  const av = VIEWS[it.activeView] ? it.activeView : "eight";
+  return {
+    title: typeof it.title === "string" ? it.title.slice(0, 60) : "",
+    kind, minutes: mins,
+    coachingPoints: typeof it.coachingPoints === "string" ? it.coachingPoints.slice(0, 800) : "",
+    equipment: typeof it.equipment === "string" ? it.equipment.slice(0, 300) : "",
+    activeView: av,
+    boards: bs
+  };
+}
+/* メニュー全体を検証・正規化 */
+function normalizeMenu(m){
+  const out = blankMenu(typeof (m && m.name) === "string" ? m.name.slice(0, 48) : "読み込んだメニュー");
+  const items = m && Array.isArray(m.items) ? m.items : [];
+  for (const it of items){ const n = normalizeMenuItem(it); if (n) out.items.push(n); }
+  return out;
+}
+
+/* ---------- レンダリング ---------- */
+function renderMenuSelect(){
+  const { menus, idx } = ensureMenus();
+  const sel = $("menuSel");
+  sel.innerHTML = "";
+  menus.forEach((m, i) => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = (m.name || "無題") + "（" + (m.items ? m.items.length : 0) + "）";
+    if (i === idx) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function renderMenu(){
+  renderMenuSelect();
+  const menu = curMenu();
+  $("menuName").value = menu.name || "";
+  const items = menu.items || [];
+  const total = items.reduce((s, it) => s + (it.minutes || 0), 0);
+  $("menuCount").textContent = items.length + " 項目";
+  $("menuMinutes").textContent = total;
+  const box = $("menuItems");
+  box.innerHTML = "";
+  if (!items.length){
+    box.innerHTML = '<div class="menuempty">まだ項目がありません。<br>盤面を作って「&#10133; 現在の盤面をメニューに追加」で追加しましょう。</div>';
+    return;
+  }
+  items.forEach((it, i) => {
+    const km = kindMeta(it.kind);
+    const mi = document.createElement("div"); mi.className = "mi";
+    // 並べ替え
+    const ord = document.createElement("div"); ord.className = "mi-ord";
+    const up = document.createElement("button"); up.innerHTML = "&#9650;"; up.title = "上へ"; up.disabled = i === 0;
+    up.addEventListener("click", () => moveMenuItem(i, -1));
+    const dn = document.createElement("button"); dn.innerHTML = "&#9660;"; dn.title = "下へ"; dn.disabled = i === items.length - 1;
+    dn.addEventListener("click", () => moveMenuItem(i, 1));
+    ord.appendChild(up); ord.appendChild(dn);
+    // 本体
+    const main = document.createElement("div"); main.className = "mi-main";
+    const head = document.createElement("div");
+    const kd = document.createElement("span"); kd.className = "mi-kind " + km.cls; kd.textContent = km.label;
+    const tt = document.createElement("span"); tt.className = "mi-title"; tt.textContent = it.title || "（無題の項目）";
+    head.appendChild(kd); head.appendChild(tt);
+    const meta = document.createElement("div"); meta.className = "mi-meta";
+    const mm = document.createElement("span"); mm.innerHTML = "&#9201;&#65039; " + (it.minutes || 0) + " 分";
+    const vw = document.createElement("span"); vw.className = "mi-vw";
+    vw.textContent = (VIEWS[it.activeView] ? VIEWS[it.activeView].label : "8人制") + "・" + boardsSummary(it.boards);
+    meta.appendChild(mm); meta.appendChild(vw);
+    main.appendChild(head); main.appendChild(meta);
+    if (it.coachingPoints){ const cp = document.createElement("div"); cp.className = "mi-coach"; cp.textContent = it.coachingPoints; main.appendChild(cp); }
+    if (it.equipment){ const eq = document.createElement("div"); eq.className = "mi-equip"; eq.textContent = "📦 " + it.equipment; main.appendChild(eq); }
+    // 操作
+    const acts = document.createElement("div"); acts.className = "mi-acts";
+    const bLoad = document.createElement("button"); bLoad.className = "mi-load"; bLoad.innerHTML = "&#11015; ボードに読込";
+    bLoad.addEventListener("click", () => loadMenuItemToBoard(i));
+    const bEdit = document.createElement("button"); bEdit.innerHTML = "&#9998; 編集";
+    bEdit.addEventListener("click", () => openItemModal(i));
+    const bDup = document.createElement("button"); bDup.innerHTML = "&#10697; 複製";
+    bDup.addEventListener("click", () => duplicateMenuItem(i));
+    const bDel = document.createElement("button"); bDel.className = "mi-del"; bDel.innerHTML = "&#128465; 削除";
+    bDel.addEventListener("click", () => deleteMenuItem(i));
+    acts.appendChild(bLoad); acts.appendChild(bEdit); acts.appendChild(bDup); acts.appendChild(bDel);
+    main.appendChild(acts);
+    const top = document.createElement("div"); top.className = "mi-top";
+    top.appendChild(ord); top.appendChild(main);
+    mi.appendChild(top);
+    box.appendChild(mi);
+  });
+}
+
+/* ---------- メニュー操作 ---------- */
+function moveMenuItem(i, dir){
+  const menu = curMenu(); const items = menu.items;
+  const j = i + dir; if (j < 0 || j >= items.length) return;
+  const t = items[i]; items[i] = items[j]; items[j] = t;
+  commitCurMenu(menu); renderMenu();
+}
+function deleteMenuItem(i){
+  const menu = curMenu();
+  const name = (menu.items[i] && menu.items[i].title) || "この項目";
+  if (!confirm("「" + name + "」を削除しますか？")) return;
+  menu.items.splice(i, 1); commitCurMenu(menu); renderMenu(); toast("項目を削除しました");
+}
+function duplicateMenuItem(i){
+  const menu = curMenu(); const src = menu.items[i]; if (!src) return;
+  const copy = JSON.parse(JSON.stringify(src)); copy.title = (src.title || "項目") + "（コピー）";
+  menu.items.splice(i + 1, 0, copy); commitCurMenu(menu); renderMenu(); toast("項目を複製しました");
+}
+/* 項目の盤面をボードに読み込む(全ビュー完全復元) */
+function loadMenuItemToBoard(i){
+  const it = curMenu().items[i]; if (!it) return;
+  try {
+    loadBoardData({ boards: it.boards, activeView: it.activeView }, true);
+    if (it.coachingPoints){
+      $("descTitle").textContent = it.title || "練習項目";
+      $("descBox").textContent = it.coachingPoints;
+    }
+    toast("「" + (it.title || "項目") + "」をボードに読み込みました");
+  } catch(e){ toast("読み込みに失敗しました", true); }
+}
+
+/* ---------- 項目 追加/編集モーダル ---------- */
+let miEditIdx = -1;             // -1=新規追加、>=0=既存編集
+let miPendingBoards = null;     // 新規追加時にキャプチャした盤面
+const miMask = $("miMask");
+function openItemModal(idx){
+  miEditIdx = (typeof idx === "number") ? idx : -1;
+  if (miEditIdx >= 0){
+    const it = curMenu().items[miEditIdx];
+    $("miModalTitle").innerHTML = "&#9998; 練習項目を編集";
+    $("miTitle").value = it.title || "";
+    $("miKind").value = it.kind || "drill";
+    $("miMin").value = it.minutes != null ? it.minutes : 10;
+    $("miCoach").value = it.coachingPoints || "";
+    $("miEquip").value = it.equipment || "";
+    miPendingBoards = null;
+    $("miBoardSummary").textContent = (VIEWS[it.activeView] ? VIEWS[it.activeView].label : "8人制") + "・" + boardsSummary(it.boards) + "（この項目の盤面を保持）";
+  } else {
+    // 新規: 現在の盤面をキャプチャ
+    normalizeBoardArrows(board());
+    miPendingBoards = snapshotBoards();
+    $("miModalTitle").innerHTML = "&#10133; 練習メニューに追加";
+    $("miTitle").value = "";
+    $("miKind").value = "drill";
+    $("miMin").value = 10;
+    $("miCoach").value = "";
+    $("miEquip").value = "";
+    $("miBoardSummary").textContent = "現在の盤面（" + VIEWS[view].label + "）・" + boardsSummary(miPendingBoards);
+  }
+  miMask.classList.add("on");
+  setTimeout(() => $("miTitle").focus(), 30);
+}
+function closeItemModal(){ miMask.classList.remove("on"); miPendingBoards = null; }
+function saveItemModal(){
+  const title = ($("miTitle").value || "").trim();
+  let mins = parseInt($("miMin").value, 10); if (!isFinite(mins) || mins < 0) mins = 0; mins = Math.min(180, mins);
+  const kind = $("miKind").value;
+  const coachingPoints = ($("miCoach").value || "").slice(0, 800);
+  const equipment = ($("miEquip").value || "").slice(0, 300);
+  const menu = curMenu();
+  if (miEditIdx >= 0){
+    const it = menu.items[miEditIdx]; if (!it){ closeItemModal(); return; }
+    it.title = title || it.title || "無題の項目";
+    it.kind = kind; it.minutes = mins; it.coachingPoints = coachingPoints; it.equipment = equipment;
+    commitCurMenu(menu); renderMenu(); closeItemModal(); toast("項目を更新しました");
+  } else {
+    const item = { title: title || (VIEWS[view].label + " 盤面"), kind, minutes: mins,
+      coachingPoints, equipment, activeView: view, boards: miPendingBoards || snapshotBoards() };
+    menu.items.push(item); commitCurMenu(menu); renderMenu(); closeItemModal();
+    toast("「" + item.title + "」をメニューに追加しました");
+  }
+}
+$("menuAddBtn").addEventListener("click", () => openItemModal(-1));
+$("miCancel").addEventListener("click", closeItemModal);
+$("miSave").addEventListener("click", saveItemModal);
+miMask.addEventListener("mousedown", e => { if (e.target === miMask) closeItemModal(); });
+
+/* ---------- メニュー切替 / 新規 / 名称 / 削除 ---------- */
+$("menuSel").addEventListener("change", e => { setCurIdx(+e.target.value || 0); renderMenu(); });
+$("menuNewBtn").addEventListener("click", () => {
+  const menus = loadMenus();
+  const nm = (prompt("新しい練習メニューの名前", "練習メニュー " + (menus.length + 1)) || "").trim();
+  if (nm === null) return;
+  menus.push(blankMenu(nm || ("練習メニュー " + (menus.length + 1))));
+  saveMenus(menus); setCurIdx(menus.length - 1); renderMenu(); toast("練習メニューを作成しました");
+});
+$("menuName").addEventListener("input", () => {
+  const menu = curMenu(); menu.name = ($("menuName").value || "").slice(0, 48); commitCurMenu(menu); renderMenuSelect();
+});
+$("menuDelBtn").addEventListener("click", () => {
+  const { menus, idx } = ensureMenus();
+  if (menus.length <= 1){
+    if (!confirm("このメニューの内容をすべて空にしますか？")) return;
+    menus[0] = blankMenu("わたしの練習メニュー"); saveMenus(menus); setCurIdx(0); renderMenu(); toast("メニューを空にしました");
+    return;
+  }
+  if (!confirm("メニュー「" + (menus[idx].name || "") + "」を削除しますか？")) return;
+  menus.splice(idx, 1); saveMenus(menus); setCurIdx(Math.max(0, idx - 1)); renderMenu(); toast("メニューを削除しました");
+});
+
+/* ============================================================
+   共有: JSON → 辞書置換で短縮 → UTF-8安全base64url
+   外部ライブラリ禁止のため自前実装。復元は不正データで落ちない。
+============================================================ */
+/* URL長を抑えるための繰り返しキー辞書(前後で対応)。値はURLに出にくい記号を使用 */
+const SHARE_DICT = [
+  ['"players"','"§p"'],['"arrows"','"§a"'],['"annotations"','"§n"'],
+  ['"boards"','"§b"'],['"activeView"','"§v"'],['"eight"','"§8"'],['"corner"','"§c"'],['"throwin"','"§t"'],
+  ['"team"','"§T"'],['"kind"','"§k"'],['"step"','"§s"'],['"delay"','"§d"'],['"trigger"','"§g"'],
+  ['"shape"','"§h"'],['"color"','"§o"'],['"label"','"§l"'],['"text"','"§x"'],['"name"','"§m"'],
+  ['"type"','"§y"'],['"items"','"§i"'],['"minutes"','"§M"'],['"coachingPoints"','"§C"'],
+  ['"equipment"','"§e"'],['"title"','"§L"'],['"version"','"§V"'],
+  ['"soccer-studio-menu"','"§SM"'],['"tactics-board"','"§TB"'],
+  ['"atk"','"§A"'],['"def"','"§D"'],['"ball"','"§B"'],
+  ['"move"','"§mv"'],['"pass"','"§ps"'],['"dribble"','"§db"'],['"comment"','"§cm"'],['"zone"','"§zn"']
+];
+function dictPack(json){ let s = json; for (const [a, b] of SHARE_DICT) s = s.split(a).join(b); return s; }
+function dictUnpack(s){ let json = s; for (const [a, b] of SHARE_DICT) json = json.split(b).join(a); return json; }
+/* UTF-8 → base64url */
+function b64urlEncode(str){
+  const b64 = btoa(unescape(encodeURIComponent(str)));
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlDecode(s){
+  let b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4) b64 += "=";
+  return decodeURIComponent(escape(atob(b64)));
+}
+function encodeShare(obj){ return b64urlEncode(dictPack(JSON.stringify(obj))); }
+function decodeShare(code){ return JSON.parse(dictUnpack(b64urlDecode(code))); }
+
+/* 共有スコープ(現在の盤面 / 練習メニュー) */
+let shareScope = "board";
+document.querySelectorAll("#shareScope button").forEach(b => {
+  b.addEventListener("click", () => {
+    shareScope = b.dataset.scope;
+    document.querySelectorAll("#shareScope button").forEach(x => x.classList.toggle("on", x === b));
+  });
+});
+/* 共有するデータを作る */
+function buildSharePayload(){
+  if (shareScope === "menu"){
+    const menu = curMenu();
+    if (!menu.items.length){ toast("メニューに項目がありません", true); return null; }
+    return { app:"soccer-studio-menu", version:1, name: menu.name || "練習メニュー", items: menu.items };
+  }
+  normalizeBoardArrows(board());
+  return { app:"tactics-board", version:1, activeView: view, boards: snapshotBoards() };
+}
+/* リンクをコピー */
+$("shareLinkBtn").addEventListener("click", async () => {
+  const payload = buildSharePayload(); if (!payload) return;
+  let code; try { code = encodeShare(payload); } catch(e){ toast("リンク生成に失敗しました", true); return; }
+  const base = location.href.split("#")[0];
+  const url = base + "#data=" + code;
+  if (url.length > 8000){
+    toast("データが大きすぎてリンクにできません。ファイル共有をお使いください", true);
+    return;
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(url); }
+    else { const ta = document.createElement("textarea"); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+    toast("🔗 共有リンクをコピーしました（" + (shareScope === "menu" ? "練習メニュー" : "盤面") + "・" + url.length + "字）");
+  } catch(e){
+    prompt("下のリンクをコピーして共有してください", url);
+  }
+});
+/* ファイル書出 */
+$("shareFileBtn").addEventListener("click", () => {
+  const payload = buildSharePayload(); if (!payload) return;
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+  const fname = shareScope === "menu"
+    ? ("練習メニュー_" + (payload.name || "menu").replace(/[\\/:*?"<>|]/g, "_")).slice(0, 40) + ".json"
+    : ("盤面_" + VIEWS[view].label + ".json");
+  downloadFile(fname, URL.createObjectURL(blob));
+  toast("ファイルを書き出しました（LINE・メールで送れます）");
+});
+/* ファイル読込 */
+$("shareImportBtn").addEventListener("click", () => $("shareImportFile").click());
+$("shareImportFile").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { importSharedData(JSON.parse(r.result)); }
+    catch(err){ toast("読み込みに失敗しました（形式が不正です）", true); }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+});
+
+/* 形式を自動判別して取り込む(単一盤面 / 練習メニュー / tactics-board互換) */
+function importSharedData(d){
+  if (!d || typeof d !== "object") throw new Error("bad");
+  if (d.app === "soccer-studio-menu" || (Array.isArray(d.items) && !d.boards)){
+    const menu = normalizeMenu(d);
+    const menus = loadMenus();
+    menus.push(menu); saveMenus(menus); setCurIdx(menus.length - 1);
+    renderMenu();
+    toast("練習メニュー「" + menu.name + "」を読み込みました（" + menu.items.length + "項目）");
+    // 先頭項目をボードにも反映して確認しやすく
+    if (menu.items.length){ try { loadBoardData({ boards: menu.items[0].boards, activeView: menu.items[0].activeView }, true); } catch(e){} }
+    return "menu";
+  }
+  // 単一盤面(soccer-studio / tactics-board 互換)
+  loadBoardData(d, true);
+  toast("盤面を読み込みました");
+  return "board";
+}
+
+/* ---------- 起動時: URLハッシュ #data= があれば復元 ---------- */
+function tryLoadFromHash(){
+  const h = location.hash || "";
+  const m = /[#&]data=([^&]+)/.exec(h);
+  if (!m) return;
+  let obj;
+  try { obj = decodeShare(m[1]); }
+  catch(e){ toast("共有リンクのデータを復元できませんでした", true); return; }
+  try {
+    const kind = importSharedData(obj);
+    setTimeout(() => toast(kind === "menu" ? "共有された練習メニューを開きました" : "共有された盤面を開きました"), 400);
+  } catch(e){ toast("共有データの形式が不正です", true); }
+  // 復元後はハッシュを消してリロード時の再適用/長いURL残留を防ぐ
+  try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
+}
+
 /* ---------- ボード初期化 ---------- */
 buildPresetList();
 renderLib();
+renderMenu();
+tryLoadFromHash();
 renderPhaseChips();
 refreshTimeline();
 /* レイアウト確定前だとcanvasが既定サイズ(300x150)に取り残されるため、
