@@ -157,6 +157,77 @@
   #nameToggleWrap{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--sub);cursor:pointer;user-select:none;}
   #nameToggleWrap input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
 
+  /* ---------- フェーズセレクタ(ツールバー) ---------- */
+  #phaseWrap{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  #phaseWrap .pw-lbl{font-size:11.5px;color:var(--sub);}
+  .phchip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:14px;
+    padding:5px 11px;font-size:12px;cursor:pointer;line-height:1;font-family:inherit;display:inline-flex;align-items:center;gap:5px;}
+  .phchip .pd{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .phchip.on{border-color:var(--gold);color:#ffe9a8;background:rgba(240,198,73,.12);font-weight:700;}
+  #phaseAdd{background:var(--panel);border:1px dashed var(--line);color:var(--sub);border-radius:14px;
+    padding:5px 10px;font-size:13px;cursor:pointer;line-height:1;font-family:inherit;}
+  #phaseAdd:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---------- 矢印プロパティパネル ---------- */
+  #arrowProp{position:absolute;z-index:42;display:none;flex-direction:column;gap:9px;
+    background:rgba(16,22,30,.98);border:1px solid var(--line);border-radius:12px;padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.6);width:236px;backdrop-filter:blur(5px);}
+  #arrowProp.on{display:flex;}
+  #arrowProp .ap-ttl{font-size:12px;color:var(--gold);font-weight:700;display:flex;align-items:center;gap:7px;}
+  #arrowProp .ap-ttl .ap-kind{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:11px;color:var(--txt);}
+  #arrowProp label{font-size:11px;color:var(--sub);display:block;margin-bottom:3px;}
+  #arrowProp .ap-field{display:block;}
+  #arrowProp select,#arrowProp input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--line);
+    color:var(--txt);border-radius:7px;padding:6px 8px;font-size:13px;font-family:inherit;}
+  #arrowProp input[type=number]{width:76px;}
+  #arrowProp .ap-row{display:flex;gap:8px;align-items:flex-end;}
+  #arrowProp .ap-hint{font-size:10.5px;color:var(--sub);line-height:1.5;}
+  #arrowProp .ap-foot{display:flex;gap:6px;}
+  #arrowProp .ap-foot button{flex:1;border:1px solid var(--line);border-radius:7px;padding:6px 0;font-size:12px;
+    cursor:pointer;font-family:inherit;background:var(--panel2);color:var(--txt);}
+  #arrowProp .ap-del{color:#ff9d9d !important;}
+  #arrowProp .ap-close{background:#0e3b23 !important;border-color:var(--accent) !important;color:var(--accent) !important;font-weight:700;}
+
+  /* ---------- タイムライン(動画編集風) ---------- */
+  #timeline{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:11px 12px 12px;}
+  #timeline.hidden{display:none;}
+  .tl-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;}
+  .tl-head h2{font-size:12.5px;color:var(--accent);letter-spacing:.04em;margin:0;}
+  .tl-head .tl-spacer{flex:1;}
+  .tlbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:6px 11px;font-size:12.5px;cursor:pointer;line-height:1;font-family:inherit;}
+  .tlbtn:hover{border-color:rgba(255,255,255,.28);}
+  .tlbtn.play{color:var(--gold);border-color:rgba(240,198,73,.5);min-width:40px;text-align:center;font-size:14px;}
+  #tlTime{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;min-width:82px;text-align:center;}
+  #tlBody{position:relative;overflow-x:auto;overflow-y:hidden;}
+  #tlGrid{position:relative;min-width:100%;}
+  .tl-rulerrow{display:flex;height:20px;position:relative;border-bottom:1px solid var(--line);margin-bottom:4px;}
+  .tl-rulerrow .tl-labgap{width:var(--tl-labw,74px);flex-shrink:0;}
+  .tl-ruler{position:relative;flex:1;height:20px;}
+  .tl-tick{position:absolute;top:0;height:20px;border-left:1px solid rgba(255,255,255,.14);
+    font-size:9px;color:var(--sub);padding-left:3px;line-height:20px;}
+  .tl-row{display:flex;align-items:center;height:30px;margin-bottom:4px;}
+  .tl-row .tl-lab{width:var(--tl-labw,74px);flex-shrink:0;font-size:11px;color:var(--txt);
+    display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-right:6px;}
+  .tl-row .tl-lab .tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;font-size:8px;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;}
+  .tl-track{position:relative;flex:1;height:28px;background:var(--panel2);border-radius:6px;overflow:hidden;}
+  .tl-block{position:absolute;top:3px;height:22px;border-radius:5px;cursor:grab;
+    display:flex;align-items:center;justify-content:center;font-size:10px;color:#111;font-weight:700;
+    box-shadow:0 1px 3px rgba(0,0,0,.4);border:1px solid rgba(0,0,0,.25);overflow:hidden;user-select:none;white-space:nowrap;}
+  .tl-block.dragging{cursor:grabbing;opacity:.9;z-index:5;}
+  .tl-block .tl-handle{position:absolute;top:0;width:8px;height:100%;cursor:ew-resize;}
+  .tl-block .tl-handle.l{left:0;} .tl-block .tl-handle.r{right:0;}
+  .tl-block.sel{outline:2px solid #fff;outline-offset:-1px;}
+  .tl-block.k-move{background:#f0c649;} .tl-block.k-dribble{background:#ff8c42;}
+  .tl-block.k-pass{background:#e8edf2;color:#111;background-image:repeating-linear-gradient(90deg,#e8edf2 0 6px,#b9c2cf 6px 10px);}
+  #tlPlayhead{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:8;pointer-events:none;
+    left:var(--tl-labw,74px);}
+  #tlPlayhead::before{content:"";position:absolute;top:-2px;left:-4px;border:5px solid transparent;border-top-color:var(--red);}
+  #tlScrub{position:absolute;top:0;bottom:0;left:var(--tl-labw,74px);right:0;cursor:pointer;z-index:6;}
+  .tl-empty{font-size:11.5px;color:var(--sub);text-align:center;padding:14px 8px;}
+
   /* 遊び心(ボード) */
   .cheer{position:absolute;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);
     pointer-events:none;user-select:none;z-index:6;opacity:0;animation:cheerUp 1.6s ease-out forwards;}
@@ -342,8 +413,35 @@
         <div class="sep"></div>
         <button class="tbtn" id="bulkNameBtn">&#128100; 選手名をまとめて入力</button>
         <label id="nameToggleWrap" title="名札の表示ON/OFF"><input type="checkbox" id="nameToggle" checked>名札表示</label>
+        <div class="sep"></div>
+        <div id="phaseWrap" title="矢印を描くフェーズ。フェーズ順に再生されます">
+          <span class="pw-lbl">&#9201;&#65039; フェーズ:</span>
+          <span id="phaseChips"></span>
+          <button id="phaseAdd" title="フェーズを追加">＋</button>
+        </div>
       </div>
       <div id="boardBox"><canvas id="cv"></canvas>
+        <!-- 矢印プロパティ(このフェーズで開始/遅延/トリガー) -->
+        <div id="arrowProp">
+          <div class="ap-ttl"><span>&#8674; この動きの設定</span><span class="ap-kind" id="apKind"></span></div>
+          <div class="ap-field">
+            <label>開始フェーズ</label>
+            <select id="apPhase"></select>
+          </div>
+          <div class="ap-field">
+            <label>連動トリガー（この動きの完了で開始）</label>
+            <select id="apTrigger"></select>
+          </div>
+          <div class="ap-field">
+            <label>遅延（秒）— トリガー／フェーズ開始からの遅れ</label>
+            <input type="number" id="apDelay" min="0" max="10" step="0.1" value="0">
+          </div>
+          <div class="ap-hint" id="apHint"></div>
+          <div class="ap-foot">
+            <button class="ap-del" id="apDel">&#128465; 削除</button>
+            <button class="ap-close" id="apClose">OK</button>
+          </div>
+        </div>
         <div id="namePop">
           <div class="np-ttl"><span class="np-badge" id="npBadge">#</span><span id="npKind">選手名を入力</span></div>
           <input type="text" id="npInput" maxlength="14" placeholder="なまえ（絵文字OK）" autocomplete="off">
@@ -360,6 +458,24 @@
         <span><i class="lin" style="border-color:#f0c649"></i>移動</span>
         <span><i class="lin" style="border-color:#fff;border-top-style:dashed"></i>パス</span>
         <span><i class="lin" style="border-color:#ff8c42"></i>ドリブル</span>
+      </div>
+      <!-- ============ タイムライン(動きの順序・タイミング) ============ -->
+      <div id="timeline" class="hidden">
+        <div class="tl-head">
+          <button class="tlbtn play" id="tlPlay" title="再生 / 一時停止">&#9654;</button>
+          <button class="tlbtn" id="tlRestart" title="最初から">&#8635;</button>
+          <span id="tlTime">0.0 / 0.0s</span>
+          <div class="tl-spacer"></div>
+          <h2>&#127916; 動きのタイムライン</h2>
+        </div>
+        <div id="tlBody">
+          <div id="tlGrid">
+            <div class="tl-rulerrow"><span class="tl-labgap"></span><div class="tl-ruler" id="tlRuler"></div></div>
+            <div id="tlRows"></div>
+            <div id="tlPlayhead"></div>
+            <div id="tlScrub"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="side">
@@ -651,21 +767,121 @@ function drawEightPitch(){
   for (const c of cs){ ctx.beginPath(); ctx.arc(m2x(c[0]), m2y(c[1]), 0.8 * scaleB, c[2], c[3]); ctx.stroke(); }
 }
 
+/* ============================================================
+   タイムライン: 矢印にフェーズ(step)・遅延(delay)・トリガー(trigger)を付与
+   ・step   : フェーズ番号(1,2,3…既定1)。フェーズ順に再生
+   ・delay  : フェーズ開始/トリガー完了からの遅延秒(既定0)
+   ・trigger: 別矢印のid。その動きの完了時刻を起点に開始(既定null)
+   後方互換: これらが無い旧データも normalizeArrow で補完
+============================================================ */
+let currentPhase = 1;             // 矢印を描くときの入力フェーズ
+let selectedArrow = null;         // プロパティ編集中の矢印
+let arrowIdSeq = 1;
+function newArrowId(){ return "a" + (arrowIdSeq++) + "_" + Math.random().toString(36).slice(2, 7); }
+/* 矢印1つに必須フィールドを保証(既存値は尊重) */
+function normalizeArrow(a){
+  if (!a.id) a.id = newArrowId();
+  if (!(a.step >= 1)) a.step = 1;
+  a.step = Math.max(1, Math.round(a.step));
+  if (typeof a.delay !== "number" || !isFinite(a.delay) || a.delay < 0) a.delay = 0;
+  if (a.trigger === undefined) a.trigger = null;
+  return a;
+}
+/* 盤面の全矢印を正規化し、id重複やid採番を安定させる */
+function normalizeBoardArrows(b){
+  const seen = new Set();
+  for (const a of b.arrows){
+    normalizeArrow(a);
+    if (seen.has(a.id)) a.id = newArrowId();
+    seen.add(a.id);
+    // id連番の最大値を採番シードに反映(数字部分)
+    const m = /^a(\d+)_/.exec(a.id); if (m && +m[1] >= arrowIdSeq) arrowIdSeq = +m[1] + 1;
+  }
+  // トリガー参照切れは解除
+  for (const a of b.arrows){ if (a.trigger && !seen.has(a.trigger)) a.trigger = null; }
+}
+/* このビューで使われている最大フェーズ番号 */
+function maxPhase(){ let mx = 1; for (const a of board().arrows) if (a.step > mx) mx = a.step; return Math.max(mx, currentPhase); }
+/* 矢印の想定所要時間(秒)。長さ由来。パスは速く、ドリブルはやや遅く */
+function arrowDur(a){
+  const len = Math.hypot(a.x2 - a.x1, a.y2 - a.y1);
+  const spd = a.kind === "pass" ? 16 : (a.kind === "dribble" ? 6 : 8); // m/s目安
+  return Math.max(0.45, Math.min(3.2, len / spd));
+}
+/* ---------- スケジューラ: 各矢印の絶対開始時刻 startAt を解決 ----------
+   返り値: { map:Map(id→{arrow,startAt,dur,endAt,step}), total, phaseStart:{step→time} }
+   ルール:
+   ・フェーズは番号順に連続再生。フェーズNの開始時刻 = フェーズN-1内の全動作の最大終了時刻
+   ・トリガー指定があれば「そのトリガー矢印の終了時刻 + delay」を開始とする(フェーズ開始より優先)
+   ・トリガーが無ければ「所属フェーズの開始時刻 + delay」
+   ・循環トリガーは無視(フェーズ基準にフォールバック)
+============================================================ */
+function buildSchedule(arrows){
+  const list = arrows.map(a => (normalizeArrow(a), a));
+  const byId = new Map(list.map(a => [a.id, a]));
+  const info = new Map();
+  for (const a of list) info.set(a.id, { arrow:a, dur:arrowDur(a), startAt:null, endAt:null, step:a.step });
+  const phases = [...new Set(list.map(a => a.step))].sort((x, y) => x - y);
+  const phaseStart = {};
+  let cursor = 0;
+  const resolving = new Set();
+  // トリガーを辿って開始時刻を求める(メモ化 + 循環検出)
+  function resolveStart(a){
+    const it = info.get(a.id);
+    if (it.startAt !== null) return it.startAt;
+    let base;
+    if (a.trigger && byId.has(a.trigger) && !resolving.has(a.id)){
+      resolving.add(a.id);
+      const tg = byId.get(a.trigger);
+      const tgStart = resolveStart(tg);
+      resolving.delete(a.id);
+      base = tgStart + info.get(tg.id).dur;
+    } else {
+      base = phaseStart[a.step];
+    }
+    it.startAt = base + (a.delay || 0);
+    it.endAt = it.startAt + it.dur;
+    return it.startAt;
+  }
+  for (const ph of phases){
+    phaseStart[ph] = cursor;
+    // フェーズ内の全矢印を解決(トリガーはフェーズをまたいで参照されうるが上で解決済み扱い)
+    let phEnd = cursor;
+    for (const a of list){ if (a.step !== ph) continue; resolveStart(a); phEnd = Math.max(phEnd, info.get(a.id).endAt); }
+    cursor = phEnd + (ph !== phases[phases.length - 1] ? 0.25 : 0); // フェーズ間に小休止
+  }
+  let total = 0;
+  for (const it of info.values()) total = Math.max(total, it.endAt || 0);
+  return { map:info, total:Math.max(total, 0.5), phaseStart };
+}
+
 /* ---------- 矢印 & マーカー ---------- */
 const ARROW_STYLE = {
   move:    { color:"#f0c649", dash:[] },
   pass:    { color:"#ffffff", dash:[9, 7] },
   dribble: { color:"#ff8c42", dash:[] }
 };
+/* フェーズごとの色相調整(明度)。フェーズが進むほど少し暗く/彩度変化させ区別 */
+const PHASE_TINT = ["#ffffff", "#d8ffe0", "#ffe9b0", "#ffcfa8", "#e6c8ff", "#bfe0ff"];
+function phaseColor(base, step){
+  // baseに phase の色味を薄く混ぜる(番号ラベルで主に区別するので控えめ)
+  return base;
+}
 function drawArrowB(a, ghost){
   const st = ARROW_STYLE[a.kind];
   const x1 = m2x(a.x1), y1 = m2y(a.y1), x2 = m2x(a.x2), y2 = m2y(a.y2);
   const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
   if (len < 4) return;
   const ang = Math.atan2(dy, dx);
-  ctx.save(); ctx.globalAlpha = ghost ? 0.55 : 1;
+  const step = a.step >= 1 ? a.step : 1;
+  const isSel = !ghost && selectedArrow === a;
+  ctx.save();
+  // フェーズが進むほど僅かに透過を上げて奥行きを出す(先のフェーズほど薄い)
+  const phaseAlpha = ghost ? 0.55 : Math.max(0.62, 1 - (step - 1) * 0.13);
+  ctx.globalAlpha = phaseAlpha;
   ctx.strokeStyle = st.color; ctx.fillStyle = st.color;
   ctx.lineWidth = Math.max(2.2, scaleB * 0.22); ctx.lineCap = "round";
+  if (isSel){ ctx.shadowColor = "rgba(255,255,255,.9)"; ctx.shadowBlur = 10; ctx.lineWidth = Math.max(3, scaleB * 0.3); }
   const head = Math.max(9, scaleB * 0.9);
   const ex = x2 - Math.cos(ang) * head * 0.75, ey = y2 - Math.sin(ang) * head * 0.75;
   ctx.setLineDash(st.dash);
@@ -681,11 +897,26 @@ function drawArrowB(a, ghost){
     }
     ctx.stroke();
   } else { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(ex, ey); ctx.stroke(); }
-  ctx.setLineDash([]);
+  ctx.setLineDash([]); ctx.shadowColor = "transparent";
   ctx.beginPath(); ctx.moveTo(x2, y2);
   ctx.lineTo(x2 - Math.cos(ang - 0.42) * head, y2 - Math.sin(ang - 0.42) * head);
   ctx.lineTo(x2 - Math.cos(ang + 0.42) * head, y2 - Math.sin(ang + 0.42) * head);
-  ctx.closePath(); ctx.fill(); ctx.restore();
+  ctx.closePath(); ctx.fill();
+  // フェーズ番号ラベル(起点付近の丸バッジ)。トリガー付きは⚡マーク
+  if (!ghost){
+    ctx.globalAlpha = 1;
+    const bx = x1 + Math.cos(ang) * head * 0.9 + Math.cos(ang + Math.PI / 2) * 0;
+    const by = y1 + Math.sin(ang) * head * 0.9;
+    const br = Math.max(7.5, scaleB * 0.62);
+    ctx.beginPath(); ctx.arc(x1, y1, br, 0, Math.PI * 2);
+    ctx.fillStyle = a.trigger ? "#a77bf0" : (isSel ? "#fff" : "rgba(10,14,20,.9)");
+    ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = st.color; ctx.stroke();
+    ctx.fillStyle = a.trigger ? "#fff" : (isSel ? "#0a0e14" : "#fff");
+    ctx.font = "700 " + Math.round(br * 1.15) + "px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(a.trigger ? "⚡" : String(step), x1, y1 + 0.5);
+  }
+  ctx.restore();
 }
 function markerR(){ return Math.max(11, Math.min(16, scaleB * 1.05)); }
 let nameLabelsOn = true;
@@ -773,7 +1004,16 @@ function eraseAt(mx, my){
   const p = hitPlayer(mx, my);
   if (p){ board().players.splice(board().players.indexOf(p), 1); drawBoard(); return; }
   const a = hitArrow(mx, my);
-  if (a){ board().arrows.splice(board().arrows.indexOf(a), 1); drawBoard(); }
+  if (a){ removeArrow(a); }
+}
+/* 矢印を削除し、それをトリガーにしていた矢印の参照を外す */
+function removeArrow(a){
+  const arr = board().arrows, idx = arr.indexOf(a);
+  if (idx < 0) return;
+  arr.splice(idx, 1);
+  for (const b of arr) if (b.trigger === a.id) b.trigger = null;
+  if (selectedArrow === a) closeArrowProp();
+  refreshTimeline(); drawBoard();
 }
 function deletePlayerAt(mx, my){
   const p = hitPlayer(mx, my);
@@ -786,10 +1026,16 @@ function pointerDown(e){
   if (tool === "erase"){ eraseAt(m.x, m.y); dragP = "erasing"; return; }
   if (tool === "move" || tool === "pass" || tool === "dribble"){ tempArrow = { kind:tool, x1:m.x, y1:m.y, x2:m.x, y2:m.y }; return; }
   const hit = hitPlayer(m.x, m.y);
-  if (hit){ dragP = hit; return; }
+  if (hit){ dragP = hit; closeArrowProp(); return; }
   if (tool === "atk" || tool === "def" || tool === "ball"){
     const p = { team:tool, x:m.x, y:m.y, num: tool === "ball" ? 0 : nextNum(tool), name:"" };
-    board().players.push(p); dragP = p; clearPresetSel(); drawBoard();
+    board().players.push(p); dragP = p; clearPresetSel(); drawBoard(); return;
+  }
+  // 選択ツール: 矢印をタップでプロパティパネルを開く
+  if (tool === "select"){
+    const a = hitArrow(m.x, m.y);
+    if (a){ openArrowProp(a); return; }
+    closeArrowProp();
   }
 }
 function pointerMove(e){
@@ -806,7 +1052,11 @@ function pointerMove(e){
 function pointerUp(){
   if (tempArrow){
     const len = Math.hypot(tempArrow.x2 - tempArrow.x1, tempArrow.y2 - tempArrow.y1);
-    if (len > 1.2){ board().arrows.push(tempArrow); clearPresetSel(); }
+    if (len > 1.2){
+      tempArrow.step = currentPhase; tempArrow.delay = 0; tempArrow.trigger = null;
+      normalizeArrow(tempArrow);
+      board().arrows.push(tempArrow); clearPresetSel(); refreshTimeline();
+    }
     tempArrow = null; drawBoard();
   }
   dragP = null;
@@ -871,6 +1121,352 @@ document.addEventListener("mousedown", e => {
 });
 $("nameToggle").addEventListener("change", e => { nameLabelsOn = e.target.checked; drawBoard(); });
 
+/* ============================================================
+   フェーズセレクタ(ツールバー)
+============================================================ */
+const PHASE_LBL_COLORS = ["#4ade80", "#f0c649", "#ff8c42", "#a77bf0", "#3e7bfa", "#e5484d"];
+function phaseChipColor(step){ return PHASE_LBL_COLORS[(step - 1) % PHASE_LBL_COLORS.length]; }
+function renderPhaseChips(){
+  const box = $("phaseChips"); if (!box) return;
+  box.innerHTML = "";
+  const mx = maxPhase();
+  for (let i = 1; i <= mx; i++){
+    const b = document.createElement("button");
+    b.className = "phchip" + (i === currentPhase ? " on" : "");
+    const dot = document.createElement("span"); dot.className = "pd"; dot.style.background = phaseChipColor(i);
+    b.appendChild(dot);
+    b.appendChild(document.createTextNode("フェーズ" + i));
+    b.addEventListener("click", () => { currentPhase = i; renderPhaseChips(); });
+    box.appendChild(b);
+  }
+}
+$("phaseAdd").addEventListener("click", () => {
+  if (animating) return;
+  currentPhase = maxPhase() + 1;
+  renderPhaseChips();
+  toast("フェーズ" + currentPhase + "を選択中。矢印を描くとこのフェーズに入ります");
+});
+
+/* ============================================================
+   矢印プロパティパネル(開始フェーズ / トリガー / 遅延)
+============================================================ */
+const arrowProp = $("arrowProp");
+const KIND_JP = { move:"移動", pass:"パス", dribble:"ドリブル" };
+function arrowShortLabel(a){
+  const owner = arrowOwnerLabel(a);
+  return KIND_JP[a.kind] + (owner ? "（" + owner + "）" : "");
+}
+/* 矢印の起点に最も近い選手/ボールの表示名を返す(タイムラインやトリガー選択用) */
+function arrowOwnerLabel(a){
+  const owner = arrowOwner(a);
+  if (!owner) return "";
+  if (owner.team === "ball") return "ボール";
+  const tag = owner.team === "atk" ? "攻" : "守";
+  return tag + (owner.name ? owner.name : "#" + owner.num);
+}
+function arrowOwner(a){
+  const ps = board().players; let best = null, bd = 3.4;
+  for (const p of ps){
+    if (a.kind === "pass" && p.team !== "ball") continue;
+    if (a.kind !== "pass" && p.team === "ball") continue;
+    const d = Math.hypot(p.x - a.x1, p.y - a.y1);
+    if (d < bd){ bd = d; best = p; }
+  }
+  // パスで近傍にボールが無ければ最寄りの攻撃選手を持ち主とみなす
+  if (!best && a.kind === "pass"){ bd = 4; for (const p of ps){ if (p.team === "ball") continue; const d = Math.hypot(p.x - a.x1, p.y - a.y1); if (d < bd){ bd = d; best = p; } } }
+  return best;
+}
+function openArrowProp(a){
+  normalizeArrow(a);
+  selectedArrow = a;
+  $("apKind").textContent = arrowShortLabel(a);
+  // フェーズ選択肢
+  const phSel = $("apPhase"); phSel.innerHTML = "";
+  const mx = maxPhase();
+  for (let i = 1; i <= mx + 1; i++){
+    const o = document.createElement("option"); o.value = i; o.textContent = "フェーズ" + i + (i > mx ? "（新規）" : "");
+    if (i === a.step) o.selected = true;
+    phSel.appendChild(o);
+  }
+  // トリガー選択肢(自分以外の矢印)
+  const tgSel = $("apTrigger"); tgSel.innerHTML = "";
+  const none = document.createElement("option"); none.value = ""; none.textContent = "なし（フェーズ順で開始）"; tgSel.appendChild(none);
+  for (const b of board().arrows){
+    if (b === a) continue;
+    const o = document.createElement("option"); o.value = b.id;
+    o.textContent = arrowShortLabel(b) + " [F" + b.step + "]";
+    if (a.trigger === b.id) o.selected = true;
+    tgSel.appendChild(o);
+  }
+  $("apDelay").value = a.delay || 0;
+  updateArrowPropHint();
+  // 配置(起点付近、はみ出し防止)
+  arrowProp.classList.add("on");
+  const bw = boardBox.clientWidth, bh = boardBox.clientHeight;
+  const pw = arrowProp.offsetWidth || 236, ph = arrowProp.offsetHeight || 220;
+  let px = m2x(a.x1) + 14, py = m2y(a.y1) + 14;
+  if (px + pw > bw) px = Math.max(4, m2x(a.x1) - pw - 14);
+  if (py + ph > bh) py = Math.max(4, bh - ph - 4);
+  arrowProp.style.left = Math.max(4, px) + "px";
+  arrowProp.style.top  = Math.max(4, py) + "px";
+  drawBoard();
+}
+function updateArrowPropHint(){
+  const a = selectedArrow; if (!a) return;
+  const trig = a.trigger ? board().arrows.find(b => b.id === a.trigger) : null;
+  let h;
+  if (trig){
+    h = "「" + arrowShortLabel(trig) + "」の完了" + (a.delay > 0 ? "から" + a.delay + "秒後" : "と同時") + "にこの動きが始まります。パス到達に合わせたい時に便利です。";
+  } else {
+    h = "フェーズ" + a.step + "の開始" + (a.delay > 0 ? "から" + a.delay + "秒後" : "と同時") + "に始まります。";
+  }
+  $("apHint").textContent = h;
+}
+$("apPhase").addEventListener("change", e => {
+  if (!selectedArrow) return;
+  selectedArrow.step = Math.max(1, +e.target.value || 1);
+  // フェーズ指定時はトリガーと排他(トリガーは維持しつつ、フェーズは基準になる)
+  renderPhaseChips(); updateArrowPropHint(); refreshTimeline(); drawBoard();
+});
+$("apTrigger").addEventListener("change", e => {
+  if (!selectedArrow) return;
+  const val = e.target.value || null;
+  // 循環を防ぐ: 選んだトリガーが自分に依存していないか簡易チェック
+  if (val && wouldCycle(selectedArrow.id, val)){ toast("その連動は循環するため設定できません", true); e.target.value = selectedArrow.trigger || ""; return; }
+  selectedArrow.trigger = val;
+  updateArrowPropHint(); refreshTimeline(); drawBoard();
+});
+$("apDelay").addEventListener("input", e => {
+  if (!selectedArrow) return;
+  let v = parseFloat(e.target.value); if (!isFinite(v) || v < 0) v = 0; if (v > 10) v = 10;
+  selectedArrow.delay = v;
+  updateArrowPropHint(); refreshTimeline();
+});
+$("apDel").addEventListener("click", () => { if (selectedArrow) removeArrow(selectedArrow); });
+$("apClose").addEventListener("click", closeArrowProp);
+function closeArrowProp(){ arrowProp.classList.remove("on"); if (selectedArrow){ selectedArrow = null; drawBoard(); } }
+/* トリガー循環検出: srcId が tgId を(直接/間接に)トリガーしていれば循環 */
+function wouldCycle(srcId, tgId){
+  const arr = board().arrows, byId = new Map(arr.map(a => [a.id, a]));
+  let cur = tgId, guard = 0;
+  while (cur && guard++ < 100){
+    if (cur === srcId) return true;
+    const a = byId.get(cur); cur = a ? a.trigger : null;
+  }
+  return false;
+}
+// 外クリックで閉じる
+document.addEventListener("mousedown", e => {
+  if (arrowProp.classList.contains("on") && !arrowProp.contains(e.target) && e.target !== cv) closeArrowProp();
+});
+
+/* ============================================================
+   タイムラインUI(動画編集風): 行=選手/ボール, ブロック=各動き
+============================================================ */
+const timelineEl = $("timeline");
+let tlState = { schedule:null, total:0, rows:[], playing:false, t:0, raf:0, prevMs:0 };
+const TL_LABW = 74;
+/* 現在ビューの矢印から行(owner別)を構築し schedule を計算 */
+function computeTimelineModel(){
+  const arrows = board().arrows;
+  const sched = buildSchedule(arrows);
+  // owner(選手/ボール)ごとに行を作る。ボールのパスはボール行に。
+  const rows = new Map(); // key -> {label, color, team, num, blocks:[]}
+  function rowKeyFor(a){
+    const owner = arrowOwner(a);
+    if (a.kind === "pass") return { key:"ball", label:"⚽ ボール", color:"#e8edf2", team:"ball" };
+    if (owner && owner.team !== "ball"){
+      const nm = owner.name ? owner.name : "#" + owner.num;
+      return { key: owner.team + "_" + owner.num, label:(owner.team === "atk" ? "🔴" : "🔵") + nm, color: owner.team === "atk" ? "#e5484d" : "#3e7bfa", team: owner.team, num: owner.num };
+    }
+    return { key:"other_" + a.id, label:KIND_JP[a.kind], color:"#93a0b8", team:"other" };
+  }
+  for (const a of arrows){
+    const rk = rowKeyFor(a);
+    if (!rows.has(rk.key)) rows.set(rk.key, { label:rk.label, color:rk.color, team:rk.team, num:rk.num, blocks:[] });
+    const it = sched.map.get(a.id);
+    rows.get(rk.key).blocks.push({ arrow:a, startAt:it.startAt, dur:it.dur, endAt:it.endAt });
+  }
+  tlState.schedule = sched; tlState.total = sched.total;
+  tlState.rows = [...rows.values()];
+}
+function refreshTimeline(){
+  computeTimelineModel();
+  const hasArrows = board().arrows.length > 0;
+  timelineEl.classList.toggle("hidden", !hasArrows);
+  if (!hasArrows){ tlStop(); return; }
+  renderTimeline();
+}
+function tlPxPerSec(){
+  const grid = $("tlGrid");
+  const w = (grid.clientWidth || boardBox.clientWidth || 640) - TL_LABW - 8;
+  return Math.max(24, w / Math.max(tlState.total, 1));
+}
+function renderTimeline(){
+  const rowsBox = $("tlRows"); rowsBox.innerHTML = "";
+  const pps = tlPxPerSec();
+  document.documentElement.style.setProperty("--tl-labw", TL_LABW + "px");
+  // ルーラー(目盛)
+  const ruler = $("tlRuler"); ruler.innerHTML = "";
+  const totalCeil = Math.ceil(tlState.total);
+  for (let s = 0; s <= totalCeil; s++){
+    const tick = document.createElement("span"); tick.className = "tl-tick";
+    tick.style.left = (s * pps) + "px"; tick.textContent = s + "s";
+    ruler.appendChild(tick);
+  }
+  if (!tlState.rows.length){
+    rowsBox.innerHTML = '<div class="tl-empty">矢印を描くと、動きがここに並びます。</div>';
+    return;
+  }
+  for (const row of tlState.rows){
+    const rowEl = document.createElement("div"); rowEl.className = "tl-row";
+    const lab = document.createElement("div"); lab.className = "tl-lab";
+    const dot = document.createElement("span"); dot.className = "tl-dot"; dot.style.background = row.color;
+    lab.appendChild(dot); lab.appendChild(document.createTextNode(row.label)); lab.title = row.label;
+    const track = document.createElement("div"); track.className = "tl-track";
+    for (const blk of row.blocks){
+      const el = document.createElement("div");
+      el.className = "tl-block k-" + blk.arrow.kind + (selectedArrow === blk.arrow ? " sel" : "");
+      el.style.left = (blk.startAt * pps) + "px";
+      el.style.width = Math.max(14, blk.dur * pps) + "px";
+      el.textContent = "F" + blk.arrow.step + (blk.arrow.trigger ? "⚡" : "");
+      el.title = arrowShortLabel(blk.arrow) + " / 開始" + blk.startAt.toFixed(1) + "s・長さ" + blk.dur.toFixed(1) + "s";
+      const hl = document.createElement("div"); hl.className = "tl-handle l"; el.appendChild(hl);
+      const hr = document.createElement("div"); hr.className = "tl-handle r"; el.appendChild(hr);
+      attachBlockDrag(el, blk, hl, hr, pps);
+      track.appendChild(el);
+    }
+    rowEl.appendChild(lab); rowEl.appendChild(track); rowsBox.appendChild(rowEl);
+  }
+  positionPlayhead();
+}
+/* ブロックのドラッグ(移動=開始タイミング / 端=長さ→スピード) */
+function attachBlockDrag(el, blk, hl, hr, pps){
+  let mode = null, startX = 0, origDelay = 0, origDur = 0;
+  const a = blk.arrow;
+  function down(e){
+    if (animating) return;
+    e.preventDefault(); e.stopPropagation();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+    startX = cx; origDelay = a.delay || 0; origDur = blk.dur;
+    if (e.target === hl) mode = "resizeL";
+    else if (e.target === hr) mode = "resizeR";
+    else mode = "move";
+    el.classList.add("dragging");
+    openArrowProp(a);
+    window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
+    window.addEventListener("touchmove", move, { passive:false }); window.addEventListener("touchend", up);
+  }
+  function move(e){
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+    const ddSec = (cx - startX) / pps;
+    if (mode === "move"){
+      let nd = Math.max(0, origDelay + ddSec);
+      a.delay = Math.round(nd * 10) / 10;
+    } else if (mode === "resizeR" || mode === "resizeL"){
+      // 長さ変更=スピード調整。dur→ arrow.speedScale で保持
+      let nDur = Math.max(0.3, origDur + (mode === "resizeR" ? ddSec : -ddSec));
+      a.speedScale = nDur / baseDur(a);
+    }
+    if (e.cancelable) e.preventDefault();
+    refreshTimelineLight();
+    if (selectedArrow === a){ $("apDelay").value = a.delay || 0; updateArrowPropHint(); }
+  }
+  function up(){
+    el.classList.remove("dragging"); mode = null;
+    window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up);
+    window.removeEventListener("touchmove", move); window.removeEventListener("touchend", up);
+    refreshTimeline();
+  }
+  el.addEventListener("mousedown", down);
+  el.addEventListener("touchstart", down, { passive:false });
+}
+/* speedScale を考慮した所要時間。arrowDur は基本値なので speedScale を掛ける */
+function baseDur(a){
+  const len = Math.hypot(a.x2 - a.x1, a.y2 - a.y1);
+  const spd = a.kind === "pass" ? 16 : (a.kind === "dribble" ? 6 : 8);
+  return Math.max(0.45, Math.min(3.2, len / spd));
+}
+/* ドラッグ中の軽量再描画(schedule再計算 + ブロック位置更新のみ) */
+function refreshTimelineLight(){
+  computeTimelineModel();
+  const pps = tlPxPerSec();
+  const rowEls = $("tlRows").querySelectorAll(".tl-row");
+  // 単純に作り直す(行数は不変)。パフォーマンス的に十分軽量
+  renderTimeline();
+}
+/* ---------- タイムライン再生ヘッド ---------- */
+function positionPlayhead(){
+  const pps = tlPxPerSec();
+  $("tlPlayhead").style.left = (TL_LABW + tlState.t * pps) + "px";
+  $("tlTime").textContent = tlState.t.toFixed(1) + " / " + tlState.total.toFixed(1) + "s";
+}
+/* スクラブ(クリック/ドラッグで任意時刻の配置を表示) */
+(function initScrub(){
+  const scrub = $("tlScrub");
+  let dragging = false;
+  function seekAt(clientX){
+    const grid = $("tlGrid"), rc = grid.getBoundingClientRect();
+    const pps = tlPxPerSec();
+    let t = (clientX - rc.left - TL_LABW + grid.scrollLeft) / pps;
+    t = Math.max(0, Math.min(tlState.total, t));
+    tlState.t = t; applyTimelineAt(t); positionPlayhead();
+  }
+  function down(e){ if (animating) return; dragging = true; if (!_tl2dBackup) tlBackup2d(); seekAt(e.touches ? e.touches[0].clientX : e.clientX); if (e.cancelable) e.preventDefault(); }
+  function move(e){ if (!dragging) return; seekAt(e.touches ? e.touches[0].clientX : e.clientX); if (e.cancelable) e.preventDefault(); }
+  function up(){ if (!dragging) return; dragging = false; if (tlState.t <= 0.02){ tlRestore2d(); } }
+  scrub.addEventListener("mousedown", down); window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
+  scrub.addEventListener("touchstart", down, { passive:false }); window.addEventListener("touchmove", move, { passive:false }); window.addEventListener("touchend", up);
+})();
+/* 任意時刻 t の選手/ボール配置を計算してボードに反映(プレビュー) */
+function applyTimelineAt(t){
+  const model = buildAnim2dModel();
+  for (const j of model.jobs){
+    const pos = sampleJob2d(j, t);
+    j.p.x = pos.x; j.p.y = pos.y;
+  }
+  if (model.ball){ const bp = sampleJob2d(model.ball, t); model.ball.p.x = bp.x; model.ball.p.y = bp.y; }
+  drawBoard();
+}
+/* ---------- タイムライン再生コントロール ---------- */
+function tlPlay(){
+  if (!board().arrows.length) return;
+  if (tlState.t >= tlState.total - 0.01) tlState.t = 0;
+  tlState.playing = true; $("tlPlay").innerHTML = "&#10074;&#10074;";
+  animating = true; $("playBtn2d").disabled = true;
+  if (!_tl2dBackup) tlBackup2d();
+  playCheer(1.6, 0.14); spawnCheers(6);
+  tlState.prevMs = performance.now();
+  cancelAnimationFrame(tlState.raf); tlState.raf = requestAnimationFrame(tlFrame);
+}
+function tlPause(){
+  tlState.playing = false; $("tlPlay").innerHTML = "&#9654;";
+  cancelAnimationFrame(tlState.raf);
+  animating = false; $("playBtn2d").disabled = false;
+}
+function tlStop(){ tlPause(); }
+function tlFrame(ms){
+  const dt = Math.min((ms - tlState.prevMs) / 1000, 0.05); tlState.prevMs = ms;
+  tlState.t += dt;
+  if (tlState.t >= tlState.total){
+    tlState.t = tlState.total; applyTimelineAt(tlState.t); positionPlayhead();
+    tlState.playing = false; $("tlPlay").innerHTML = "&#9654;";
+    if (ballInGoal()) golazo();
+    animating = false; $("playBtn2d").disabled = false;
+    // 少し見せてから元配置に戻す(編集状態を保つ)
+    setTimeout(() => { if (!tlState.playing){ tlRestore2d(); tlState.t = 0; positionPlayhead(); } }, 1000);
+    return;
+  }
+  applyTimelineAt(tlState.t); positionPlayhead();
+  tlState.raf = requestAnimationFrame(tlFrame);
+}
+let _tl2dBackup = null;
+function tlBackup2d(){ _tl2dBackup = board().players.map(p => ({ p, x:p.x, y:p.y })); }
+function tlRestore2d(){ if (_tl2dBackup){ for (const b of _tl2dBackup) { b.p.x = b.x; b.p.y = b.y; } _tl2dBackup = null; drawBoard(); } }
+$("tlPlay").addEventListener("click", () => { if (tlState.playing) tlPause(); else tlPlay(); });
+$("tlRestart").addEventListener("click", () => { tlPause(); tlRestore2d(); tlState.t = 0; applyTimelineAt(0); positionPlayhead(); tlPlay(); });
+window.addEventListener("resize", () => { if (currentScreen === "board" && !timelineEl.classList.contains("hidden")) renderTimeline(); });
+
 /* ---------- ツールバー / ビュータブ ---------- */
 document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
   b.addEventListener("click", () => {
@@ -881,6 +1477,7 @@ document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
 $("clearBtn").addEventListener("click", () => {
   if (animating) return;
   board().players = []; board().arrows = []; clearPresetSel();
+  currentPhase = 1; closeArrowProp(); renderPhaseChips(); refreshTimeline();
   setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
   drawBoard();
 });
@@ -890,6 +1487,7 @@ document.querySelectorAll("#bViews .vtab").forEach(t => {
     view = t.dataset.view;
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x === t));
     buildPresetList(); clearPresetSel();
+    currentPhase = 1; closeArrowProp(); normalizeBoardArrows(board()); renderPhaseChips(); refreshTimeline();
     setDesc("", "プリセットを選ぶと配置と動きが再現されます。");
     resizeBoard();
   });
@@ -1012,71 +1610,117 @@ function applyPreset(i, btn){
     const num = pl[0] === "ball" ? 0 : ++counters[pl[0]];
     b.players.push({ team:pl[0], x:pl[1], y:pl[2], num, name:"" });
   }
-  b.arrows = p.arrows.map(a => ({ kind:a[0], x1:a[1], y1:a[2], x2:a[3], y2:a[4] }));
+  b.arrows = p.arrows.map(a => normalizeArrow({ kind:a[0], x1:a[1], y1:a[2], x2:a[3], y2:a[4], step:(a[5] || 1), delay:(a[6] || 0), trigger:null }));
+  normalizeBoardArrows(b);
   clearPresetSel(); activePresetBtn = btn; btn.classList.add("on");
+  currentPhase = 1; closeArrowProp(); renderPhaseChips(); refreshTimeline();
   setDesc(p.name, p.desc, p.coach);
   drawBoard();
   toast("プリセット「" + p.name + "」を配置しました");
 }
 
-/* ---------- 2D アニメーション再生 ---------- */
-$("playBtn2d").addEventListener("click", startAnim2d);
-function startAnim2d(){
-  if (animating) return;
-  const b = board(), jobs = [], BIND = 3.2;
-  for (const p of b.players){
-    if (p.team === "ball"){
-      let cx = p.x, cy = p.y; const used = new Set(), path = [];
-      for (;;){
-        let best = null, bd = BIND;
-        for (const a of b.arrows){
-          if (a.kind !== "pass" || used.has(a)) continue;
-          const d = Math.hypot(a.x1 - cx, a.y1 - cy);
-          if (d < bd){ bd = d; best = a; }
-        }
-        if (!best) break;
-        used.add(best); path.push(best); cx = best.x2; cy = best.y2;
-      }
-      if (path.length) jobs.push({ p, path, ox:p.x, oy:p.y });
-    } else {
+/* ============================================================
+   2D アニメーション再生(スケジューラ準拠の逐次再生)
+   buildAnim2dModel: 選手/ボールに矢印を割り当て、各矢印の startAt/dur を
+   スケジューラ(フェーズ順・トリガー・遅延)から解決したモデルを作る。
+   sampleJob2d: 時刻 t におけるその対象の座標を返す(進行中の矢印を補間)。
+============================================================ */
+function scheduleDur(a){ return baseDur(a) * (a.speedScale > 0 ? a.speedScale : 1); }
+function buildAnim2dModel(){
+  const b = board(), BIND = 3.2;
+  // スケジュールは speedScale を反映させたいので arrowDur を差し替えた版で解決
+  const sched = buildScheduleWithScale(b.arrows);
+  const jobs = [];  // 選手ごと: { p, ox, oy, segs:[{a,startAt,dur,sx,sy,ex,ey}] }
+  const usedPass = new Set();
+  // ボール: パス矢印を近接連鎖でたどる
+  let ballJob = null;
+  const ballP = b.players.find(p => p.team === "ball");
+  if (ballP){
+    let cx = ballP.x, cy = ballP.y; const segs = [];
+    for (let guard = 0; guard < 20; guard++){
       let best = null, bd = BIND;
-      for (const a of b.arrows){
-        if (a.kind === "pass") continue;
-        const d = Math.hypot(a.x1 - p.x, a.y1 - p.y);
-        if (d < bd){ bd = d; best = a; }
-      }
-      if (best) jobs.push({ p, path:[best], ox:p.x, oy:p.y });
+      for (const a of b.arrows){ if (a.kind !== "pass" || usedPass.has(a)) continue; const d = Math.hypot(a.x1 - cx, a.y1 - cy); if (d < bd){ bd = d; best = a; } }
+      if (!best) break;
+      usedPass.add(best); segs.push(makeSeg(best, sched)); cx = best.x2; cy = best.y2;
     }
+    ballJob = { p:ballP, ox:ballP.x, oy:ballP.y, sx:ballP.x, sy:ballP.y, segs };
   }
-  if (!jobs.length){ toast("再生できる矢印がありません(矢印の起点をマーカーの近くに)"); return; }
-  for (const j of jobs){
-    j.lens = j.path.map(a => Math.hypot(a.x2 - a.x1, a.y2 - a.y1));
-    j.total = j.lens.reduce((s, l) => s + l, 0) || 1;
-  }
-  animating = true; $("playBtn2d").disabled = true;
-  playCheer(1.7, 0.16); spawnCheers(8);
-  const DUR = 2000, t0 = performance.now();
-  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-  function frame(now){
-    const raw = Math.min(1, (now - t0) / DUR), t = ease(raw);
-    for (const j of jobs){
-      let dist = t * j.total, seg = 0;
-      while (seg < j.path.length - 1 && dist > j.lens[seg]){ dist -= j.lens[seg]; seg++; }
-      const a = j.path[seg], f = j.lens[seg] ? Math.min(1, dist / j.lens[seg]) : 1;
-      j.p.x = a.x1 + (a.x2 - a.x1) * f; j.p.y = a.y1 + (a.y2 - a.y1) * f;
+  // 選手: move/dribble を1本割り当て(起点近接)
+  for (const p of b.players){
+    if (p.team === "ball") continue;
+    const segs = [];
+    let cx = p.x, cy = p.y;
+    const usedMove = new Set();
+    for (let guard = 0; guard < 6; guard++){
+      let best = null, bd = BIND;
+      for (const a of b.arrows){ if (a.kind === "pass" || usedMove.has(a) || a.__assigned) continue; const d = Math.hypot(a.x1 - cx, a.y1 - cy); if (d < bd){ bd = d; best = a; } }
+      if (!best) break;
+      usedMove.add(best); best.__assigned = true; segs.push(makeSeg(best, sched)); cx = best.x2; cy = best.y2;
     }
-    drawBoard();
-    if (raw < 1){ requestAnimationFrame(frame); }
-    else {
-      if (ballInGoal()) golazo();
-      setTimeout(() => {
-        for (const j of jobs){ j.p.x = j.ox; j.p.y = j.oy; }
-        animating = false; $("playBtn2d").disabled = false; drawBoard();
-      }, 900);
-    }
+    if (segs.length) jobs.push({ p, ox:p.x, oy:p.y, sx:p.x, sy:p.y, segs });
   }
-  requestAnimationFrame(frame);
+  for (const a of b.arrows) delete a.__assigned;
+  return { jobs, ball:ballJob, total:sched.total, sched };
 }
+function makeSeg(a, sched){
+  const it = sched.map.get(a.id);
+  return { a, startAt:it.startAt, dur:it.dur, endAt:it.endAt, sx:a.x1, sy:a.y1, ex:a.x2, ey:a.y2, kind:a.kind };
+}
+const _ease2d = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+/* 時刻 t におけるジョブ対象の座標(未開始は起点, 進行中は補間, 完了は終点) */
+function sampleJob2d(job, t){
+  const segs = job.segs;
+  if (!segs || !segs.length) return { x:job.ox, y:job.oy };
+  // まだ最初の動作前
+  if (t < segs[0].startAt) return { x:segs[0].sx, y:segs[0].sy };
+  // 進行中の区間を探す
+  for (const s of segs){
+    if (t >= s.startAt && t < s.endAt){
+      const f = _ease2d(Math.max(0, Math.min(1, (t - s.startAt) / Math.max(s.dur, 1e-4))));
+      return { x:s.sx + (s.ex - s.sx) * f, y:s.sy + (s.ey - s.sy) * f };
+    }
+  }
+  // 完了済み: 直近に完了した区間の終点(時刻的に手前で最大のendAt)
+  let last = segs[0];
+  for (const s of segs) if (s.startAt <= t && s.endAt <= t && s.endAt >= last.endAt) last = s;
+  return { x:last.ex, y:last.ey };
+}
+/* buildSchedule と同じだが arrowDur に speedScale を反映 */
+function buildScheduleWithScale(arrows){
+  const list = arrows.map(a => (normalizeArrow(a), a));
+  const byId = new Map(list.map(a => [a.id, a]));
+  const info = new Map();
+  for (const a of list) info.set(a.id, { arrow:a, dur:scheduleDur(a), startAt:null, endAt:null, step:a.step });
+  const phases = [...new Set(list.map(a => a.step))].sort((x, y) => x - y);
+  const phaseStart = {}; let cursor = 0; const resolving = new Set();
+  function resolveStart(a){
+    const it = info.get(a.id);
+    if (it.startAt !== null) return it.startAt;
+    let base;
+    if (a.trigger && byId.has(a.trigger) && !resolving.has(a.id)){
+      resolving.add(a.id); const tg = byId.get(a.trigger); const ts = resolveStart(tg); resolving.delete(a.id);
+      base = ts + info.get(tg.id).dur;
+    } else base = phaseStart[a.step];
+    it.startAt = base + (a.delay || 0); it.endAt = it.startAt + it.dur; return it.startAt;
+  }
+  for (const ph of phases){
+    phaseStart[ph] = cursor; let phEnd = cursor;
+    for (const a of list){ if (a.step !== ph) continue; resolveStart(a); phEnd = Math.max(phEnd, info.get(a.id).endAt); }
+    cursor = phEnd + (ph !== phases[phases.length - 1] ? 0.25 : 0);
+  }
+  let total = 0; for (const it of info.values()) total = Math.max(total, it.endAt || 0);
+  return { map:info, total:Math.max(total, 0.5), phaseStart };
+}
+
+/* ---------- 再生ボタン(タイムラインと共通の逐次再生) ---------- */
+$("playBtn2d").addEventListener("click", () => {
+  if (animating){ if (tlState.playing){ tlPause(); } return; }
+  const b = board();
+  if (!b.arrows.length){ toast("再生できる矢印がありません(矢印の起点をマーカーの近くに)"); return; }
+  refreshTimeline();
+  tlState.t = 0;
+  tlPlay();
+});
 
 /* ---------- 保存 / 共有 ---------- */
 function downloadFile(name, url){
@@ -1110,7 +1754,17 @@ function loadBoardData(d, switchView){
       ).map(p => ({ team:p.team, x:+p.x, y:+p.y, num:+p.num || 0, name: typeof p.name === "string" ? p.name.slice(0, 14) : "" }));
       boards[k].arrows = (d.boards[k].arrows || []).filter(a =>
         ["move","pass","dribble"].includes(a.kind) && [a.x1,a.y1,a.x2,a.y2].every(isFinite)
-      ).map(a => ({ kind:a.kind, x1:+a.x1, y1:+a.y1, x2:+a.x2, y2:+a.y2 }));
+      ).map(a => {
+        // step/delay/trigger は追加フィールド。無い旧JSONは既定値(step=1,delay=0,trigger=null)
+        const na = { kind:a.kind, x1:+a.x1, y1:+a.y1, x2:+a.x2, y2:+a.y2 };
+        if (typeof a.id === "string") na.id = a.id;
+        if (a.step != null && isFinite(a.step)) na.step = Math.max(1, Math.round(+a.step));
+        if (a.delay != null && isFinite(a.delay)) na.delay = Math.max(0, +a.delay);
+        if (typeof a.trigger === "string") na.trigger = a.trigger;
+        if (a.speedScale != null && isFinite(a.speedScale) && +a.speedScale > 0) na.speedScale = +a.speedScale;
+        return normalizeArrow(na);
+      });
+      normalizeBoardArrows(boards[k]);
     }
   }
   if (switchView && d.activeView && VIEWS[d.activeView]){
@@ -1118,7 +1772,7 @@ function loadBoardData(d, switchView){
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x.dataset.view === view));
     buildPresetList();
   }
-  clearPresetSel(); resizeBoard();
+  clearPresetSel(); currentPhase = 1; closeArrowProp(); renderPhaseChips(); refreshTimeline(); resizeBoard();
 }
 
 /* ---------- マイ戦術ライブラリ (localStorage) ---------- */
@@ -1228,7 +1882,13 @@ $("to3dBtn").addEventListener("click", () => {
   const b = board();
   const hasMarker = b.players.some(p => ["atk","def","ball"].includes(p.team));
   if (!hasMarker){ toast("先に選手やボールを配置してください", true); return; }
+  normalizeBoardArrows(b);
   const data = { app:"tactics-board", version:1, activeView:view, boards:{ [view]: JSON.parse(JSON.stringify(b)) } };
+  // 解決済みスケジュール(フェーズ順・トリガー・遅延)を3D側に渡し、waypoint開始時刻へ反映
+  const sched = buildScheduleWithScale(b.arrows);
+  const schedObj = {};
+  for (const [id, it] of sched.map.entries()) schedObj[id] = { startAt:it.startAt, dur:it.dur, step:it.step };
+  data.__schedule = schedObj; data.__total = sched.total;
   requestTheater({ type:"board", data, title:"ボードの戦術" });
 });
 
@@ -1304,6 +1964,8 @@ $("bkTplDel").addEventListener("click", () => {
 /* ---------- ボード初期化 ---------- */
 buildPresetList();
 renderLib();
+renderPhaseChips();
+refreshTimeline();
 /* レイアウト確定前だとcanvasが既定サイズ(300x150)に取り残されるため、
    実サイズになるまで数回リトライして確実にフィットさせる */
 (function ensureBoardSized(tries){
@@ -2093,19 +2755,39 @@ function buildImportedScene(d){
   const valid = v => typeof v === "number" && isFinite(v);
   const rawPlayers = (b.players || []).filter(p => ["atk","def","ball"].includes(p.team) && valid(+p.x) && valid(+p.y));
   const rawArrows = (b.arrows || []).filter(a => ["move","pass","dribble"].includes(a.kind) && [a.x1,a.y1,a.x2,a.y2].every(v => valid(+v)));
-  const arrows = rawArrows.map(a => ({ kind: a.kind, s: clampPitch(conv(+a.x1, +a.y1)), e: clampPitch(conv(+a.x2, +a.y2)), used: false }));
+  // タイムラインで解決済みのスケジュール(startAt/dur)。無ければ従来の一律タイミングにフォールバック
+  const SCHED = (d.__schedule && typeof d.__schedule === "object") ? d.__schedule : null;
+  const arrows = rawArrows.map(a => ({
+    id: a.id, kind: a.kind, step: (a.step >= 1 ? a.step : 1),
+    s: clampPitch(conv(+a.x1, +a.y1)), e: clampPitch(conv(+a.x2, +a.y2)), used: false,
+    sched: (SCHED && a.id && SCHED[a.id]) ? SCHED[a.id] : null
+  }));
   const players = [];
   const counters = { atk:0, def:0 };
   const T_MOVE_START = 0.7, T_MOVE_END = 3.6;
+  let schedMaxEnd = 0;
   for (const p of rawPlayers){
     if (p.team === "ball") continue;
     const pos = clampPitch(conv(+p.x, +p.y));
     counters[p.team]++;
     const num = (+p.num > 0 && +p.num < 100) ? +p.num : counters[p.team];
-    let best = null, bd = 16;
-    for (const a of arrows){ if (a.used || a.kind === "pass") continue; const dd = dist2(a.s, pos); if (dd < bd){ bd = dd; best = a; } }
+    // この選手に割り当てる move/dribble を近接連鎖でたどる(複数フェーズの連続移動に対応)
     const wp = [{ t:0, x:pos.x, z:pos.z }];
-    if (best){ best.used = true; wp.push({ t:T_MOVE_START, x:pos.x, z:pos.z }); wp.push({ t:T_MOVE_END, x:best.e.x, z:best.e.z }); }
+    let cx = pos.x, cz = pos.z, hasMove = false;
+    for (let guard = 0; guard < 4; guard++){
+      let best = null, bd = 16;
+      for (const a of arrows){ if (a.used || a.kind === "pass") continue; const dd = dist2(a.s, { x:cx, z:cz }); if (dd < bd){ bd = dd; best = a; } }
+      if (!best) break;
+      best.used = true; hasMove = true;
+      let startT, endT;
+      if (best.sched){ startT = best.sched.startAt; endT = best.sched.startAt + best.sched.dur; }
+      else { startT = T_MOVE_START; endT = T_MOVE_END; }
+      // 直前位置で待機してから開始点へ(既に起点にいる想定)、startで発進しendで到達
+      wp.push({ t:startT, x:cx, z:cz });
+      wp.push({ t:Math.max(startT + 0.05, endT), x:best.e.x, z:best.e.z });
+      schedMaxEnd = Math.max(schedMaxEnd, endT);
+      cx = best.e.x; cz = best.e.z;
+    }
     players.push({ team:p.team, num, name: (typeof p.name === "string" ? p.name : ""), wp });
   }
   if (!players.length) throw new Error("no players");
@@ -2120,16 +2802,25 @@ function buildImportedScene(d){
       for (const a of arrows){ if (a.used && a.kind === "pass") continue; if (a.kind === "move") continue; const dd = dist2(a.s, cur); if (dd < bd){ bd = dd; best = a; } }
       if (!best) break;
       best.used = true;
-      const d0 = Math.sqrt(dist2(best.s, best.e)), dt = Math.max(0.5, Math.min(1.6, d0/12));
-      t += dt;
+      const d0 = Math.sqrt(dist2(best.s, best.e));
       const h = best.kind === "pass" ? Math.max(0.25, Math.min(5, d0*0.15)) : 0;
-      ballWp.push({ t, x:best.e.x, z:best.e.z, h }); t += 0.25; ballWp.push({ t, x:best.e.x, z:best.e.z });
+      if (best.sched){
+        // スケジュールに沿ってボールも発火。開始で起点にいて、終了で到達点へ
+        const st = best.sched.startAt, en = best.sched.startAt + best.sched.dur;
+        if (st > t){ ballWp.push({ t:st, x:cur.x, z:cur.z }); }
+        ballWp.push({ t:Math.max(en, st + 0.05), x:best.e.x, z:best.e.z, h });
+        t = Math.max(en, st + 0.05);
+      } else {
+        const dt = Math.max(0.5, Math.min(1.6, d0/12));
+        t += dt; ballWp.push({ t, x:best.e.x, z:best.e.z, h }); t += 0.25; ballWp.push({ t, x:best.e.x, z:best.e.z });
+      }
       cur = best.e;
     }
     lastT = t;
     if (Math.abs(cur.x) > HALF_L-1 && Math.abs(cur.z) < GOAL_W/2+0.6) goalAt = lastT-0.25;
   } else { ballWp = [{ t:0, x:0, z:0 }]; }
-  const duration = Math.max(4.5, T_MOVE_END+0.9, lastT+1.2);
+  const schedTotal = (SCHED && d.__total) ? +d.__total : 0;
+  const duration = Math.max(4.5, T_MOVE_END+0.9, lastT+1.2, schedMaxEnd+1.0, schedTotal+1.0);
   return {
     name: (d.__title || "インポート戦術") + "（" + VIEW_LABEL[key] + "）",
     tag: "ボード連携",
