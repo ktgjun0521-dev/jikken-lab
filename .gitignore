@@ -1,0 +1,4 @@
+.claude/
+_*
+*.py
+*.csv

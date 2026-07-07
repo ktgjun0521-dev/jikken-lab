@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実験ラボ | Fable 5 Playground</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  header { text-align: center; margin-bottom: 48px; }
+  h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    background: linear-gradient(90deg, #ffd86f, #fc6262, #6fb1fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  header p { color: #b8b5d0; font-size: 1rem; }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 1080px;
+  }
+  a.card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 28px 24px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    backdrop-filter: blur(6px);
+  }
+  a.card:hover {
+    transform: translateY(-6px) scale(1.02);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  }
+  .emoji { font-size: 2.6rem; margin-bottom: 14px; }
+  .card h2 { font-size: 1.25rem; margin-bottom: 10px; }
+  .card p { color: #c5c2da; font-size: 0.92rem; line-height: 1.7; }
+  .tag {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+  .tag.ranking { color: #ffd86f; border-color: #ffd86f66; }
+  .tag.stats   { color: #7ef29d; border-color: #7ef29d66; }
+  .tag.poker   { color: #6fb1fc; border-color: #6fb1fc66; }
+  .tag.tactics { color: #ff9d6f; border-color: #ff9d6f66; }
+  .tag.trivia  { color: #f28de0; border-color: #f28de066; }
+  .tag.party   { color: #ffe66f; border-color: #ffe66f66; }
+  .tag.golf    { color: #8df2c3; border-color: #8df2c366; }
+  .tag.type16  { color: #b39df2; border-color: #b39df266; }
+  .tag.vending { color: #f2b8d4; border-color: #f2b8d466; }
+  .tag.biz     { color: #9fc4f2; border-color: #9fc4f266; }
+  .tag.drink   { color: #f2d59d; border-color: #f2d59d66; }
+  .tag.money   { color: #ffb3b3; border-color: #ffb3b366; }
+  a.card { position: relative; }
+  a.card:hover .emoji { animation: wiggle 0.5s ease; }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-12deg) scale(1.15); }
+    75% { transform: rotate(12deg) scale(1.15); }
+  }
+  .osusume {
+    position: absolute;
+    top: -10px;
+    right: -8px;
+    background: linear-gradient(135deg, #ff6b6b, #ffa36b);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  #subtitle { transition: opacity 0.4s ease; min-height: 1.5em; }
+  .lab-count { color: #b8b5d0; font-size: 0.85rem; margin-top: 8px; }
+  footer { margin-top: 56px; color: #8884aa; font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+  <header>
+    <h1 id="lab-title" title="タイトルを連打すると何かが起きるかも">🧪 実験ラボ</h1>
+    <p id="subtitle">Fable 5 と作った、遊び心のあるシミュレーション&amp;可視化アプリ集</p>
+    <p class="lab-count" id="lab-count"></p>
+  </header>
+
+  <div class="cards">
+    <a class="card" href="ranking-japan.html">
+      <div class="emoji">🗾</div>
+      <h2>日本くだらないランキング研究所</h2>
+      <p>うどん消費量、漁獲量、スタバ店舗数、Jリーガー輩出数……。くだらないけど気になる47都道府県ランキングを、タイルマップとアニメーションで可視化。</p>
+      <span class="tag ranking">データ可視化</span>
+    </a>
+
+    <a class="card" href="soccer-stats.html">
+      <div class="emoji">⚽</div>
+      <h2>セットプレー相関ラボ</h2>
+      <p>選手の身長とコーナーキックからの得点率に相関はあるのか?散布図・回帰直線・相関係数で探索できる分析ダッシュボード。CSVで自分のデータも分析可能。</p>
+      <span class="tag stats">統計分析</span>
+    </a>
+
+    <a class="card" href="poker-assist.html">
+      <div class="emoji">🃏</div>
+      <h2>ポーカー検討ラボ</h2>
+      <p>手札・ボードに加えてポジションや相手のベット状況も入力すると、モンテカルロ法の勝率計算にもとづき「何倍でレイズすべきか」までアドバイスする学習用ツール。</p>
+      <span class="tag poker">シミュレーション</span>
+    </a>
+
+    <a class="card" href="tactics-board.html">
+      <div class="emoji">📋</div>
+      <h2>セットプレー戦術ボード</h2>
+      <p>コーナーキックのニアゾーンアタック、スローイン戦術、8人制フォーメーション。選手をドラッグして矢印を描き、アニメーションで動かせる戦術落とし込みツール。</p>
+      <span class="tag tactics">戦術ボード</span>
+    </a>
+
+    <a class="card" href="trivia-lab.html">
+      <div class="emoji">🔬</div>
+      <h2>くだらない雑学研究所</h2>
+      <p>なぜゾウの鼻は長いのか。なぜ正座で足がしびれるのか。どうでもいいけど眠れなくなる「なぜ?」をフリップカードとクイズで楽しむ研究所。</p>
+      <span class="tag trivia">雑学</span>
+    </a>
+
+    <a class="card" href="enkai-lab.html">
+      <div class="emoji">🍻</div>
+      <h2>宴会お助けラボ</h2>
+      <p>乾杯の音頭メーカーと一発ギャグ対応AI。急に振られても大丈夫。スベった時のリカバリーフレーズまで完備した飲み会の救世主。</p>
+      <span class="tag party">宴会芸</span>
+    </a>
+
+    <a class="card" href="golf-shindan.html">
+      <div class="emoji">⛳</div>
+      <h2>全国オススメゴルフ場診断</h2>
+      <p>8つの質問に答えるだけで、あなたのゴルファータイプと相性のいい全国のゴルフ場を診断。絶景リゾート派?名門チャレンジャー?</p>
+      <span class="tag golf">診断</span>
+    </a>
+
+    <a class="card" href="golf-type16.html">
+      <div class="emoji">🏌️</div>
+      <h2>ゴルフ性格診断 16タイプ</h2>
+      <p>攻め方・判断・メンタル・スタイルの4軸で、あなたのゴルファー人格を16タイプに分類。「祭りのエース」か「静かなる参謀」か。相性診断つき。</p>
+      <span class="tag type16">16タイプ診断</span>
+    </a>
+
+    <a class="card" href="jihanki-sim.html">
+      <div class="emoji">🥤</div>
+      <h2>自販機アタリ研究所</h2>
+      <p>7777が揃うともう1本!のアレ、実際何本目で当たるのか。スロット演出つきで1本ずつ買うもよし、1万本一気にシミュレートして確率の残酷さを知るもよし。</p>
+      <span class="tag vending">確率シミュ</span>
+    </a>
+
+    <a class="card" href="gaichu-cost.html">
+      <div class="emoji">💼</div>
+      <h2>外注費せつめい職人</h2>
+      <p>単価と稼働を入力すると、見積もり内訳表+面談でそのまま読める説明トークスクリプト+メール用短縮版を自動生成。費用説明のモヤモヤを解消する実務ツール。</p>
+      <span class="tag biz">実務ツール</span>
+    </a>
+
+    <a class="card" href="alcohol-counter.html">
+      <div class="emoji">🍺</div>
+      <h2>アルコールカウンター</h2>
+      <p>飲んだ杯をタップで記録するとダメージメーターが上昇。水とウコンで軽減しつつ、明朝の二日酔いを天気予報風にお知らせ。「⛈記憶を確認する朝」になる前に。</p>
+      <span class="tag drink">宴会実用</span>
+    </a>
+
+    <a class="card" href="setsuyaku-maker.html">
+      <div class="emoji">👹</div>
+      <h2>節約メーカー</h2>
+      <p>クレカ明細CSVを読み込むと、節約の鬼コーチがあなたの支出をぶった斬り。サブスクの疑い・ラテマネー・深夜タクシーを検出して「年間◯円浮くぞ」と具体的にアドバイス。データは端末内だけで処理。</p>
+      <span class="tag money">家計分析</span>
+    </a>
+  </div>
+
+  <footer>Built with Claude Fable 5 · 2026<br><span id="fun-fact"></span></footer>
+
+  <script>
+    const subtitles = [
+      'Fable 5 と作った、遊び心のあるシミュレーション&可視化アプリ集',
+      'くだらないは、正義。',
+      '真剣にふざけると、それはもう研究。',
+      '本日も通常営業。生産性は保証しません。',
+      'うどんからポーカーまで、幅広く無駄を追求。',
+      '二日酔いの朝も、戦術ボードは裏切らない。'
+    ];
+    let si = 0;
+    const subEl = document.getElementById('subtitle');
+    setInterval(() => {
+      subEl.style.opacity = 0;
+      setTimeout(() => {
+        si = (si + 1) % subtitles.length;
+        subEl.textContent = subtitles[si];
+        subEl.style.opacity = 1;
+      }, 400);
+    }, 5000);
+
+    const cards = document.querySelectorAll('a.card');
+    document.getElementById('lab-count').textContent = `現在の収蔵アプリ: ${cards.length}本(増殖中)`;
+
+    // 日替わりイチオシ(日付シードで毎日変わる)
+    const today = new Date();
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    const pick = cards[seed % cards.length];
+    const badge = document.createElement('span');
+    badge.className = 'osusume';
+    badge.textContent = '🔥 今日のイチオシ';
+    pick.appendChild(badge);
+
+    const facts = [
+      'このページのアプリはすべて1ファイル完結。持ち運びも増殖も自由です。',
+      '「今日のイチオシ」は日替わりです。明日もぜひ。',
+      'アイデアを思いついたら、それはもう半分完成です。',
+      '雑学: 実験ラボの消費電力は、ほぼあなたの好奇心です。'
+    ];
+    document.getElementById('fun-fact').textContent = facts[seed % facts.length];
+
+    // タイトル連打の隠し演出
+    let clicks = 0, timer = null;
+    document.getElementById('lab-title').addEventListener('click', () => {
+      clicks++;
+      clearTimeout(timer);
+      timer = setTimeout(() => clicks = 0, 800);
+      if (clicks >= 5) {
+        clicks = 0;
+        for (let i = 0; i < 40; i++) {
+          const e = document.createElement('div');
+          e.textContent = ['🧪','🍺','⚽','🃏','⛳','🥤','👹','🗾'][i % 8];
+          e.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-40px;font-size:${20+Math.random()*24}px;z-index:999;pointer-events:none;transition:transform ${2+Math.random()*2}s ease-in, opacity 3s;`;
+          document.body.appendChild(e);
+          requestAnimationFrame(() => {
+            e.style.transform = `translateY(${window.innerHeight+80}px) rotate(${Math.random()*720-360}deg)`;
+            e.style.opacity = 0;
+          });
+          setTimeout(() => e.remove(), 4200);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

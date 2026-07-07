@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>セットプレー戦術ボード</title>
+<style>
+  :root{
+    --bg:#0f1318; --panel:#1a212a; --panel2:#222b36; --line:#2e3a47;
+    --txt:#e8edf2; --sub:#9db0c0; --accent:#4ade80; --red:#e63946; --blue:#2b7de9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--txt);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;min-height:100vh;}
+  header{padding:14px 18px 10px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#141a22,#0f1318);}
+  .backlink{color:var(--sub);text-decoration:none;font-size:13px;}
+  .backlink:hover{color:var(--accent);}
+  h1{font-size:20px;margin-top:6px;letter-spacing:.05em;display:flex;align-items:center;gap:10px;}
+  h1 .badge{font-size:11px;background:var(--accent);color:#08290f;border-radius:20px;padding:2px 10px;font-weight:700;}
+  .tabs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .tab{background:var(--panel);border:1px solid var(--line);color:var(--sub);padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:14px;}
+  .tab.active{background:var(--panel2);color:var(--accent);border-bottom:2px solid var(--accent);font-weight:700;}
+  .wrap{display:flex;gap:14px;padding:14px 18px;align-items:flex-start;}
+  .left{flex:1;min-width:0;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .tbtn{background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:7px 11px;border-radius:8px;cursor:pointer;font-size:13px;line-height:1;transition:background .15s;}
+  .tbtn:hover{background:var(--panel2);}
+  .tbtn.active{background:#0e3b23;border-color:var(--accent);color:var(--accent);font-weight:700;}
+  .tbtn.warn{color:#ff9d9d;}
+  .tbtn.play{color:#ffd23f;}
+  .sep{width:1px;background:var(--line);margin:2px 3px;}
+  #boardBox{position:relative;background:#0a0d10;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  canvas{display:block;width:100%;touch-action:none;cursor:crosshair;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--sub);}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .lin{width:26px;height:0;border-top:3px solid;display:inline-block;}
+  .side{width:310px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .card h2{font-size:14px;color:var(--accent);margin-bottom:10px;letter-spacing:.05em;}
+  .plist{display:flex;flex-direction:column;gap:6px;}
+  .pbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;text-align:left;transition:border-color .15s;}
+  .pbtn:hover{border-color:var(--accent);}
+  .pbtn.on{border-color:var(--accent);background:#12301f;}
+  #descBox{font-size:13px;line-height:1.75;color:var(--txt);min-height:64px;white-space:pre-wrap;}
+  #descBox .coach{display:block;margin-top:8px;color:#ffd23f;font-size:12.5px;}
+  #descTitle{font-weight:700;color:#fff;margin-bottom:6px;font-size:13.5px;}
+  .iorow{display:flex;gap:6px;flex-wrap:wrap;}
+  .iorow .tbtn{flex:1;text-align:center;min-width:80px;}
+  .hint{font-size:11.5px;color:var(--sub);line-height:1.7;margin-top:10px;}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#0e3b23;color:var(--accent);border:1px solid var(--accent);padding:9px 18px;border-radius:24px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:50;}
+  #toast.show{opacity:1;}
+  /* ---------- 遊び心ゾーン ---------- */
+  .cheer{position:absolute;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);pointer-events:none;user-select:none;z-index:6;opacity:0;animation:cheerUp 1.6s ease-out forwards;}
+  @keyframes cheerUp{0%{transform:translateY(0) scale(.7);opacity:0;}18%{opacity:1;}100%{transform:translateY(-90px) scale(1.3);opacity:0;}}
+  #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:90;}
+  #flash.go{animation:flashAnim .55s ease-out;}
+  @keyframes flashAnim{0%{opacity:.85;}100%{opacity:0;}}
+  #golazo{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(0);opacity:0;font-size:min(12vw,86px);font-weight:900;color:#ffd23f;text-shadow:0 0 26px rgba(255,210,63,.85),0 5px 0 #6d4f00;letter-spacing:.06em;z-index:91;pointer-events:none;white-space:nowrap;}
+  #golazo.go{animation:golazoPop 1.9s cubic-bezier(.2,1.5,.4,1) forwards;}
+  @keyframes golazoPop{0%{transform:translate(-50%,-50%) scale(0) rotate(-10deg);opacity:0;}16%{transform:translate(-50%,-50%) scale(1.18) rotate(3deg);opacity:1;}28%{transform:translate(-50%,-50%) scale(1) rotate(0);}78%{opacity:1;transform:translate(-50%,-50%) scale(1.03);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1);}}
+  #descBox .kantoku{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:#7ee3a3;font-size:12.5px;font-style:italic;}
+  @media (max-width:920px){
+    .wrap{flex-direction:column;}
+    .side{width:100%;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="backlink" href="index.html">&#8592; 実験ラボに戻る</a>
+  <h1>&#9917; セットプレー戦術ボード <span class="badge">SET PLAY</span></h1>
+  <div class="tabs">
+    <button class="tab active" data-view="corner">コーナーキック</button>
+    <button class="tab" data-view="throwin">スローイン</button>
+    <button class="tab" data-view="eight">8人制ピッチ</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="left">
+    <div class="toolbar" id="toolbar">
+      <button class="tbtn active" data-tool="select">&#9995; 選択/移動</button>
+      <button class="tbtn" data-tool="atk">&#128308; 攻撃+</button>
+      <button class="tbtn" data-tool="def">&#128309; 守備+</button>
+      <button class="tbtn" data-tool="ball">&#9917; ボール+</button>
+      <div class="sep"></div>
+      <button class="tbtn" data-tool="move">&#8594; 移動(実線)</button>
+      <button class="tbtn" data-tool="pass">&#8674; パス(点線)</button>
+      <button class="tbtn" data-tool="dribble">&#8767; ドリブル(波線)</button>
+      <button class="tbtn" data-tool="erase">&#9986; 消しゴム</button>
+      <div class="sep"></div>
+      <button class="tbtn warn" id="clearBtn">&#128465; 全消去</button>
+      <button class="tbtn play" id="playBtn">&#9654; 再生</button>
+      <button class="tbtn active" id="soundBtn" title="再生時の歓声のON/OFF">&#128266; 歓声</button>
+      <button class="tbtn" id="kantokuBtn" title="ONにするとプリセット選択時に監督の一言が付いてきます">&#128227; 監督モード</button>
+      <button class="tbtn" id="heatBtn" style="display:none;">&#128293; 危険ゾーン表示</button>
+    </div>
+    <div id="boardBox"><canvas id="cv"></canvas></div>
+    <div class="legend">
+      <span><i class="dot" style="background:#e63946"></i>攻撃</span>
+      <span><i class="dot" style="background:#2b7de9"></i>守備</span>
+      <span><i class="dot" style="background:#fff"></i>ボール</span>
+      <span><i class="lin" style="border-color:#ffd23f"></i>移動</span>
+      <span><i class="lin" style="border-color:#fff;border-top-style:dashed"></i>パス</span>
+      <span><i class="lin" style="border-color:#ff8c42;border-top-style:wavy;border-top-style:solid"></i>ドリブル</span>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="card">
+      <h2>&#128220; プリセット</h2>
+      <div class="plist" id="presetList"></div>
+    </div>
+    <div class="card">
+      <h2>&#128161; 戦術解説</h2>
+      <div id="descTitle"></div>
+      <div id="descBox">プリセットを選ぶと、配置と動きが自動で再現され、ここに戦術のポイントが表示されます。</div>
+    </div>
+    <div class="card">
+      <h2>&#128190; 保存 / 共有</h2>
+      <div class="iorow">
+        <button class="tbtn" id="pngBtn">&#128247; PNG保存</button>
+        <button class="tbtn" id="exportBtn">&#11015; JSON書出</button>
+        <button class="tbtn" id="importBtn">&#11014; JSON読込</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+      <div class="hint">
+        操作ガイド：マーカー追加ツールを選んで空きスペースをタップ／ドラッグで移動／ダブルタップ(ダブルクリック)で削除。矢印ツールはドラッグで描画。▶再生で矢印に沿ってマーカーが動きます。
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="flash"></div>
+<div id="golazo">&#9917; ゴラッソ!!</div>
+
+<script>
+"use strict";
+/* ============================================================
+   セットプレー戦術ボード  (vanilla JS / self-contained)
+   座標系: 各ビューごとの「メートル座標」で状態を保持し、
+   描画時にピクセルへ変換する。
+============================================================ */
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const boardBox = document.getElementById("boardBox");
+
+/* ---------- ビュー定義 (単位: m) ---------- */
+const VIEWS = {
+  corner:  { fw:56,   fh:34, mt:3.4, mb:1.6, ml:1.6, mr:1.6, draw:drawCornerPitch,
+             label:"コーナーキック" },
+  throwin: { fw:52.5, fh:46, mt:1.8, mb:1.6, ml:1.6, mr:3.4, draw:drawThrowinPitch,
+             label:"スローイン" },
+  eight:   { fw:68,   fh:50, mt:1.6, mb:1.6, ml:3.4, mr:3.4, draw:drawEightPitch,
+             label:"8人制" }
+};
+let view = "corner";
+
+/* ---------- 状態 ---------- */
+const boards = {
+  corner:  { players:[], arrows:[] },
+  throwin: { players:[], arrows:[] },
+  eight:   { players:[], arrows:[] }
+};
+let tool = "select";
+let showHeat = false;
+let scale = 10;              // px per meter (css px)
+let tempArrow = null;        // 描画中の矢印
+let dragP = null;            // ドラッグ中マーカー
+let animating = false;
+let activePresetBtn = null;
+
+const board = () => boards[view];
+const V = () => VIEWS[view];
+
+/* ---------- 座標変換 ---------- */
+function m2x(x){ return (V().ml + x) * scale; }
+function m2y(y){ return (V().mt + y) * scale; }
+function p2mx(px){ return px / scale - V().ml; }
+function p2my(py){ return py / scale - V().mt; }
+
+/* ---------- キャンバスサイズ ---------- */
+function resize(){
+  const v = V();
+  const cssW = boardBox.clientWidth;
+  scale = cssW / (v.fw + v.ml + v.mr);
+  const cssH = (v.fh + v.mt + v.mb) * scale;
+  const dpr = window.devicePixelRatio || 1;
+  cv.style.height = cssH + "px";
+  cv.width  = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener("resize", resize);
+
+/* ============================================================
+   ピッチ描画
+============================================================ */
+const GRASS1 = "#2c8a45", GRASS2 = "#25763b";
+const LINE = "rgba(255,255,255,.88)";
+
+function grassStripes(horizontal, count){
+  const v = V();
+  const W = (v.fw + v.ml + v.mr) * scale;
+  const H = (v.fh + v.mt + v.mb) * scale;
+  ctx.fillStyle = GRASS1;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = GRASS2;
+  if (horizontal){
+    const bw = H / count;
+    for (let i = 0; i < count; i += 2) ctx.fillRect(0, i * bw, W, bw);
+  } else {
+    const bw = W / count;
+    for (let i = 0; i < count; i += 2) ctx.fillRect(i * bw, 0, bw, H);
+  }
+}
+function lw(){ ctx.lineWidth = Math.max(1.5, scale * 0.12); ctx.strokeStyle = LINE; }
+function rectM(x, y, w, h){ ctx.strokeRect(m2x(x), m2y(y), w * scale, h * scale); }
+function lineM(x1, y1, x2, y2){
+  ctx.beginPath(); ctx.moveTo(m2x(x1), m2y(y1)); ctx.lineTo(m2x(x2), m2y(y2)); ctx.stroke();
+}
+function spotM(x, y){
+  ctx.beginPath(); ctx.arc(m2x(x), m2y(y), Math.max(2.5, scale * 0.22), 0, Math.PI * 2);
+  ctx.fillStyle = LINE; ctx.fill();
+}
+function goalRect(x, y, w, h){ // ゴール(網掛け)
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,.18)";
+  ctx.fillRect(m2x(x), m2y(y), w * scale, h * scale);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1.5, scale * 0.14);
+  ctx.strokeRect(m2x(x), m2y(y), w * scale, h * scale);
+  ctx.restore();
+}
+
+/* --- (a) コーナーキック: PA周辺拡大図 (ゴールライン上, 右コーナー) --- */
+function drawCornerPitch(){
+  grassStripes(true, 8);
+  lw();
+  // ゴールライン & 右タッチライン
+  lineM(0, 0, 56, 0);
+  lineM(56, 0, 56, 34);
+  // ペナルティエリア (ピッチx 13.84-54.16 → ローカル 1.84-42.16)
+  rectM(1.84, 0, 40.32, 16.5);
+  // ゴールエリア
+  rectM(12.84, 0, 18.32, 5.5);
+  // ゴール (奥行2m)
+  goalRect(18.34, -2, 7.32, 2);
+  // ペナルティスポット & アーク
+  spotM(22, 11);
+  ctx.beginPath();
+  ctx.arc(m2x(22), m2y(11), 9.15 * scale, 0.6405, Math.PI - 0.6405);
+  ctx.stroke();
+  // コーナーアーク (右上)
+  ctx.beginPath();
+  ctx.arc(m2x(56), m2y(0), 1 * scale, Math.PI / 2, Math.PI);
+  ctx.stroke();
+  // コーナーフラッグ
+  ctx.beginPath(); ctx.moveTo(m2x(56), m2y(0)); ctx.lineTo(m2x(56) + scale, m2y(0) - scale * 1.2);
+  ctx.strokeStyle = "#ffd23f"; ctx.stroke();
+  if (showHeat) drawHeatmap();
+}
+
+/* --- 危険ゾーンヒートマップ (ニアゾーン) --- */
+function drawHeatmap(){
+  ctx.save();
+  const layers = [
+    { x:26.5, y:3.6, r:11, a:0.16 },  // ゴール前全体 うっすら
+    { x:27,   y:3.8, r:7,  a:0.26 },  // ニア寄りゾーン
+    { x:27.6, y:3.2, r:4,  a:0.42 }   // ニアポスト前(最重要)
+  ];
+  for (const L of layers){
+    const g = ctx.createRadialGradient(m2x(L.x), m2y(L.y), 0, m2x(L.x), m2y(L.y), L.r * scale);
+    g.addColorStop(0, "rgba(255,50,30," + L.a + ")");
+    g.addColorStop(1, "rgba(255,50,30,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, cv.width, cv.height);
+  }
+  // ラベル
+  const fx = m2x(27.6), fy = m2y(3.2);
+  ctx.font = "700 " + Math.max(11, scale * 0.9) + "px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,.95)";
+  ctx.textAlign = "center";
+  ctx.fillText("ニアゾーン", fx, fy + scale * 5.6);
+  ctx.font = Math.max(10, scale * 0.7) + "px sans-serif";
+  ctx.fillStyle = "rgba(255,235,200,.9)";
+  ctx.fillText("このゾーンへのボールが最も得点期待値が高い", m2x(24), m2y(20));
+  ctx.fillText("(GKと守備の中間・ワンタッチで枠に飛ばせる)", m2x(24), m2y(22));
+  ctx.restore();
+}
+
+/* --- (b) スローイン: タッチライン付近のハーフコート (タッチ上/ゴール右) --- */
+function drawThrowinPitch(){
+  grassStripes(false, 8);
+  lw();
+  // タッチライン(上) / ゴールライン(右) / ハーフウェイライン(左)
+  lineM(0, 0, 52.5, 0);
+  lineM(52.5, 0, 52.5, 46);
+  lineM(0, 0, 0, 46);
+  // センターサークル(右半分)  中心(0,34)
+  ctx.beginPath();
+  ctx.arc(m2x(0), m2y(34), 9.15 * scale, -Math.PI / 2, Math.PI / 2);
+  ctx.stroke();
+  spotM(0, 34);
+  // ペナルティエリア x36-52.5, y13.84-54.16(下は画面外)
+  lineM(36, 13.84, 52.5, 13.84);
+  lineM(36, 13.84, 36, 46);
+  // ゴールエリア x47-52.5, y24.84-43.16
+  rectM(47, 24.84, 5.5, 18.32);
+  // ゴール(右, 奥行2m) y30.34-37.66
+  goalRect(52.5, 30.34, 2, 7.32);
+  // ペナルティスポット & アーク  spot(41.5,34)
+  spotM(41.5, 34);
+  ctx.beginPath();
+  ctx.arc(m2x(41.5), m2y(34), 9.15 * scale, 2.216, 2 * Math.PI - 2.216);
+  ctx.stroke();
+  // コーナーアーク(右上)
+  ctx.beginPath();
+  ctx.arc(m2x(52.5), m2y(0), 1 * scale, Math.PI / 2, Math.PI);
+  ctx.stroke();
+  // スローインの目印
+  ctx.font = "700 " + Math.max(11, scale * 0.8) + "px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,.75)";
+  ctx.textAlign = "left";
+  ctx.fillText("タッチライン", m2x(2), m2y(0) - scale * 0.5);
+}
+
+/* --- (c) 8人制フルピッチ 68m x 50m --- */
+function drawEightPitch(){
+  grassStripes(false, 10);
+  lw();
+  rectM(0, 0, 68, 50);              // 外周
+  lineM(34, 0, 34, 50);             // ハーフウェイ
+  ctx.beginPath();                   // センターサークル r7
+  ctx.arc(m2x(34), m2y(25), 7 * scale, 0, Math.PI * 2);
+  ctx.stroke();
+  spotM(34, 25);
+  // 左右 PA(奥行12m, y10.5-39.5) / GA(奥行4m, y18.5-31.5)
+  rectM(0, 10.5, 12, 29);
+  rectM(56, 10.5, 12, 29);
+  rectM(0, 18.5, 4, 13);
+  rectM(64, 18.5, 4, 13);
+  // ゴール(5m幅, 奥行1.6m)
+  goalRect(-1.6, 22.5, 1.6, 5);
+  goalRect(68, 22.5, 1.6, 5);
+  // ペナルティマーク(8m) & アーク r7
+  spotM(8, 25); spotM(60, 25);
+  ctx.beginPath(); ctx.arc(m2x(8),  m2y(25), 7 * scale, -0.963, 0.963); ctx.stroke();
+  ctx.beginPath(); ctx.arc(m2x(60), m2y(25), 7 * scale, Math.PI - 0.963, Math.PI + 0.963); ctx.stroke();
+  // コーナーアーク
+  const cs = [[0,0,0,Math.PI/2],[68,0,Math.PI/2,Math.PI],[68,50,Math.PI,Math.PI*1.5],[0,50,Math.PI*1.5,Math.PI*2]];
+  for (const c of cs){
+    ctx.beginPath(); ctx.arc(m2x(c[0]), m2y(c[1]), 0.8 * scale, c[2], c[3]); ctx.stroke();
+  }
+}
+
+/* ============================================================
+   矢印 & マーカー描画
+============================================================ */
+const ARROW_STYLE = {
+  move:    { color:"#ffd23f", dash:[] },
+  pass:    { color:"#ffffff", dash:[9, 7] },
+  dribble: { color:"#ff8c42", dash:[] }
+};
+
+function drawArrow(a, ghost){
+  const st = ARROW_STYLE[a.kind];
+  const x1 = m2x(a.x1), y1 = m2y(a.y1), x2 = m2x(a.x2), y2 = m2y(a.y2);
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const ang = Math.atan2(dy, dx);
+  ctx.save();
+  ctx.globalAlpha = ghost ? 0.55 : 1;
+  ctx.strokeStyle = st.color;
+  ctx.fillStyle = st.color;
+  ctx.lineWidth = Math.max(2.2, scale * 0.22);
+  ctx.lineCap = "round";
+  const head = Math.max(9, scale * 0.9);
+  const ex = x2 - Math.cos(ang) * head * 0.75;
+  const ey = y2 - Math.sin(ang) * head * 0.75;
+  ctx.setLineDash(st.dash);
+  if (a.kind === "dribble"){
+    // 波線
+    ctx.beginPath();
+    const amp = Math.max(3, scale * 0.35);
+    const wl = Math.max(11, scale * 1.1);
+    const n = Math.max(8, Math.floor(len / 3));
+    for (let i = 0; i <= n; i++){
+      const t = i / n;
+      const bx = x1 + (ex - x1) * t;
+      const by = y1 + (ey - y1) * t;
+      const off = Math.sin(t * len / wl * Math.PI * 2) * amp;
+      const px = bx + Math.cos(ang + Math.PI / 2) * off;
+      const py = by + Math.sin(ang + Math.PI / 2) * off;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(ex, ey); ctx.stroke();
+  }
+  // 矢じり
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - Math.cos(ang - 0.42) * head, y2 - Math.sin(ang - 0.42) * head);
+  ctx.lineTo(x2 - Math.cos(ang + 0.42) * head, y2 - Math.sin(ang + 0.42) * head);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function markerR(){ return Math.max(11, Math.min(16, scale * 1.05)); }
+
+function drawPlayer(p){
+  const x = m2x(p.x), y = m2y(p.y);
+  const r = p.team === "ball" ? markerR() * 0.72 : markerR();
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.45)";
+  ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  if (p.team === "atk") ctx.fillStyle = "#e63946";
+  else if (p.team === "def") ctx.fillStyle = "#2b7de9";
+  else ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = p.team === "ball" ? "#222" : "rgba(255,255,255,.9)";
+  ctx.stroke();
+  if (p.team === "ball"){
+    // 簡易ボール模様
+    ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = "#222"; ctx.fill();
+  } else {
+    ctx.fillStyle = "#fff";
+    ctx.font = "700 " + Math.round(r * 1.02) + "px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(p.num, x, y + 0.5);
+  }
+  ctx.restore();
+}
+
+function draw(){
+  const v = V();
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  v.draw();
+  for (const a of board().arrows) drawArrow(a, false);
+  if (tempArrow) drawArrow(tempArrow, true);
+  for (const p of board().players) drawPlayer(p);
+}
+
+/* ============================================================
+   入力 (マウス + タッチ)
+============================================================ */
+function evPos(e){
+  const rc = cv.getBoundingClientRect();
+  const t = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+  return { x: p2mx(t.clientX - rc.left), y: p2my(t.clientY - rc.top) };
+}
+function hitPlayer(mx, my){
+  const hr = (markerR() + 5) / scale;
+  const ps = board().players;
+  for (let i = ps.length - 1; i >= 0; i--){
+    if (Math.hypot(ps[i].x - mx, ps[i].y - my) < hr) return ps[i];
+  }
+  return null;
+}
+function distToSeg(px, py, a){
+  const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
+  const L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - a.x1) * dx + (py - a.y1) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (a.x1 + dx * t), py - (a.y1 + dy * t));
+}
+function hitArrow(mx, my){
+  const hr = 14 / scale;
+  const as = board().arrows;
+  for (let i = as.length - 1; i >= 0; i--){
+    if (distToSeg(mx, my, as[i]) < hr) return as[i];
+  }
+  return null;
+}
+function nextNum(team){
+  let n = 0;
+  for (const p of board().players) if (p.team === team && p.num > n) n = p.num;
+  return n + 1;
+}
+function eraseAt(mx, my){
+  const p = hitPlayer(mx, my);
+  if (p){ board().players.splice(board().players.indexOf(p), 1); checkBench(); draw(); return; }
+  const a = hitArrow(mx, my);
+  if (a){ board().arrows.splice(board().arrows.indexOf(a), 1); draw(); }
+}
+function deletePlayerAt(mx, my){
+  const p = hitPlayer(mx, my);
+  if (p){ board().players.splice(board().players.indexOf(p), 1); clearPresetSel(); checkBench(); draw(); }
+}
+
+let lastTap = { t:0, x:0, y:0 };
+
+function pointerDown(e){
+  if (animating) return;
+  const m = evPos(e);
+  if (tool === "erase"){ eraseAt(m.x, m.y); dragP = "erasing"; return; }
+  if (tool === "move" || tool === "pass" || tool === "dribble"){
+    tempArrow = { kind:tool, x1:m.x, y1:m.y, x2:m.x, y2:m.y };
+    return;
+  }
+  const hit = hitPlayer(m.x, m.y);
+  if (hit){ dragP = hit; return; }
+  if (tool === "atk" || tool === "def" || tool === "ball"){
+    const p = { team:tool, x:m.x, y:m.y, num: tool === "ball" ? 0 : nextNum(tool) };
+    board().players.push(p);
+    dragP = p;
+    clearPresetSel();
+    draw();
+    checkBench();
+  }
+}
+function pointerMove(e){
+  if (animating) return;
+  const m = evPos(e);
+  if (tempArrow){ tempArrow.x2 = m.x; tempArrow.y2 = m.y; draw(); return; }
+  if (dragP === "erasing"){ eraseAt(m.x, m.y); return; }
+  if (dragP){
+    dragP.x = Math.max(-V().ml, Math.min(V().fw + V().mr, m.x));
+    dragP.y = Math.max(-V().mt, Math.min(V().fh + V().mb, m.y));
+    draw();
+  }
+}
+function pointerUp(e){
+  if (tempArrow){
+    const len = Math.hypot(tempArrow.x2 - tempArrow.x1, tempArrow.y2 - tempArrow.y1);
+    if (len > 1.2){ board().arrows.push(tempArrow); clearPresetSel(); }
+    tempArrow = null;
+    draw();
+  }
+  dragP = null;
+}
+
+cv.addEventListener("mousedown", pointerDown);
+window.addEventListener("mousemove", e => { if (dragP || tempArrow) pointerMove(e); });
+window.addEventListener("mouseup", pointerUp);
+cv.addEventListener("dblclick", e => { const m = evPos(e); deletePlayerAt(m.x, m.y); });
+
+cv.addEventListener("touchstart", e => {
+  e.preventDefault();
+  const m = evPos(e);
+  const now = Date.now();
+  const rc = cv.getBoundingClientRect();
+  const t = e.touches[0];
+  const sx = t.clientX - rc.left, sy = t.clientY - rc.top;
+  if (now - lastTap.t < 350 && Math.hypot(sx - lastTap.x, sy - lastTap.y) < 24){
+    deletePlayerAt(m.x, m.y);
+    lastTap = { t:0, x:0, y:0 };
+    dragP = null; tempArrow = null;
+    return;
+  }
+  lastTap = { t:now, x:sx, y:sy };
+  pointerDown(e);
+}, { passive:false });
+cv.addEventListener("touchmove", e => { e.preventDefault(); pointerMove(e); }, { passive:false });
+cv.addEventListener("touchend",  e => { e.preventDefault(); pointerUp(e); },  { passive:false });
+
+/* ============================================================
+   ツールバー / タブ
+============================================================ */
+document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
+  b.addEventListener("click", () => {
+    tool = b.dataset.tool;
+    document.querySelectorAll("#toolbar [data-tool]").forEach(x => x.classList.toggle("active", x === b));
+  });
+});
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (animating) return;
+  board().players = []; board().arrows = [];
+  benchToastShown = false;
+  clearPresetSel();
+  setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
+  draw();
+});
+const heatBtn = document.getElementById("heatBtn");
+heatBtn.addEventListener("click", () => {
+  showHeat = !showHeat;
+  heatBtn.classList.toggle("active", showHeat);
+  draw();
+});
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => {
+    if (animating) return;
+    view = t.dataset.view;
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+    heatBtn.style.display = view === "corner" ? "" : "none";
+    buildPresetList();
+    clearPresetSel();
+    syncBenchFlag();
+    setDesc("", "プリセットを選ぶと、配置と動きが自動で再現され、ここに戦術のポイントが表示されます。");
+    resize();
+  });
+});
+
+/* ============================================================
+   プリセット定義
+   players: [team, x, y] / arrows: [kind, x1,y1, x2,y2]
+============================================================ */
+const PRESETS = {
+corner: [
+  {
+    name:"ニアゾーンアタック",
+    desc:"ニアポスト前の「ニアゾーン」に複数人が時間差で走り込み、インスイングのボールをワンタッチで合わせる定番の得点パターン。GKと守備ラインの中間に落ちるボールは、触るだけで枠に飛びやすい。",
+    coach:"コーチングポイント：キッカーの助走開始を合図にスタート。ニアの選手は「すらす」だけでOK、後ろの選手がこぼれを狙う。",
+    players:[["atk",54.8,1.2],["atk",25,13],["atk",29,12],["atk",21,14],["atk",16,11],
+             ["def",22,0.9],["def",26,5],["def",23,6.2],["def",19.5,6.2],["def",27,9],["def",22,10.5],
+             ["ball",54.1,0.9]],
+    arrows:[["pass",54.3,1.0,27,4],
+            ["move",25,13,27.5,4.2],["move",29,12,24.5,5.5],
+            ["move",21,14,21,7],["move",16,11,17.8,5]]
+  },
+  {
+    name:"ファーサイドオーバーロード",
+    desc:"ファーサイド(遠いポスト側)に選手を密集させて数的優位を作り、山なりのボールをファーで合わせる。GKから最も遠いエリアなので、キャッチされにくく折り返しも狙える。",
+    coach:"コーチングポイント：密集からの「散らばる」動き出しでマークを剥がす。ファーで競り勝てなくても中へ折り返す意識を徹底。",
+    players:[["atk",54.8,1.2],["atk",14,9],["atk",12,12],["atk",17,11],["atk",21,13],
+             ["def",22,0.9],["def",16,5],["def",19,6],["def",23,6],["def",26,4],
+             ["ball",54.1,0.9]],
+    arrows:[["pass",54.3,1.0,16.5,5],
+            ["move",14,9,16.8,4.5],["move",12,12,14,7],
+            ["move",17,11,19,5],["move",21,13,22,6.5]]
+  },
+  {
+    name:"ショートコーナー",
+    desc:"近くの味方と2対1を作ってから角度を変えてクロス。守備が出てくれば中の枚数が減り、出てこなければフリーでクロスを上げられる、二択を突きつけるプレー。",
+    coach:"コーチングポイント：受け手はオフサイドラインに注意しつつ深い位置で受ける。中の選手はクロスのタイミングまで動き直しを続ける。",
+    players:[["atk",54.8,1.2],["atk",50.5,4.5],["atk",43,9.5],["atk",24,9],["atk",19,9],
+             ["def",22,0.9],["def",27,4],["def",23,5],["def",19,5],["def",48,4],
+             ["ball",54.1,0.9]],
+    arrows:[["pass",54.2,1.0,50.3,4.3],["pass",50.5,4.5,43.5,9.2],["pass",43,9.5,22,5.5],
+            ["move",24,9,24,4.5],["move",19,9,20,5],["move",48,4,51,2.8]]
+  },
+  {
+    name:"ゾーンディフェンス配置",
+    desc:"守備側の基本形。マンツーマンではなく、危険なゾーン(ゴールエリア前〜ニアゾーン)を人で埋める配置。相手の動きに釣られず、ボールの落下点に最初に触ることを最優先する。",
+    coach:"コーチングポイント：クリアは「高く・遠く・外へ」。ニアゾーンの選手は絶対に触らせない意識。セカンドボール回収役をPA外に必ず置く。",
+    players:[["def",22,1.2],["def",28.5,3],["def",26,5],["def",23.2,5.8],["def",20.4,5.8],["def",17.6,5],["def",15,3.5],["def",24,10.5],["def",19,10.5],["def",50,3],
+             ["atk",54.8,1.2],["atk",24,8],["atk",20,8],
+             ["ball",54.1,0.9]],
+    arrows:[]
+  }
+],
+throwin: [
+  {
+    name:"ロングスロー",
+    desc:"ペナルティエリア内へ直接投げ込み、コーナーキックのような攻撃を仕掛ける。ニアで背の高い選手が「すらし」、ファーとゴール正面で合わせる形が基本。",
+    coach:"コーチングポイント：投げ手は助走をしっかり取り、フラットで速いボールを。PA外にセカンドボール回収役を必ず配置する。",
+    players:[["atk",47.5,1],["atk",48.5,26],["atk",44,30],["atk",41,24],["atk",38,17],
+             ["def",51.5,34],["def",47.5,28],["def",45.5,32],["def",42.5,26],
+             ["ball",47.5,2.2]],
+    arrows:[["pass",47.5,2.0,48.5,25],["pass",48.7,26.5,47.5,32],
+            ["move",44,30,47.5,33],["move",41,24,45.5,29]]
+  },
+  {
+    name:"サードマン(投げる→落とす→3人目)",
+    desc:"マークされた選手へ一度投げて足元で「落とし」、フリーの3人目が前を向いてスペースで受けるコンビネーション。スローインは密集しやすいので、3人目の関わりが最も効果的。",
+    coach:"コーチングポイント：受け手は投げる瞬間に一歩マークを外す。落としはワンタッチで、3人目は落とす前に走り出す。",
+    players:[["atk",28,1],["atk",31,7],["atk",24.5,9],["atk",34,13],
+             ["def",32.5,8.5],["def",26.5,12],["def",38,10],
+             ["ball",28,2.2]],
+    arrows:[["pass",28,2.0,31,6.5],["pass",31.3,7.3,25.2,9],["pass",24.7,9.3,39,16],
+            ["move",34,13,39.5,16.5]]
+  },
+  {
+    name:"クイックリスタート",
+    desc:"相手の守備が整う前に素早く投げてライン際を突破する。スローインは「止まった時間」を作らないことが最大の武器。ボールを取りに行く速さがそのままチャンスの数になる。",
+    coach:"コーチングポイント：ボール確保から3秒以内を目標。受け手はタッチライン沿いを前向きにスプリント、投げ手はすぐ中へ入って次のプレーに関わる。",
+    players:[["atk",22,1],["atk",27,5],["atk",18,8],
+             ["def",30,9],["def",24,13],
+             ["ball",22,2.2]],
+    arrows:[["pass",22,2.0,36,3.5],
+            ["move",27,5,37,3],["move",18,8,26,7]]
+  }
+],
+eight: [
+  {
+    name:"フォーメーション 2-3-2",
+    desc:"攻守のバランスが良い8人制の王道フォーメーション。中盤3枚で数的優位を作りやすく、2トップで前線からのプレスも掛けやすい。ジュニア年代の導入に最適。",
+    coach:"コーチングポイント：中盤の真ん中(アンカー)がチームのへそ。DF2枚は幅を取りすぎず、中央を閉じることを最優先。",
+    players:[["atk",5,25],["atk",16,16],["atk",16,34],
+             ["atk",31,11],["atk",29,25],["atk",31,39],
+             ["atk",47,19],["atk",47,31],
+             ["ball",34,25]],
+    arrows:[]
+  },
+  {
+    name:"フォーメーション 3-3-1",
+    desc:"守備が安定する3バックの形。後ろに人数がいるためビルドアップの逃げ道が多く、負けない試合運びがしやすい。1トップは孤立しやすいので中盤の追い越しが鍵。",
+    coach:"コーチングポイント：3バックの両脇が攻撃時にサイドへ上がれると一気に厚みが出る。1トップは背負うプレーとプレスバックを両立。",
+    players:[["atk",5,25],["atk",15,12],["atk",14,25],["atk",15,38],
+             ["atk",32,12],["atk",30,25],["atk",32,38],
+             ["atk",48,25],
+             ["ball",34,25]],
+    arrows:[]
+  },
+  {
+    name:"フォーメーション 2-4-1",
+    desc:"中盤4枚でボール支配を狙う攻撃的な形。サイドの高い位置を取りやすく、ポゼッション志向のチームに向く。DF2枚の背後のスペース管理が最大のリスク。",
+    coach:"コーチングポイント：サイドMFは幅を取り、インサイドMFはライン間で受ける。奪われた瞬間の即時奪回(5秒ルール)をチームの約束事に。",
+    players:[["atk",5,25],["atk",15,17],["atk",15,33],
+             ["atk",32,8],["atk",30,20],["atk",30,30],["atk",32,42],
+             ["atk",48,25],
+             ["ball",34,25]],
+    arrows:[]
+  }
+]
+};
+
+function buildPresetList(){
+  const list = document.getElementById("presetList");
+  list.innerHTML = "";
+  PRESETS[view].forEach((p, i) => {
+    const b = document.createElement("button");
+    b.className = "pbtn";
+    b.textContent = p.name;
+    b.addEventListener("click", () => applyPreset(i, b));
+    list.appendChild(b);
+  });
+}
+function clearPresetSel(){
+  if (activePresetBtn){ activePresetBtn.classList.remove("on"); activePresetBtn = null; }
+}
+function setDesc(title, body, coach){
+  document.getElementById("descTitle").textContent = title;
+  const box = document.getElementById("descBox");
+  box.textContent = body;
+  if (coach){
+    const c = document.createElement("span");
+    c.className = "coach";
+    c.textContent = coach;
+    box.appendChild(c);
+  }
+}
+function applyPreset(i, btn){
+  if (animating) return;
+  const p = PRESETS[view][i];
+  const b = board();
+  b.players = [];
+  const counters = { atk:0, def:0 };
+  for (const pl of p.players){
+    const num = pl[0] === "ball" ? 0 : ++counters[pl[0]];
+    b.players.push({ team:pl[0], x:pl[1], y:pl[2], num });
+  }
+  b.arrows = p.arrows.map(a => ({ kind:a[0], x1:a[1], y1:a[2], x2:a[3], y2:a[4] }));
+  clearPresetSel();
+  activePresetBtn = btn;
+  btn.classList.add("on");
+  setDesc(p.name, p.desc, p.coach);
+  if (kantokuMode) addKantokuQuote();
+  syncBenchFlag();
+  draw();
+  toast("プリセット「" + p.name + "」を配置しました");
+}
+
+/* ============================================================
+   アニメーション再生
+   - 攻守マーカー: 起点が近い「移動/ドリブル」矢印に沿って移動
+   - ボール: 起点が近い「パス」矢印をチェーンでたどる
+============================================================ */
+const playBtn = document.getElementById("playBtn");
+playBtn.addEventListener("click", startAnim);
+
+function startAnim(){
+  if (animating) return;
+  const b = board();
+  const jobs = [];
+  const BIND = 3.2; // 紐付け距離(m)
+  for (const p of b.players){
+    if (p.team === "ball"){
+      let cx = p.x, cy = p.y;
+      const used = new Set(), path = [];
+      for (;;){
+        let best = null, bd = BIND;
+        for (const a of b.arrows){
+          if (a.kind !== "pass" || used.has(a)) continue;
+          const d = Math.hypot(a.x1 - cx, a.y1 - cy);
+          if (d < bd){ bd = d; best = a; }
+        }
+        if (!best) break;
+        used.add(best); path.push(best);
+        cx = best.x2; cy = best.y2;
+      }
+      if (path.length) jobs.push({ p, path, ox:p.x, oy:p.y });
+    } else {
+      let best = null, bd = BIND;
+      for (const a of b.arrows){
+        if (a.kind === "pass") continue;
+        const d = Math.hypot(a.x1 - p.x, a.y1 - p.y);
+        if (d < bd){ bd = d; best = a; }
+      }
+      if (best) jobs.push({ p, path:[best], ox:p.x, oy:p.y });
+    }
+  }
+  if (!jobs.length){ toast("再生できる矢印がありません(矢印の起点をマーカーの近くに)"); return; }
+  // 各ジョブの累積距離
+  for (const j of jobs){
+    j.lens = j.path.map(a => Math.hypot(a.x2 - a.x1, a.y2 - a.y1));
+    j.total = j.lens.reduce((s, l) => s + l, 0) || 1;
+  }
+  animating = true;
+  playBtn.disabled = true;
+  playCheer(1.7, 0.16);
+  spawnCheers(8);
+  const DUR = 2000;
+  const t0 = performance.now();
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  function frame(now){
+    const raw = Math.min(1, (now - t0) / DUR);
+    const t = ease(raw);
+    for (const j of jobs){
+      let dist = t * j.total;
+      let seg = 0;
+      while (seg < j.path.length - 1 && dist > j.lens[seg]){ dist -= j.lens[seg]; seg++; }
+      const a = j.path[seg];
+      const f = j.lens[seg] ? Math.min(1, dist / j.lens[seg]) : 1;
+      j.p.x = a.x1 + (a.x2 - a.x1) * f;
+      j.p.y = a.y1 + (a.y2 - a.y1) * f;
+    }
+    draw();
+    if (raw < 1){ requestAnimationFrame(frame); }
+    else {
+      if (ballInGoal()) golazo();
+      setTimeout(() => {
+        for (const j of jobs){ j.p.x = j.ox; j.p.y = j.oy; }
+        animating = false;
+        playBtn.disabled = false;
+        draw();
+      }, 900);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   保存 / 共有
+============================================================ */
+function download(name, url){
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+document.getElementById("pngBtn").addEventListener("click", () => {
+  download("tactics-" + view + ".png", cv.toDataURL("image/png"));
+  toast("PNG画像を保存しました");
+});
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const data = { app:"tactics-board", version:1, activeView:view, boards };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+  download("tactics-board.json", URL.createObjectURL(blob));
+  toast("JSONをエクスポートしました");
+});
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d.boards) throw new Error("bad format");
+      for (const k of ["corner", "throwin", "eight"]){
+        if (d.boards[k]){
+          boards[k].players = (d.boards[k].players || []).filter(p =>
+            ["atk","def","ball"].includes(p.team) && isFinite(p.x) && isFinite(p.y)
+          ).map(p => ({ team:p.team, x:+p.x, y:+p.y, num:+p.num || 0 }));
+          boards[k].arrows = (d.boards[k].arrows || []).filter(a =>
+            ["move","pass","dribble"].includes(a.kind) &&
+            [a.x1,a.y1,a.x2,a.y2].every(isFinite)
+          ).map(a => ({ kind:a.kind, x1:+a.x1, y1:+a.y1, x2:+a.x2, y2:+a.y2 }));
+        }
+      }
+      if (d.activeView && VIEWS[d.activeView]){
+        view = d.activeView;
+        document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === view));
+        heatBtn.style.display = view === "corner" ? "" : "none";
+        buildPresetList();
+      }
+      clearPresetSel();
+      syncBenchFlag();
+      resize();
+      toast("JSONを読み込みました");
+    } catch (err){
+      toast("読み込みに失敗しました（形式が不正です）");
+    }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+});
+
+/* ---------- トースト ---------- */
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ============================================================
+   遊び心ゾーン: 歓声 / ゴラッソ演出 / 監督モード / ベンチトースト
+============================================================ */
+
+/* --- 歓声 (Web Audio: ホワイトノイズのスウェル) --- */
+let soundOn = true;   // 既定ON
+let audioCtx = null;
+const soundBtn = document.getElementById("soundBtn");
+soundBtn.addEventListener("click", () => {
+  soundOn = !soundOn;
+  soundBtn.classList.toggle("active", soundOn);
+  soundBtn.innerHTML = (soundOn ? "&#128266;" : "&#128263;") + " 歓声";
+  toast(soundOn ? "歓声ON：スタジアムが目を覚ました" : "歓声OFF：本日は無観客試合です");
+});
+function playCheer(duration, peak){
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const sr = audioCtx.sampleRate;
+    const buf = audioCtx.createBuffer(1, Math.max(1, Math.floor(sr * duration)), sr);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const filt = audioCtx.createBiquadFilter();
+    filt.type = "bandpass"; filt.frequency.value = 850; filt.Q.value = 0.5;
+    const gain = audioCtx.createGain();
+    const t = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(peak, t + duration * 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    src.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
+    src.start(t); src.stop(t + duration + 0.05);
+  } catch (e) { /* 音が出なくても試合は続く */ }
+}
+
+/* --- 「ワァァ」が湧き上がる演出 --- */
+const CHEER_WORDS = ["ワァァァ!", "ウォォォ!", "わーっ!", "オオォー!", "いけーっ!", "ワァー!"];
+function spawnCheers(n){
+  for (let i = 0; i < n; i++){
+    const s = document.createElement("span");
+    s.className = "cheer";
+    s.textContent = CHEER_WORDS[Math.floor(Math.random() * CHEER_WORDS.length)];
+    s.style.left = (6 + Math.random() * 84) + "%";
+    s.style.bottom = (5 + Math.random() * 35) + "%";
+    s.style.fontSize = (13 + Math.random() * 15) + "px";
+    s.style.animationDelay = (Math.random() * 0.55).toFixed(2) + "s";
+    boardBox.appendChild(s);
+    setTimeout(() => s.remove(), 2400);
+  }
+}
+
+/* --- ゴラッソ判定 & 演出 (ゴール枠のm座標 + わずかな余白) --- */
+const GOALS = {
+  corner:  [{ x1:18.1, y1:-2.3, x2:25.9, y2:0.4 }],
+  throwin: [{ x1:52.3, y1:30.1, x2:54.8, y2:37.9 }],
+  eight:   [{ x1:-1.9, y1:22.2, x2:0.4, y2:27.8 }, { x1:67.6, y1:22.2, x2:69.9, y2:27.8 }]
+};
+function ballInGoal(){
+  for (const p of board().players){
+    if (p.team !== "ball") continue;
+    for (const g of GOALS[view]){
+      if (p.x >= g.x1 && p.x <= g.x2 && p.y >= g.y1 && p.y <= g.y2) return true;
+    }
+  }
+  return false;
+}
+function golazo(){
+  const f = document.getElementById("flash");
+  const g = document.getElementById("golazo");
+  f.classList.remove("go"); g.classList.remove("go");
+  void f.offsetWidth; // reflow でアニメーションを再始動
+  f.classList.add("go"); g.classList.add("go");
+  playCheer(2.4, 0.24);
+  spawnCheers(16);
+  setTimeout(() => { f.classList.remove("go"); g.classList.remove("go"); }, 2000);
+}
+
+/* --- 監督モード --- */
+let kantokuMode = false;
+const KANTOKU_QUOTES = [
+  "ニアゾーンは戦術ではなく、生き様だ。",
+  "ボールは汗をかかない。走るのは君たちだ。",
+  "セットプレーは準備が9割。残りの1割も準備だ。",
+  "マークを外す一歩は、人生を変える一歩と同じ重さがある。",
+  "ファーサイドで待つ勇気。それは沈黙で語る哲学だ。",
+  "クリアは高く、遠く、そして未来へ。",
+  "ショートコーナーは臆病ではない。相手への敬意だ。",
+  "いいか、ゾーンを守るな。ゾーンに住め。",
+  "スローインを軽く見る者は、スローインに泣く。",
+  "セカンドボールを制する者が、月曜日の職員室を制する。",
+  "走り込むタイミングは俺が決めるんじゃない。ボールが決める。",
+  "壁になれとは言っていない。壁を超える人間になれと言っている。",
+  "点を取ったら喜べ。取られたら学べ。引き分けなら両方だ。",
+  "ベンチから見えるものがある。だからベンチも戦術だ。"
+];
+const kantokuBtn = document.getElementById("kantokuBtn");
+kantokuBtn.addEventListener("click", () => {
+  kantokuMode = !kantokuMode;
+  kantokuBtn.classList.toggle("active", kantokuMode);
+  toast(kantokuMode ? "監督モードON：戦術に魂が宿る" : "監督モードOFF：監督は静かにピッチを去った");
+});
+function addKantokuQuote(){
+  const q = KANTOKU_QUOTES[Math.floor(Math.random() * KANTOKU_QUOTES.length)];
+  const k = document.createElement("span");
+  k.className = "kantoku";
+  k.textContent = "📣 監督「" + q + "」";
+  document.getElementById("descBox").appendChild(k);
+}
+
+/* --- ベンチにも人生がある --- */
+let benchToastShown = false;
+function benchCount(){ return board().players.filter(p => p.team !== "ball").length; }
+function syncBenchFlag(){ benchToastShown = benchCount() >= 10; }
+function checkBench(){
+  const n = benchCount();
+  if (n >= 10 && !benchToastShown){
+    benchToastShown = true;
+    toast("選手を大切に。ベンチにも人生がある");
+  } else if (n < 10) benchToastShown = false;
+}
+
+/* ---------- 初期化 ---------- */
+heatBtn.style.display = "";  // 初期ビュー=corner
+buildPresetList();
+resize();
+</script>
+</body>
+</html>

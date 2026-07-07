@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全国オススメゴルフ場診断</title>
+<style>
+  :root {
+    --green: #2e8b57;
+    --green-dark: #1f6b41;
+    --green-light: #e6f5ec;
+    --sky: #7ec8e3;
+    --sky-light: #eaf7fc;
+    --ink: #2b3a33;
+    --sub: #5f7268;
+    --card-bg: #ffffff;
+    --radius: 18px;
+    --shadow: 0 8px 24px rgba(46, 139, 87, 0.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    color: var(--ink);
+    background: linear-gradient(175deg, var(--sky-light) 0%, #d8f0e2 45%, var(--green-light) 100%);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 16px 16px 56px;
+  }
+  .back-link {
+    display: inline-block;
+    font-size: 0.85rem;
+    color: var(--green-dark);
+    text-decoration: none;
+    margin-bottom: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.7);
+    transition: background 0.2s;
+  }
+  .back-link:hover { background: #fff; }
+  header.hero {
+    text-align: center;
+    padding: 10px 0 20px;
+  }
+  header.hero .flag { font-size: 2.6rem; display: block; margin-bottom: 4px; }
+  header.hero h1 {
+    font-size: 1.5rem;
+    color: var(--green-dark);
+    letter-spacing: 0.04em;
+  }
+  header.hero p.lead {
+    font-size: 0.9rem;
+    color: var(--sub);
+    margin-top: 6px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 20px;
+  }
+
+  /* start screen */
+  #start-screen { text-align: center; }
+  #start-screen .desc { font-size: 0.95rem; margin: 8px 0 20px; color: var(--sub); }
+  .btn {
+    display: inline-block;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--green) 0%, #3aa76a 100%);
+    padding: 14px 36px;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(46,139,87,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(46,139,87,0.45); }
+  .btn:active { transform: translateY(0); }
+  .btn.secondary {
+    background: #fff;
+    color: var(--green-dark);
+    border: 2px solid var(--green);
+    box-shadow: none;
+  }
+
+  /* progress */
+  .progress-area { margin-bottom: 16px; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--sub);
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 10px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--sky) 0%, var(--green) 100%);
+    border-radius: 999px;
+    transition: width 0.35s ease;
+  }
+
+  /* quiz */
+  .q-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--green-dark);
+  }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--sky-light);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+  .choice-btn .emoji { font-size: 1.4rem; flex-shrink: 0; }
+  .choice-btn:hover {
+    background: var(--green-light);
+    border-color: var(--green);
+    transform: translateX(3px);
+  }
+  .quiz-nav { margin-top: 18px; }
+  .back-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--sub);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+  }
+  .back-btn:hover { background: var(--sky-light); color: var(--green-dark); }
+  .back-btn[disabled] { visibility: hidden; }
+
+  .fade-q { animation: fadeQ 0.3s ease both; }
+  @keyframes fadeQ {
+    from { opacity: 0; transform: translateX(14px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* result */
+  #result-screen { display: none; }
+  .result-card {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+    animation: popIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .result-card:nth-of-type(2) { animation-delay: 0.25s; }
+  @keyframes popIn {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .result-head {
+    text-align: center;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed #cde5d6;
+    margin-bottom: 14px;
+  }
+  .result-head .type-emoji { font-size: 3rem; display: block; }
+  .result-head .you-are { font-size: 0.8rem; color: var(--sub); margin-top: 6px; }
+  .result-head h2 {
+    font-size: 1.45rem;
+    color: var(--green-dark);
+    margin: 2px 0;
+  }
+  .result-head .catch {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(90deg, var(--sky) 0%, var(--green) 100%);
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-top: 6px;
+  }
+  .result-desc { font-size: 0.92rem; }
+
+  .course-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .course-card {
+    background: var(--green-light);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .course-card .course-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .course-card .course-name { font-weight: 700; font-size: 0.95rem; }
+  .course-card .course-meta {
+    font-size: 0.78rem;
+    color: var(--green-dark);
+    background: #fff;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .course-card .course-note { font-size: 0.85rem; color: var(--sub); margin-top: 4px; }
+  .disclaimer {
+    font-size: 0.75rem;
+    color: var(--sub);
+    margin-top: 12px;
+  }
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    text-align: center;
+  }
+  .copy-done {
+    font-size: 0.8rem;
+    color: var(--green-dark);
+    min-height: 1.2em;
+  }
+  footer.page-foot {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--sub);
+    margin-top: 28px;
+  }
+  @media (min-width: 480px) {
+    header.hero h1 { font-size: 1.7rem; }
+    .card { padding: 28px 28px; }
+    .result-actions { flex-direction: row; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="index.html">← 実験ラボに戻る</a>
+
+  <header class="hero">
+    <span class="flag">⛳</span>
+    <h1>全国オススメゴルフ場診断</h1>
+    <p class="lead">8つの質問で、あなたにピッタリのゴルフ場タイプがわかる！</p>
+  </header>
+
+  <!-- start -->
+  <section id="start-screen" class="card">
+    <p class="desc">
+      腕前、予算、こだわりポイント……<br>
+      あなたのゴルフスタイルを分析して、<br>
+      <strong>6タイプ</strong>の中からあなたに合うタイプと<br>
+      全国の実在おすすめコース3選をご提案します🏌️
+    </p>
+    <button class="btn" id="start-btn">診断スタート！</button>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz-screen" style="display:none;">
+    <div class="progress-area">
+      <div class="progress-label">
+        <span id="progress-text">Q1 / 8</span>
+        <span>⛳ 診断中…</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="card" id="quiz-card">
+      <div id="q-body"></div>
+      <div class="quiz-nav">
+        <button class="back-btn" id="back-btn">← 前の質問に戻る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- result -->
+  <section id="result-screen">
+    <div class="card result-card">
+      <div class="result-head">
+        <span class="type-emoji" id="r-emoji"></span>
+        <p class="you-are">あなたのタイプは……</p>
+        <h2 id="r-name"></h2>
+        <span class="catch" id="r-catch"></span>
+      </div>
+      <p class="result-desc" id="r-desc"></p>
+    </div>
+
+    <div class="card result-card" style="margin-top:16px;">
+      <h3 class="course-section-title">🏌️ あなたにおすすめのコース3選</h3>
+      <div id="r-courses"></div>
+      <p class="disclaimer">※情報は概算・目安です。予約前に公式情報をご確認ください。</p>
+      <div class="result-actions">
+        <button class="btn" id="copy-btn">📋 結果をコピー</button>
+        <button class="btn secondary" id="retry-btn">🔄 もう一度診断</button>
+      </div>
+      <p class="copy-done" id="copy-done"></p>
+    </div>
+  </section>
+
+  <footer class="page-foot">全国オススメゴルフ場診断 | エンタメ診断コンテンツです</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // タイプキー: resort / strategy / cospa / meimon / onsen / settai
+  var QUESTIONS = [
+    {
+      title: "Q1. あなたの腕前（平均スコア）は？",
+      choices: [
+        { emoji: "🐣", label: "120以上（はじめたばかり）", pts: { cospa: 2, onsen: 1 } },
+        { emoji: "🙂", label: "100〜120（楽しく回りたい）", pts: { cospa: 1, resort: 1, onsen: 1 } },
+        { emoji: "💪", label: "90〜100（上達志向）", pts: { strategy: 2, settai: 1 } },
+        { emoji: "🏆", label: "80台以下（腕に自信あり）", pts: { strategy: 2, meimon: 2 } }
+      ]
+    },
+    {
+      title: "Q2. 1ラウンドの予算感は？",
+      choices: [
+        { emoji: "💰", label: "〜1万円（安さ最優先！）", pts: { cospa: 3 } },
+        { emoji: "💳", label: "1〜2万円（バランス重視）", pts: { strategy: 1, onsen: 1, cospa: 1 } },
+        { emoji: "💎", label: "2〜3万円（良い体験に投資）", pts: { resort: 2, settai: 1 } },
+        { emoji: "👑", label: "3万円超（特別な一日なら惜しまない）", pts: { meimon: 2, settai: 2 } }
+      ]
+    },
+    {
+      title: "Q3. 自宅からの移動、どこまでOK？",
+      choices: [
+        { emoji: "🚗", label: "1時間以内！近場がいちばん", pts: { cospa: 2, settai: 1 } },
+        { emoji: "🛣️", label: "2時間くらいなら遠征気分で楽しい", pts: { strategy: 1, meimon: 1, onsen: 1 } },
+        { emoji: "✈️", label: "飛行機や新幹線でも！旅とセットで", pts: { resort: 3, onsen: 1 } }
+      ]
+    },
+    {
+      title: "Q4. ゴルフ場でいちばん重視するのは？",
+      choices: [
+        { emoji: "🌅", label: "景色！絶景の中で打ちたい", pts: { resort: 3 } },
+        { emoji: "🧠", label: "戦略性！考えるゴルフが好き", pts: { strategy: 3, meimon: 1 } },
+        { emoji: "🉐", label: "コスパ！気軽にたくさん回りたい", pts: { cospa: 3 } },
+        { emoji: "🤝", label: "格式と設備！接待映えが大事", pts: { settai: 3, meimon: 1 } }
+      ]
+    },
+    {
+      title: "Q5. 温泉やグルメも楽しみたい？",
+      choices: [
+        { emoji: "♨️", label: "むしろそっちがメインまである", pts: { onsen: 3, resort: 1 } },
+        { emoji: "🍽️", label: "あれば嬉しい。食事は大事", pts: { onsen: 1, settai: 1, resort: 1 } },
+        { emoji: "⛳", label: "ゴルフに集中！余計なものは不要", pts: { strategy: 2, meimon: 1 } }
+      ]
+    },
+    {
+      title: "Q6. いつも誰とラウンドする？",
+      choices: [
+        { emoji: "🍻", label: "気の合う仲間とワイワイ", pts: { cospa: 2, onsen: 1 } },
+        { emoji: "💼", label: "取引先・上司と（仕事がらみ多め）", pts: { settai: 3 } },
+        { emoji: "👨‍👩‍👧", label: "家族・パートナーとのんびり", pts: { onsen: 2, resort: 1 } },
+        { emoji: "🚶", label: "一人予約でストイックに", pts: { strategy: 2, meimon: 1 } }
+      ]
+    },
+    {
+      title: "Q7. 好きな季節・ラウンド日和は？",
+      choices: [
+        { emoji: "🌸", label: "春！花と新緑のフェアウェイ", pts: { onsen: 1, resort: 1, cospa: 1 } },
+        { emoji: "🌻", label: "夏！高原の避暑ゴルフ最高", pts: { resort: 2, onsen: 1 } },
+        { emoji: "🍁", label: "秋！ベストシーズンに本気の一戦", pts: { strategy: 1, meimon: 1, settai: 1 } },
+        { emoji: "❄️", label: "冬！空いてて安いオフシーズン狙い", pts: { cospa: 2 } }
+      ]
+    },
+    {
+      title: "Q8. 名門コースの緊張感 vs 気楽なエンジョイ、どっち派？",
+      choices: [
+        { emoji: "🔥", label: "名門で緊張感を味わいたい！", pts: { meimon: 3, settai: 1 } },
+        { emoji: "😌", label: "気楽にエンジョイがいちばん", pts: { cospa: 2, onsen: 1 } },
+        { emoji: "⚖️", label: "たまには挑戦、普段はのんびり", pts: { strategy: 1, resort: 1, onsen: 1 } }
+      ]
+    }
+  ];
+
+  var TYPES = {
+    resort: {
+      emoji: "🌅",
+      name: "絶景リゾート派",
+      catchcopy: "ゴルフは、旅だ。",
+      desc: "あなたにとってゴルフは「非日常への扉」。スコアよりもまず、ティーグラウンドから見える海や山並みに心を奪われるタイプです。遠征もいとわない行動力があり、旅程を組んでいる時間すら楽しめる根っからのトラベラー気質。次の連休は、絶景コースへの弾丸ゴルフ旅を計画してみては？",
+      courses: [
+        { name: "川奈ホテルゴルフコース 富士コース", pref: "静岡県", price: "¥¥¥", note: "太平洋を見下ろす日本屈指のシーサイドコース。世界のトーナメントの舞台。" },
+        { name: "フェニックスカントリークラブ", pref: "宮崎県", price: "¥¥¥", note: "松林と南国の空が広がる名リゾート。ダンロップフェニックス開催コース。" },
+        { name: "軽井沢72ゴルフ", pref: "長野県", price: "¥¥", note: "浅間山を望む高原ゴルフの聖地。夏でも爽やか、コース数も豊富。" }
+      ]
+    },
+    strategy: {
+      emoji: "🧠",
+      name: "戦略派シングル候補生",
+      catchcopy: "1打ごとに、頭脳戦。",
+      desc: "あなたはコースと「対話」しながら攻めるタイプ。ハザードの配置を読み、風を計算し、あえて刻む勇気も持っています。練習にも余念がなく、伸びしろは6タイプ中No.1。難コースに挑むほど燃える性格なので、次のラウンドは設計家の意図が光る戦略型コースがおすすめです。",
+      courses: [
+        { name: "太平洋クラブ御殿場コース", pref: "静岡県", price: "¥¥¥", note: "富士山麓の戦略性あふれる名コース。三井住友VISA太平洋マスターズの舞台。" },
+        { name: "大洗ゴルフ倶楽部", pref: "茨城県", price: "¥¥¥", note: "海風と松林が牙をむく林間の傑作。井上誠一設計、腕試しに最適。" },
+        { name: "カレドニアン・ゴルフクラブ", pref: "千葉県", price: "¥¥", note: "うねるグリーンと深いバンカー。何度回っても飽きない戦略型レイアウト。" }
+      ]
+    },
+    cospa: {
+      emoji: "🉐",
+      name: "コスパエンジョイ派",
+      catchcopy: "安く、ゆるく、何度でも。",
+      desc: "あなたは「ゴルフ=最高の遊び」と割り切れる健全なエンジョイ勢。高いプレーフィより回数、格式よりも仲間との笑い声を大切にします。早朝スルーや薄暮、直前割の使いこなしはもはや職人級。フットワークの軽さを武器に、月イチどころか週イチゴルファーを目指しましょう！",
+      courses: [
+        { name: "市原京急カントリークラブ", pref: "千葉県", price: "¥", note: "都心からアクセス良好でリーズナブル。仲間とのカジュアルラウンドの定番。" },
+        { name: "赤羽ゴルフ倶楽部", pref: "東京都", price: "¥", note: "都内の河川敷名物コース。電車で行けて半日サクッと回れる手軽さが魅力。" },
+        { name: "大熱海国際ゴルフクラブ", pref: "静岡県", price: "¥", note: "36ホールの大型コースを手頃な料金で。温泉地・熱海とセットでも◎。" }
+      ]
+    },
+    meimon: {
+      emoji: "👑",
+      name: "名門チャレンジャー",
+      catchcopy: "その一打に、格式を。",
+      desc: "あなたは歴史と伝統に敬意を払い、緊張感すらごちそうにできる本格派。ドレスコードもマナーも「面倒」ではなく「様式美」と捉えるタイプです。名門の門をくぐるたびにゴルファーとしての格が一段上がる、そんな成長ストーリーの主人公。人脈と腕を磨いて、憧れのクラブハウスを目指しましょう。",
+      courses: [
+        { name: "廣野ゴルフ倶楽部", pref: "兵庫県", price: "¥¥¥", note: "日本最高峰と名高い超名門（※メンバー同伴・紹介が必要）。いつか立ちたい憧れの舞台。" },
+        { name: "霞ヶ関カンツリー倶楽部", pref: "埼玉県", price: "¥¥¥", note: "東京五輪の舞台となった歴史ある名門（※メンバー同伴等の制限あり）。" },
+        { name: "小樽カントリー倶楽部", pref: "北海道", price: "¥¥", note: "100年超の歴史を誇る北の名門。日本オープン開催の由緒あるチャンピオンコース。" }
+      ]
+    },
+    onsen: {
+      emoji: "♨️",
+      name: "温泉セットのんびり派",
+      catchcopy: "18ホールのあとの一湯まで、がゴルフ。",
+      desc: "あなたにとってゴルフは癒やしのトータルパッケージ。プレー後の温泉、地のものを使った食事、帰りの車内の心地よい疲労感までがワンセットです。スコアが崩れても「まあ温泉あるし」と切り替えられるメンタルの安定感は一級品。一泊二日のゴルフ+温泉旅で、心も体も整えましょう。",
+      courses: [
+        { name: "大浅間ゴルフクラブ", pref: "長野県", price: "¥¥", note: "浅間山麓の爽快な高原コース。軽井沢の温泉・グルメとセットで大満足。" },
+        { name: "箱根湖畔ゴルフコース", pref: "神奈川県", price: "¥¥", note: "富士と芦ノ湖を望むロケーション。プレー後は箱根の名湯へ直行。" },
+        { name: "指宿ゴルフクラブ", pref: "鹿児島県", price: "¥¥", note: "開聞岳と海を望む南国コース。名物の砂むし温泉で疲れを癒やす旅ゴルフに。" }
+      ]
+    },
+    settai: {
+      emoji: "🤝",
+      name: "接待エース",
+      catchcopy: "ビジネスは、フェアウェイで決まる。",
+      desc: "あなたはゴルフを最強のコミュニケーションツールに変えられる社交派。コース選び、組み合わせ、昼食のタイミングまで気配りが行き届き、同伴者を必ず笑顔にします。「あの人とのゴルフはまた行きたい」と言わせる人徳こそ最大の武器。アクセス良好で格式も備えた接待映えコースがあなたの主戦場です。",
+      courses: [
+        { name: "東京よみうりカントリークラブ", pref: "東京都", price: "¥¥¥", note: "都心から至近の名門トーナメントコース。アクセスと格式を兼ね備えた接待の王道。" },
+        { name: "袖ヶ浦カンツリークラブ", pref: "千葉県", price: "¥¥¥", note: "アクアラインで都心から好アクセス。落ち着いた林間の趣で商談もはずむ。" },
+        { name: "ザ・クラシックゴルフ倶楽部", pref: "福岡県", price: "¥¥", note: "豪華なクラブハウスが接待映え抜群。九州エリアのビジネスゴルフの定番。" }
+      ]
+    }
+  };
+
+  var TYPE_KEYS = ["resort", "strategy", "cospa", "meimon", "onsen", "settai"];
+
+  var current = 0;
+  var answers = []; // 選んだ選択肢のindex
+
+  var startScreen = document.getElementById("start-screen");
+  var quizScreen = document.getElementById("quiz-screen");
+  var resultScreen = document.getElementById("result-screen");
+  var qBody = document.getElementById("q-body");
+  var progressFill = document.getElementById("progress-fill");
+  var progressText = document.getElementById("progress-text");
+  var backBtn = document.getElementById("back-btn");
+  var copyDone = document.getElementById("copy-done");
+  var lastResultType = null;
+
+  function showQuestion() {
+    var q = QUESTIONS[current];
+    progressText.textContent = "Q" + (current + 1) + " / " + QUESTIONS.length;
+    progressFill.style.width = ((current) / QUESTIONS.length * 100) + "%";
+    backBtn.disabled = current === 0;
+
+    var html = '<div class="fade-q"><p class="q-title">' + q.title + '</p><div class="choices">';
+    q.choices.forEach(function (c, i) {
+      html += '<button type="button" class="choice-btn" data-idx="' + i + '">' +
+              '<span class="emoji">' + c.emoji + '</span><span>' + c.label + '</span></button>';
+    });
+    html += "</div></div>";
+    qBody.innerHTML = html;
+
+    var btns = qBody.querySelectorAll(".choice-btn");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener("click", onChoose);
+    }
+  }
+
+  function onChoose(e) {
+    var idx = parseInt(e.currentTarget.getAttribute("data-idx"), 10);
+    answers[current] = idx;
+    answers.length = current + 1; // 戻って選び直した場合、以降の回答を破棄
+    if (current < QUESTIONS.length - 1) {
+      current++;
+      showQuestion();
+    } else {
+      finishQuiz();
+    }
+  }
+
+  function calcType() {
+    var scores = {};
+    TYPE_KEYS.forEach(function (k) { scores[k] = 0; });
+    answers.forEach(function (choiceIdx, qIdx) {
+      var pts = QUESTIONS[qIdx].choices[choiceIdx].pts;
+      for (var k in pts) {
+        if (Object.prototype.hasOwnProperty.call(pts, k)) scores[k] += pts[k];
+      }
+    });
+    var best = TYPE_KEYS[0];
+    TYPE_KEYS.forEach(function (k) {
+      if (scores[k] > scores[best]) best = k;
+    });
+    return best;
+  }
+
+  function finishQuiz() {
+    progressFill.style.width = "100%";
+    var key = calcType();
+    lastResultType = key;
+    var t = TYPES[key];
+
+    document.getElementById("r-emoji").textContent = t.emoji;
+    document.getElementById("r-name").textContent = t.name;
+    document.getElementById("r-catch").textContent = t.catchcopy;
+    document.getElementById("r-desc").textContent = t.desc;
+
+    var ch = "";
+    t.courses.forEach(function (c) {
+      ch += '<div class="course-card">' +
+            '<div class="course-top"><span class="course-name">⛳ ' + c.name + '</span>' +
+            '<span class="course-meta">' + c.pref + '・' + c.price + '</span></div>' +
+            '<p class="course-note">' + c.note + '</p></div>';
+    });
+    document.getElementById("r-courses").innerHTML = ch;
+
+    quizScreen.style.display = "none";
+    resultScreen.style.display = "block";
+    copyDone.textContent = "";
+
+    // 演出用アニメーションを再発火
+    var cards = resultScreen.querySelectorAll(".result-card");
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].style.animation = "none";
+      void cards[i].offsetWidth; // reflow
+      cards[i].style.animation = "";
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function buildShareText() {
+    var t = TYPES[lastResultType];
+    var lines = [
+      "⛳【全国オススメゴルフ場診断】",
+      "私のタイプは… " + t.emoji + "「" + t.name + "」！",
+      "『" + t.catchcopy + "』",
+      "",
+      "おすすめコース:"
+    ];
+    t.courses.forEach(function (c) {
+      lines.push("・" + c.name + "（" + c.pref + "・" + c.price + "）");
+    });
+    lines.push("");
+    lines.push("#ゴルフ場診断 #ゴルフ好きと繋がりたい");
+    return lines.join("\n");
+  }
+
+  function copyResult() {
+    var text = buildShareText();
+    function ok() { copyDone.textContent = "✅ コピーしました！SNSでシェアしてみよう"; }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        ok();
+      } catch (err) {
+        copyDone.textContent = "コピーできませんでした。お手数ですが手動でコピーしてください。";
+      }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function resetQuiz() {
+    current = 0;
+    answers = [];
+    lastResultType = null;
+    resultScreen.style.display = "none";
+    quizScreen.style.display = "block";
+    showQuestion();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.getElementById("start-btn").addEventListener("click", function () {
+    startScreen.style.display = "none";
+    quizScreen.style.display = "block";
+    showQuestion();
+  });
+
+  backBtn.addEventListener("click", function () {
+    if (current > 0) {
+      current--;
+      showQuestion();
+    }
+  });
+
+  document.getElementById("copy-btn").addEventListener("click", copyResult);
+  document.getElementById("retry-btn").addEventListener("click", resetQuiz);
+})();
+</script>
+</body>
+</html>

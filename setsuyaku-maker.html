@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>節約メーカー 〜クレカ明細ぶった斬り道場〜</title>
+<style>
+  :root{
+    --navy:#0d1b2e;
+    --navy2:#12233c;
+    --navy3:#1a2f4e;
+    --gold:#d4af37;
+    --gold-light:#f0d878;
+    --gold-dim:#8a7326;
+    --ink:#f5f0e1;
+    --ink-dim:#b8b098;
+    --red:#e05a4e;
+    --green:#7fc97f;
+    --shadow:0 4px 16px rgba(0,0,0,.45);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--navy);
+    background-image:
+      radial-gradient(ellipse at 50% -10%, #1e3556 0%, transparent 55%),
+      repeating-linear-gradient(45deg, transparent 0 40px, rgba(212,175,55,.02) 40px 41px);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    min-height:100vh;
+    line-height:1.6;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:16px 16px 60px;}
+  a.back{
+    display:inline-block;color:var(--gold-light);text-decoration:none;
+    font-size:.9rem;margin-bottom:8px;border:1px solid var(--gold-dim);
+    padding:4px 12px;border-radius:20px;transition:.2s;
+  }
+  a.back:hover{background:var(--gold-dim);color:var(--navy);}
+  header{text-align:center;padding:10px 0 20px;}
+  h1{
+    font-family:"Yu Mincho","Hiragino Mincho ProN",serif;
+    font-weight:900;font-size:clamp(2rem,6vw,3.4rem);
+    color:var(--gold);letter-spacing:.08em;
+    text-shadow:2px 3px 0 #000, 0 0 30px rgba(212,175,55,.35);
+    -webkit-text-stroke:1px rgba(0,0,0,.3);
+  }
+  .subtitle{
+    font-family:"Yu Mincho",serif;color:var(--ink-dim);
+    font-size:clamp(.9rem,2.5vw,1.15rem);letter-spacing:.15em;margin-top:4px;
+  }
+  .subtitle::before,.subtitle::after{content:"〜";color:var(--gold-dim);}
+  .privacy{
+    margin:14px auto 0;max-width:640px;
+    background:linear-gradient(135deg,#20365a,#182b47);
+    border:2px solid var(--gold);border-radius:10px;
+    padding:10px 16px;font-weight:700;font-size:.95rem;
+    color:var(--gold-light);box-shadow:var(--shadow);
+  }
+  .card{
+    background:var(--navy2);border:1px solid #2a4066;border-radius:14px;
+    padding:20px;margin-top:20px;box-shadow:var(--shadow);
+  }
+  h2.sec{
+    font-family:"Yu Mincho",serif;font-weight:900;font-size:1.35rem;
+    color:var(--gold);border-bottom:2px solid var(--gold-dim);
+    padding-bottom:6px;margin-bottom:14px;letter-spacing:.1em;
+  }
+  h2.sec .en{font-size:.7rem;color:var(--ink-dim);letter-spacing:.2em;margin-left:10px;font-family:sans-serif;}
+  /* drop zone */
+  #dropzone{
+    border:3px dashed var(--gold-dim);border-radius:14px;
+    padding:36px 16px;text-align:center;cursor:pointer;transition:.2s;
+    background:rgba(212,175,55,.03);
+  }
+  #dropzone.drag{background:rgba(212,175,55,.15);border-color:var(--gold);transform:scale(1.01);}
+  #dropzone .big{font-size:2.4rem;}
+  #dropzone p{color:var(--ink-dim);margin-top:6px;font-size:.92rem;}
+  .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+  button.btn{
+    font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;
+    border:none;border-radius:8px;padding:12px 24px;transition:.15s;
+  }
+  .btn-gold{background:linear-gradient(180deg,var(--gold-light),var(--gold));color:#3a2e00;box-shadow:0 3px 0 var(--gold-dim);}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--gold-dim);}
+  .btn-ghost{background:transparent;color:var(--gold-light);border:1px solid var(--gold-dim);}
+  .btn-ghost:hover{background:rgba(212,175,55,.12);}
+  .hidden{display:none !important;}
+  /* mapping */
+  .maprow{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;}
+  .maprow label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--ink-dim);flex:1;min-width:180px;}
+  select,option{
+    background:var(--navy3);color:var(--ink);border:1px solid var(--gold-dim);
+    border-radius:6px;padding:8px;font-family:inherit;font-size:.95rem;
+  }
+  .err{color:var(--red);font-weight:700;}
+  /* summary tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+  .tile{background:var(--navy3);border:1px solid #2a4066;border-radius:10px;padding:14px;text-align:center;}
+  .tile .lbl{font-size:.8rem;color:var(--ink-dim);}
+  .tile .val{font-size:1.4rem;font-weight:900;color:var(--gold-light);font-family:"Yu Mincho",serif;}
+  /* charts */
+  .chartgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:760px){.chartgrid{grid-template-columns:1fr;}}
+  .chartbox{background:var(--navy3);border-radius:10px;padding:14px;}
+  .chartbox h3{font-size:1rem;color:var(--gold-light);margin-bottom:8px;font-family:"Yu Mincho",serif;}
+  canvas{max-width:100%;height:auto;display:block;}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.82rem;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;color:var(--ink-dim);}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;}
+  /* ranking bars */
+  .rank{display:flex;flex-direction:column;gap:7px;}
+  .rankrow{display:grid;grid-template-columns:1.4rem minmax(90px,160px) 1fr auto;gap:8px;align-items:center;font-size:.86rem;}
+  .rankrow .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);}
+  .rankrow .barbg{background:#0a1626;border-radius:5px;height:16px;overflow:hidden;}
+  .rankrow .bar{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:5px;}
+  .rankrow .amt{color:var(--gold-light);font-weight:700;white-space:nowrap;}
+  .rankrow .no{color:var(--gold);font-family:"Yu Mincho",serif;font-weight:900;text-align:right;}
+  /* coach */
+  #coach-sec{border:2px solid var(--gold);}
+  .coach-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between;}
+  .coach-face{font-size:3rem;filter:drop-shadow(0 0 10px rgba(224,90,78,.5));}
+  .tone-toggle{display:flex;border:1px solid var(--gold-dim);border-radius:22px;overflow:hidden;}
+  .tone-toggle button{
+    font-family:inherit;border:none;background:transparent;color:var(--ink-dim);
+    padding:8px 18px;cursor:pointer;font-weight:700;font-size:.92rem;transition:.15s;
+  }
+  .tone-toggle button.on{background:var(--gold);color:#3a2e00;}
+  .potential{
+    text-align:center;margin:18px 0;padding:20px;border-radius:12px;
+    background:linear-gradient(135deg,#2a1f05,#1a2f4e);border:1px solid var(--gold);
+  }
+  .potential .lbl{color:var(--gold-light);letter-spacing:.2em;font-size:.95rem;}
+  .potential .money{
+    font-family:"Yu Mincho",serif;font-weight:900;color:var(--gold);
+    font-size:clamp(2rem,7vw,3.2rem);text-shadow:2px 2px 0 #000;
+  }
+  .potential .conv{color:var(--ink-dim);font-size:.95rem;margin-top:6px;}
+  .advice{display:flex;flex-direction:column;gap:12px;}
+  .adv{
+    background:var(--navy3);border-left:5px solid var(--red);border-radius:8px;
+    padding:12px 16px;display:flex;gap:12px;align-items:flex-start;
+  }
+  body.angel .adv{border-left-color:var(--green);}
+  .adv .ic{font-size:1.6rem;flex-shrink:0;}
+  .adv .txt{flex:1;}
+  .adv .save{color:var(--gold-light);font-weight:700;font-size:.86rem;margin-top:3px;}
+  /* titles */
+  .titles{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+  .title-badge{
+    background:linear-gradient(135deg,#3a2e00,#1a2f4e);
+    border:1px solid var(--gold);border-radius:8px;padding:10px 16px;
+    font-family:"Yu Mincho",serif;font-weight:900;font-size:1.05rem;color:var(--gold-light);
+    box-shadow:var(--shadow);
+  }
+  .title-badge small{display:block;font-family:sans-serif;font-weight:400;font-size:.76rem;color:var(--ink-dim);}
+  /* detections */
+  .detect-list{display:flex;flex-direction:column;gap:8px;font-size:.92rem;}
+  .detect-list .d{background:var(--navy3);border-radius:8px;padding:9px 14px;}
+  .detect-list .d b{color:var(--gold-light);}
+  /* table */
+  .tablewrap{max-height:340px;overflow:auto;border:1px solid #2a4066;border-radius:8px;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th{position:sticky;top:0;background:var(--navy3);color:var(--gold-light);padding:8px;text-align:left;z-index:1;}
+  td{padding:6px 8px;border-top:1px solid #1e3050;}
+  tr:hover td{background:rgba(212,175,55,.06);}
+  td.num{text-align:right;white-space:nowrap;}
+  td select{padding:3px 6px;font-size:.82rem;}
+  .note{font-size:.8rem;color:var(--ink-dim);margin-top:8px;}
+  footer{text-align:center;margin-top:40px;color:var(--ink-dim);font-size:.82rem;}
+  .stamp{
+    display:inline-block;transform:rotate(-6deg);
+    border:3px solid var(--red);color:var(--red);border-radius:8px;
+    font-family:"Yu Mincho",serif;font-weight:900;padding:2px 10px;font-size:1.1rem;
+    margin-left:10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← 実験ラボに戻る</a>
+  <header>
+    <h1>節約メーカー</h1>
+    <div class="subtitle">クレカ明細ぶった斬り道場</div>
+    <div class="privacy">🔒 データはどこにも送信されません。すべてこの画面の中だけで処理されます</div>
+  </header>
+
+  <!-- 入力 -->
+  <section class="card" id="input-sec">
+    <h2 class="sec">壱ノ段 明細を差し出せ<span class="en">INPUT</span></h2>
+    <div id="dropzone">
+      <div class="big">📄⚔️</div>
+      <div><b>クレジットカード明細CSVをここにドラッグ&ドロップ</b></div>
+      <p>またはクリックしてファイルを選択（UTF-8 / Shift_JIS 対応・楽天カード / 三井住友 / JCB などの一般的な形式を自動判定）</p>
+      <input type="file" id="file-input" accept=".csv,text/csv" class="hidden">
+    </div>
+    <div class="btnrow">
+      <button class="btn btn-gold" id="btn-sample">👹 サンプル明細で試す（架空の3ヶ月分）</button>
+      <button class="btn btn-ghost hidden" id="btn-reset">別のCSVを読み込む</button>
+    </div>
+    <div id="parse-msg" class="note"></div>
+  </section>
+
+  <!-- 列マッピング -->
+  <section class="card hidden" id="map-sec">
+    <h2 class="sec">列の割当て<span class="en">MAPPING</span></h2>
+    <p class="err" id="map-msg">列を自動判定できませんでした。どの列がどれか教えてください。</p>
+    <div class="maprow">
+      <label>日付の列<select id="map-date"></select></label>
+      <label>店名・内容の列<select id="map-store"></select></label>
+      <label>金額の列<select id="map-amount"></select></label>
+    </div>
+    <div class="btnrow" style="justify-content:flex-start">
+      <button class="btn btn-gold" id="btn-map-apply">この割当てで分析する</button>
+    </div>
+  </section>
+
+  <div id="result-area" class="hidden">
+
+    <!-- サマリー -->
+    <section class="card">
+      <h2 class="sec">弐ノ段 支出の全貌<span class="en">SUMMARY</span></h2>
+      <div class="tiles" id="tiles"></div>
+    </section>
+
+    <!-- グラフ -->
+    <section class="card">
+      <h2 class="sec">参ノ段 見える化の術<span class="en">CHARTS</span></h2>
+      <div class="chartgrid">
+        <div class="chartbox">
+          <h3>カテゴリ別支出</h3>
+          <canvas id="pie" width="420" height="300"></canvas>
+          <div class="legend" id="pie-legend"></div>
+        </div>
+        <div class="chartbox">
+          <h3>月別推移</h3>
+          <canvas id="bars" width="420" height="300"></canvas>
+        </div>
+      </div>
+      <div class="chartbox" style="margin-top:20px">
+        <h3>店名別トップ10</h3>
+        <div class="rank" id="rank"></div>
+      </div>
+    </section>
+
+    <!-- 検出 -->
+    <section class="card">
+      <h2 class="sec">肆ノ段 浪費パターン検出<span class="en">DETECTION</span></h2>
+      <div class="detect-list" id="detects"></div>
+    </section>
+
+    <!-- コーチ -->
+    <section class="card" id="coach-sec">
+      <div class="coach-head">
+        <h2 class="sec" style="border:none;margin:0;padding:0">伍ノ段 コーチの指導<span class="en">ADVICE</span></h2>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="coach-face" id="coach-face">👹</div>
+          <div class="tone-toggle">
+            <button id="tone-oni" class="on">👹 鬼コーチ（辛口）</button>
+            <button id="tone-angel">😇 天使（優しい）</button>
+          </div>
+        </div>
+      </div>
+      <div class="potential">
+        <div class="lbl">節約ポテンシャル総額（年間）</div>
+        <div class="money" id="potential-money">¥0</div>
+        <div class="conv" id="potential-conv"></div>
+      </div>
+      <div class="advice" id="advice"></div>
+      <h2 class="sec" style="margin-top:26px">浪費タイプ診断 <span class="stamp">認定</span></h2>
+      <div class="titles" id="titles"></div>
+    </section>
+
+    <!-- 明細テーブル -->
+    <section class="card">
+      <h2 class="sec">六ノ段 全明細<span class="en">TRANSACTIONS</span></h2>
+      <p class="note">カテゴリはプルダウンで手動変更できます。変更すると分析も即座に更新されます。</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>日付</th><th>店名・内容</th><th style="text-align:right">金額</th><th>カテゴリ</th></tr></thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    節約メーカー 〜クレカ明細ぶった斬り道場〜<br>
+    ※アドバイスは娯楽込みの目安です
+  </footer>
+</div>
+
+<script>
+'use strict';
+
+/* ================= カテゴリ辞書 ================= */
+const CATEGORIES = ['コンビニ','カフェ','外食・飲み会','サブスク','交通・タクシー','スーパー','ドラッグストア','ネットショッピング','趣味・娯楽','その他'];
+const CAT_COLORS = {
+  'コンビニ':'#e05a4e','カフェ':'#c98f4e','外食・飲み会':'#d4af37','サブスク':'#8e6cc9',
+  '交通・タクシー':'#4e9ec9','スーパー':'#7fc97f','ドラッグストア':'#c96ca8',
+  'ネットショッピング':'#e0b04e','趣味・娯楽':'#5fc9b8','その他':'#8a93a8'
+};
+// 判定順が重要（サブスクをネットショッピングより先に）
+const KEYWORD_RULES = [
+  ['サブスク', ['NETFLIX','ネットフリックス','SPOTIFY','スポティファイ','AMAZON PRIME','AMAZONプライム','PRIME VIDEO','HULU','DISNEY','ディズニープラス','YOUTUBE','APPLE.COM/BILL','APPLE COM BILL','ICLOUD','ADOBE','DAZN','U-NEXT','UNEXT','KINDLE UNLIMITED','GOOGLE ONE','GOOGLE STORAGE','ABEMA','ニコニコ','DROPBOX','CHATGPT','OPENAI','ANTHROPIC','CLAUDE']],
+  ['コンビニ', ['セブン-イレブン','セブンイレブン','セブン‐イレブン','7-ELEVEN','ローソン','LAWSON','ファミリーマート','ファミマ','FAMILYMART','ミニストップ','デイリーヤマザキ','NEWDAYS','ニューデイズ','セイコーマート','ポプラ','コンビニ']],
+  ['カフェ', ['スターバックス','スタバ','STARBUCKS','ドトール','DOUTOR','タリーズ','TULLY','コメダ','エクセルシオール','サンマルクカフェ','プロント','PRONTO','ブルーボトル','珈琲','カフェ','CAFE','COFFEE','喫茶']],
+  ['外食・飲み会', ['居酒屋','鳥貴族','磯丸水産','塚田農場','和民','ワタミ','焼肉','焼鳥','串カツ','酒場','バル','ビアガーデン','マクドナルド','MCDONALD','モスバーガー','ケンタッキー','KFC','吉野家','すき家','松屋','ガスト','サイゼリヤ','バーミヤン','ジョナサン','デニーズ','ラーメン','寿司','スシロー','くら寿司','はま寿司','食堂','ダイニング','レストラン','UBER EATS','UBEREATS','出前館','ピザ','餃子の王将','丸亀製麺','天下一品','一蘭']],
+  ['交通・タクシー', ['タクシー','TAXI','日本交通','GOタクシー','GO タクシー','S.RIDE','DIDI','UBER TRIP','UBER *TRIP','JR東日本','JR西日本','JR東海','モバイルSUICA','SUICA','PASMO','ICOCA','メトロ','地下鉄','新幹線','ETC','高速道路','NEXCO','エアライン','ANA','JAL','バス','駐車場','パーキング','ガソリン','ENEOS','出光','コスモ石油']],
+  ['スーパー', ['イオン','AEON','イトーヨーカドー','西友','SEIYU','ライフ','マルエツ','サミット','オーケー','OK STORE','業務スーパー','成城石井','ヤオコー','コープ','いなげや','マックスバリュ','スーパー']],
+  ['ドラッグストア', ['マツモトキヨシ','マツキヨ','ウエルシア','ツルハ','スギ薬局','ココカラファイン','サンドラッグ','クリエイト','トモズ','ドラッグ','薬局','クスリ']],
+  ['ネットショッピング', ['AMAZON','アマゾン','楽天市場','RAKUTEN','ヤフーショッピング','YAHOO','ZOZO','メルカリ','ヨドバシ','ビックカメラ.COM','QOO10','SHEIN','ユニクロオンライン','ネット通販']],
+  ['趣味・娯楽', ['映画','シネマ','TOHO','イオンシネマ','カラオケ','ビッグエコー','まねきねこ','ゲーム','STEAM','NINTENDO','ニンテンドー','PLAYSTATION','書店','ブックス','紀伊國屋','ジュンク堂','TSUTAYA','ゴルフ','ジム','フィットネス','温泉','スパ','ボウリング','水族館','遊園地','チケット']],
+];
+function classify(store){
+  // NFKC正規化で全角英数（例: ＮＥＴＦＬＩＸ）や半角カナ（例: ｾﾌﾞﾝ）を吸収
+  const s = String(store||'').normalize('NFKC').toUpperCase();
+  for (const [cat, kws] of KEYWORD_RULES){
+    for (const kw of kws){ if (s.includes(kw.toUpperCase())) return cat; }
+  }
+  return 'その他';
+}
+
+/* ================= CSVパーサ（引用符・カンマ対応） ================= */
+function parseCSV(text){
+  const rows = []; let row = []; let field = ''; let inQ = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (inQ){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i++; } else inQ = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ','){ row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r'){
+        if (c === '\r' && text[i+1] === '\n') i++;
+        row.push(field); field = '';
+        if (row.length > 1 || row[0] !== '') rows.push(row);
+        row = [];
+      } else field += c;
+    }
+  }
+  row.push(field);
+  if (row.length > 1 || row[0] !== '') rows.push(row);
+  return rows;
+}
+
+/* ================= 文字コード判定（UTF-8 → Shift_JIS フォールバック） ================= */
+function decodeBuffer(buf){
+  try {
+    return new TextDecoder('utf-8', { fatal:true }).decode(buf);
+  } catch(e){
+    try { return new TextDecoder('shift_jis').decode(buf); }
+    catch(e2){ return new TextDecoder('utf-8').decode(buf); }
+  }
+}
+
+/* ================= 列自動判定 ================= */
+const COL_PATTERNS = {
+  date:   [/利用日/, /ご利用日/, /利用年月日/, /日付/, /取引日/, /^date$/i, /年月日/],
+  store:  [/利用店名/, /ご利用先/, /加盟店/, /利用先/, /店名/, /摘要/, /内容/, /名称/, /description/i, /merchant/i],
+  amount: [/利用金額/, /ご利用金額/, /支払金額/, /利用額/, /新規利用額/, /請求金額/, /^金額/, /金額/, /amount/i]
+};
+function detectColumns(headers){
+  const found = {};
+  for (const key of ['date','store','amount']){
+    found[key] = -1;
+    outer:
+    for (const pat of COL_PATTERNS[key]){
+      for (let i = 0; i < headers.length; i++){
+        const h = String(headers[i]||'').trim();
+        if (pat.test(h) && !Object.values(found).includes(i)){ found[key] = i; break outer; }
+      }
+    }
+  }
+  return found;
+}
+
+/* ================= 値パース ================= */
+function parseDateStr(s){
+  s = String(s||'').trim();
+  let m = s.match(/(\d{4})[\/\-年\.](\d{1,2})[\/\-月\.](\d{1,2})/);
+  if (!m) m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2]-1, +m[3]);
+  return isNaN(d) ? null : d;
+}
+function parseAmount(s){
+  const n = parseFloat(String(s||'').replace(/[,\s¥￥円"]/g,''));
+  return isNaN(n) ? null : n;
+}
+function yen(n){ return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function ymOf(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+
+/* ================= サンプルデータ生成（固定シード疑似乱数で毎回同じ） ================= */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function generateSample(){
+  const rnd = mulberry32(20260707);
+  const pick = arr => arr[Math.floor(rnd()*arr.length)];
+  const between = (a,b) => Math.round(a + rnd()*(b-a));
+  const txs = [];
+  const months = [[2026,4],[2026,5],[2026,6]];
+  const push = (y,mo,d,store,amt) => txs.push({date:new Date(y,mo-1,d), store, amount:amt});
+  const convStores = ['セブン-イレブン 神田駅前店','ローソン 秋葉原一丁目店','ファミリーマート 御茶ノ水店','セブン-イレブン 飯田橋東口店'];
+  const cafeStores = ['スターバックス 丸の内店','ドトールコーヒー 神保町店','タリーズコーヒー 御茶ノ水店'];
+  const izakaya = ['鳥貴族 神田店','磯丸水産 新橋店','居酒屋 うまいもん横丁','串カツ田中 秋葉原店'];
+  const taxi = ['日本交通タクシー(深夜)','GOタクシー 東京(深夜)','S.RIDEタクシー'];
+  for (const [y,mo] of months){
+    // コンビニ 月18回
+    for (let i=0;i<18;i++) push(y,mo,between(1,28),pick(convStores),between(280,980));
+    // カフェ 月8回
+    for (let i=0;i<8;i++) push(y,mo,between(1,28),pick(cafeStores),between(480,890));
+    // サブスク4件
+    push(y,mo,1,'NETFLIX.COM',1490);
+    push(y,mo,3,'SPOTIFY',980);
+    push(y,mo,5,'AMAZON PRIME',600);
+    push(y,mo,10,'YOUTUBE PREMIUM',1280);
+    // 飲み会 月3回
+    for (let i=0;i<3;i++) push(y,mo,pick([5,12,19,26]),pick(izakaya),between(3800,7800));
+    // 深夜タクシー 月2回
+    for (let i=0;i<2;i++) push(y,mo,pick([6,13,20,27]),pick(taxi),between(2600,4800));
+    // ネットショッピング 月2回
+    push(y,mo,between(8,25),'AMAZON.CO.JP',between(2200,8900));
+    push(y,mo,between(8,25),'楽天市場 ネット通販',between(1800,6400));
+    // スーパー 月2回
+    for (let i=0;i<2;i++) push(y,mo,between(2,27),'西友 三軒茶屋店',between(2400,4600));
+    // ドラッグストア 月1回
+    push(y,mo,between(4,24),'マツモトキヨシ 神田店',between(900,2400));
+    // 趣味 月1回
+    push(y,mo,between(10,26),pick(['TOHOシネマズ 日比谷','カラオケビッグエコー 上野店','STEAM GAMES']),between(1500,3400));
+  }
+  // 3ヶ月合計 = 40件×3 = 120件
+  return txs;
+}
+
+/* ================= 状態 ================= */
+let rawRows = null;       // CSVの生データ（マッピング用）
+let transactions = [];    // {date, ym, store, amount, cat}
+let tone = 'oni';
+
+/* ================= 入力ハンドリング ================= */
+const dz = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+dz.addEventListener('click', () => fileInput.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) loadFile(fileInput.files[0]); });
+
+document.getElementById('btn-sample').addEventListener('click', () => {
+  transactions = generateSample().map(t => ({...t, ym: ymOf(t.date), cat: classify(t.store)}));
+  transactions.sort((a,b) => a.date - b.date);
+  document.getElementById('parse-msg').textContent = '👹 サンプル明細（架空の3ヶ月・' + transactions.length + '件）を読み込んだ。覚悟はいいか。';
+  document.getElementById('map-sec').classList.add('hidden');
+  document.getElementById('btn-reset').classList.remove('hidden');
+  analyzeAndRender();
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  transactions = []; rawRows = null;
+  document.getElementById('result-area').classList.add('hidden');
+  document.getElementById('map-sec').classList.add('hidden');
+  document.getElementById('btn-reset').classList.add('hidden');
+  document.getElementById('parse-msg').textContent = '';
+  fileInput.value = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+function loadFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = decodeBuffer(reader.result);
+    const rows = parseCSV(text);
+    if (rows.length < 2){
+      document.getElementById('parse-msg').innerHTML = '<span class="err">CSVの読み込みに失敗しました（データ行がありません）。</span>';
+      return;
+    }
+    rawRows = rows;
+    const cols = detectColumns(rows[0]);
+    if (cols.date >= 0 && cols.store >= 0 && cols.amount >= 0){
+      buildTransactions(cols.date, cols.store, cols.amount);
+      document.getElementById('map-sec').classList.add('hidden');
+    } else {
+      showMappingUI(rows[0], cols);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showMappingUI(headers, guess){
+  const sec = document.getElementById('map-sec');
+  sec.classList.remove('hidden');
+  document.getElementById('result-area').classList.add('hidden');
+  for (const [id, key] of [['map-date','date'],['map-store','store'],['map-amount','amount']]){
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    headers.forEach((h,i) => {
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = (h||'(空)') + '（' + (i+1) + '列目）';
+      if (guess[key] === i) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  sec.scrollIntoView({behavior:'smooth'});
+}
+document.getElementById('btn-map-apply').addEventListener('click', () => {
+  buildTransactions(
+    +document.getElementById('map-date').value,
+    +document.getElementById('map-store').value,
+    +document.getElementById('map-amount').value
+  );
+});
+
+function buildTransactions(di, si, ai){
+  const out = [];
+  for (let r = 1; r < rawRows.length; r++){
+    const row = rawRows[r];
+    const d = parseDateStr(row[di]);
+    const amt = parseAmount(row[ai]);
+    const store = String(row[si]||'').trim();
+    if (!d || amt === null || amt <= 0 || !store) continue; // 支払・返金・空行はスキップ
+    out.push({date:d, ym: ymOf(d), store, amount: amt, cat: classify(store)});
+  }
+  if (out.length === 0){
+    document.getElementById('parse-msg').innerHTML = '<span class="err">有効な明細行が見つかりませんでした。列の割当てを確認してください。</span>';
+    showMappingUI(rawRows[0], detectColumns(rawRows[0]));
+    return;
+  }
+  out.sort((a,b) => a.date - b.date);
+  transactions = out;
+  document.getElementById('parse-msg').textContent = '✅ ' + out.length + '件の明細を読み込みました（' + (rawRows.length-1-out.length) + '件は日付/金額が読めずスキップ）。';
+  document.getElementById('map-sec').classList.add('hidden');
+  document.getElementById('btn-reset').classList.remove('hidden');
+  analyzeAndRender();
+}
+
+/* ================= 分析 ================= */
+function analyze(){
+  const byCat = {}, byMonth = {}, byStore = {};
+  let total = 0;
+  const months = new Set();
+  for (const t of transactions){
+    total += t.amount;
+    months.add(t.ym);
+    byCat[t.cat] = (byCat[t.cat]||0) + t.amount;
+    byMonth[t.ym] = (byMonth[t.ym]||0) + t.amount;
+    if (!byStore[t.store]) byStore[t.store] = {total:0, count:0, amounts:[], months:new Set()};
+    byStore[t.store].total += t.amount;
+    byStore[t.store].count++;
+    byStore[t.store].amounts.push(t.amount);
+    byStore[t.store].months.add(t.ym);
+  }
+  const nMonths = Math.max(1, months.size);
+
+  // --- サブスク検知: 同一店名 × ほぼ同額 × 複数月 ---
+  const subs = [];
+  const NOT_SUB_CATS = ['コンビニ','カフェ','外食・飲み会','スーパー','ドラッグストア','交通・タクシー'];
+  for (const [store, s] of Object.entries(byStore)){
+    if (s.months.size < 2) continue;          // 複数月にまたがること
+    if (s.count > nMonths + 1) continue;      // 月1回程度の頻度であること
+    if (NOT_SUB_CATS.includes(classify(store))) continue; // 実店舗系は対象外
+    const avg = s.total / s.count;
+    if (avg < 100) continue;
+    // 「ほぼ同額」= 金額同士が1.5%（最低20円）以内で並ぶペアがあること
+    const sorted = [...s.amounts].sort((a,b) => a-b);
+    let near = false;
+    for (let i = 1; i < sorted.length; i++){
+      if (sorted[i] - sorted[i-1] <= Math.max(20, sorted[i]*0.015)){ near = true; break; }
+    }
+    if (near) subs.push({store, monthly: Math.round(avg), months: s.months.size});
+  }
+  subs.sort((a,b) => b.monthly - a.monthly);
+
+  // --- ラテマネー検知: 1,000円未満 × 月10回以上 ---
+  const smallByMonth = {};
+  let smallTotal = 0, smallCount = 0;
+  for (const t of transactions){
+    if (t.amount < 1000){
+      smallByMonth[t.ym] = (smallByMonth[t.ym]||0) + 1;
+      smallTotal += t.amount; smallCount++;
+    }
+  }
+  const latteMonths = Object.entries(smallByMonth).filter(([,c]) => c >= 10);
+  const latte = latteMonths.length > 0 ? {
+    avgPerMonth: Math.round(smallCount / nMonths),
+    monthlyAmount: Math.round(smallTotal / nMonths),
+    avgPrice: smallCount ? Math.round(smallTotal / smallCount) : 0
+  } : null;
+
+  // --- カテゴリ別頻度 ---
+  const catCount = {};
+  for (const t of transactions) catCount[t.cat] = (catCount[t.cat]||0) + 1;
+  const perMonth = cat => (catCount[cat]||0) / nMonths;
+  const catAvgPrice = cat => (catCount[cat]||0) ? (byCat[cat]||0) / catCount[cat] : 0;
+
+  // --- タクシー（深夜含む） ---
+  const taxiTxs = transactions.filter(t =>
+    /タクシー|TAXI|UBER TRIP|S\.RIDE|GO ?タクシー|日本交通/i.test(t.store));
+  const nightTaxi = taxiTxs.filter(t => /深夜/.test(t.store));
+  const taxiTotal = taxiTxs.reduce((s,t) => s+t.amount, 0);
+
+  return { byCat, byMonth, byStore, total, nMonths, subs, latte,
+           catCount, perMonth, catAvgPrice, taxiTxs, nightTaxi, taxiTotal };
+}
+
+/* ================= アドバイス生成 ================= */
+function buildAdvice(A){
+  const items = []; // {icon, oni, angel, save(年間)}
+  const pm = A.perMonth, ap = A.catAvgPrice;
+
+  // コンビニ
+  const convPM = pm('コンビニ');
+  if (convPM >= 8){
+    const cut = Math.min(8, Math.round(convPM/2)); // 週2回減 ≒ 月8回
+    const save = Math.round(cut * ap('コンビニ') * 12);
+    items.push({icon:'🏪', save,
+      oni:`コンビニ月${Math.round(convPM)}回!? 冷蔵庫はインテリアか? 週2減らせば年間${yen(save)}浮くぞ。スーパーの袋を握りしめて出直してこい!`,
+      angel:`コンビニ、月${Math.round(convPM)}回はちょっと多めかも。週2回減らすと年間${yen(save)}になりますよ🌸 まとめ買いって意外と楽しいです`});
+  }
+  // カフェ
+  const cafePM = pm('カフェ');
+  if (cafePM >= 5){
+    const save = Math.round(4 * ap('カフェ') * 12);
+    items.push({icon:'☕', save,
+      oni:`カフェ月${Math.round(cafePM)}回。お前の血液はもうコーヒーだ。週1をマイボトルに替えるだけで年間${yen(save)}。豆から淹れろ、漢なら。`,
+      angel:`カフェタイム、月${Math.round(cafePM)}回ですね☕ 週1回だけお家コーヒーにすると年間${yen(save)}の余裕が生まれますよ🌸`});
+  }
+  // サブスク
+  if (A.subs.length >= 2){
+    const cheapest = A.subs[A.subs.length-1];
+    const totalM = A.subs.reduce((s,x) => s+x.monthly, 0);
+    const save = cheapest.monthly * 12;
+    items.push({icon:'📺', save,
+      oni:`サブスク${A.subs.length}件で月${yen(totalM)}。全部使ってるだと? 先週「${cheapest.store}」を開いたか思い出せ。1つ解約で年${yen(save)}だ!`,
+      angel:`サブスクが${A.subs.length}件（月${yen(totalM)}）見つかりました。全部使えてますか? 例えば「${cheapest.store}」を1つ解約すると年${yen(save)}になりますよ🌸`});
+  }
+  // ラテマネー
+  if (A.latte){
+    const save = Math.round(A.latte.monthlyAmount * 0.4 * 12);
+    items.push({icon:'💸', save,
+      oni:`1,000円未満の小口が月${A.latte.avgPerMonth}回、月${yen(A.latte.monthlyAmount)}。典型的なラテマネーだ! 「安いからいいや」の積み重ねが財布に穴を開ける。4割削って年${yen(save)}守り抜け!`,
+      angel:`1,000円未満の小さなお買い物が月${A.latte.avgPerMonth}回ありました。塵も積もれば月${yen(A.latte.monthlyAmount)}。少し意識するだけで年${yen(save)}くらい貯まりそうです🌸`});
+  }
+  // 深夜タクシー
+  if (A.taxiTxs.length >= 3){
+    const monthly = A.taxiTotal / A.nMonths;
+    const save = Math.round(monthly * 0.7 * 12);
+    const nightNote = A.nightTaxi.length ? `しかも深夜便${A.nightTaxi.length}回。` : '';
+    items.push({icon:'🚕', save,
+      oni:`タクシー${A.taxiTxs.length}回で計${yen(A.taxiTotal)}。${nightNote}終電はお前を待ってたぞ。走って帰れとは言わん、電車で帰れ。年${yen(save)}が戻ってくる!`,
+      angel:`タクシーのご利用が${A.taxiTxs.length}回（計${yen(A.taxiTotal)}）ありました。${nightNote}終電を意識するだけで年${yen(save)}くらい浮きそうです🌸 でも安全第一ですよ`});
+  }
+  // 飲み会
+  const nomiPM = pm('外食・飲み会');
+  const nomiAvg = ap('外食・飲み会');
+  if (nomiPM >= 3 && nomiAvg >= 3000){
+    const save = Math.round(nomiAvg * 12);
+    items.push({icon:'🍻', save,
+      oni:`飲み会・外食が月${Math.round(nomiPM)}回、1回平均${yen(nomiAvg)}。付き合いも結構だが、月1回「行かない勇気」で年${yen(save)}。二次会は幻だ、忘れろ!`,
+      angel:`飲み会・外食が月${Math.round(nomiPM)}回ペースですね🍻 月1回だけお家ごはんに替えると年${yen(save)}に。たまの休肝日は体にも優しいです🌸`});
+  }
+  // ネットショッピング
+  const netMonthly = (A.byCat['ネットショッピング']||0) / A.nMonths;
+  if (netMonthly >= 8000){
+    const save = Math.round(netMonthly * 0.2 * 12);
+    items.push({icon:'📦', save,
+      oni:`ネット通販が月${yen(netMonthly)}。ポチる指を一晩寝かせろ。カートで24時間熟成させれば2割は消える。年${yen(save)}の防衛戦だ!`,
+      angel:`ネットショッピングが月${yen(netMonthly)}ほど。カートに入れて一晩置く「熟成ルール」で2割減らせたら年${yen(save)}ですよ🌸`});
+  }
+  // 何も検出されなかった場合
+  if (items.length === 0){
+    items.push({icon:'🏆', save:0,
+      oni:`……む。斬るところが見当たらん。見事な明細だ。だが油断するな、財布の緩みは心の緩みから始まるぞ!`,
+      angel:`とても堅実な明細でした✨ このまま無理せず続けてくださいね🌸`});
+  }
+  items.sort((a,b) => b.save - a.save);
+  return items;
+}
+
+/* ================= 浪費タイプ診断 ================= */
+function buildTitles(A){
+  const pm = A.perMonth;
+  const share = cat => A.total ? (A.byCat[cat]||0) / A.total : 0;
+  const list = [];
+  if (pm('コンビニ') >= 12) list.push(['コンビニの主','店員に顔を覚えられしレジ前の帝王']);
+  if (A.subs.length >= 4) list.push(['サブスク集めし者','課金の星々を束ねる月額コレクター']);
+  if (A.nightTaxi.length >= 3 || A.taxiTxs.length >= 5) list.push(['深夜のタクシー王','終電を見送りし夜道の貴族']);
+  if (pm('カフェ') >= 6) list.push(['カフェインの錬金術師','豆を黄金に変える者…逆だが']);
+  if (pm('外食・飲み会') >= 3 && A.catAvgPrice('外食・飲み会') >= 3000) list.push(['宴の帝王','乾杯の音頭とともに万札が舞う']);
+  if ((A.catCount['ネットショッピング']||0) / A.nMonths >= 2 && share('ネットショッピング') >= 0.1) list.push(['ポチり将軍','段ボールの城を築きし指先の武人']);
+  if (A.latte) list.push(['ラテマネーの妖精','小銭の羽音とともに現れる散財の精']);
+  if (share('趣味・娯楽') >= 0.15) list.push(['趣味に生きる侍','推しと娯楽に魂を捧げし者']);
+  if ((A.catCount['ドラッグストア']||0) / A.nMonths >= 3) list.push(['薬箱の番人','ポイント倍デーに舞い降りる健康賢者']);
+  if (share('スーパー') >= 0.3) list.push(['台所の堅実者','自炊の炎を絶やさぬ家計の守り人']);
+  // 週末浪費
+  const weekend = transactions.filter(t => [0,6].includes(t.date.getDay())).reduce((s,t)=>s+t.amount,0);
+  if (A.total && weekend / A.total >= 0.45) list.push(['週末の解放者','金土日に財布の封印が解ける者']);
+  if (list.length === 0) list.push(['質実剛健の達人','斬る隙なし。見事な家計なり']);
+  return list.slice(0, 3);
+}
+
+/* ================= 描画 ================= */
+function analyzeAndRender(){
+  const A = analyze();
+  document.getElementById('result-area').classList.remove('hidden');
+
+  /* サマリータイル */
+  const monthlyAvg = A.total / A.nMonths;
+  document.getElementById('tiles').innerHTML = `
+    <div class="tile"><div class="lbl">総支出（${A.nMonths}ヶ月）</div><div class="val">${yen(A.total)}</div></div>
+    <div class="tile"><div class="lbl">月平均</div><div class="val">${yen(monthlyAvg)}</div></div>
+    <div class="tile"><div class="lbl">明細件数</div><div class="val">${transactions.length}件</div></div>
+    <div class="tile"><div class="lbl">サブスク疑い</div><div class="val">${A.subs.length}件</div></div>`;
+
+  drawPie(A);
+  drawBars(A);
+  drawRank(A);
+  renderDetects(A);
+  renderCoach(A);
+  renderTable();
+}
+
+function drawPie(A){
+  const cv = document.getElementById('pie'), ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const entries = CATEGORIES.map(c => [c, A.byCat[c]||0]).filter(([,v]) => v > 0);
+  const total = entries.reduce((s,[,v]) => s+v, 0) || 1;
+  const cx = cv.width/2, cy = cv.height/2, r = Math.min(cx,cy) - 24;
+  let ang = -Math.PI/2;
+  for (const [cat, v] of entries){
+    const a2 = ang + (v/total) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,ang,a2); ctx.closePath();
+    ctx.fillStyle = CAT_COLORS[cat]; ctx.fill();
+    ctx.strokeStyle = '#0d1b2e'; ctx.lineWidth = 2; ctx.stroke();
+    // パーセントラベル（5%以上のみ）
+    if (v/total >= 0.05){
+      const mid = (ang+a2)/2;
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round(v/total*100) + '%', cx + Math.cos(mid)*r*0.65, cy + Math.sin(mid)*r*0.65);
+    }
+    ang = a2;
+  }
+  // 中央ドーナツ穴
+  ctx.beginPath(); ctx.arc(cx,cy,r*0.42,0,Math.PI*2);
+  ctx.fillStyle = '#1a2f4e'; ctx.fill();
+  ctx.fillStyle = '#d4af37'; ctx.font = 'bold 14px "Yu Mincho",serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('支出内訳', cx, cy);
+  document.getElementById('pie-legend').innerHTML = entries
+    .sort((a,b) => b[1]-a[1])
+    .map(([c,v]) => `<span><i style="background:${CAT_COLORS[c]}"></i>${c} ${yen(v)}</span>`).join('');
+}
+
+function drawBars(A){
+  const cv = document.getElementById('bars'), ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const months = Object.keys(A.byMonth).sort();
+  const max = Math.max(...months.map(m => A.byMonth[m]), 1);
+  const pad = {l:56, r:12, t:16, b:34};
+  const W = cv.width - pad.l - pad.r, H = cv.height - pad.t - pad.b;
+  // 目盛り
+  ctx.strokeStyle = '#2a4066'; ctx.fillStyle = '#b8b098'; ctx.font = '10px sans-serif';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i=0;i<=4;i++){
+    const y = pad.t + H - H*i/4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cv.width-pad.r, y); ctx.stroke();
+    ctx.fillText((max*i/4/10000).toFixed(1) + '万', pad.l-6, y);
+  }
+  const bw = Math.min(64, W / months.length * 0.55);
+  months.forEach((m,i) => {
+    const x = pad.l + W*(i+0.5)/months.length - bw/2;
+    const h = H * A.byMonth[m] / max;
+    const g = ctx.createLinearGradient(0, pad.t+H-h, 0, pad.t+H);
+    g.addColorStop(0,'#f0d878'); g.addColorStop(1,'#8a7326');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, pad.t+H-h, bw, h);
+    ctx.fillStyle = '#f5f0e1'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(yen(A.byMonth[m]), x+bw/2, pad.t+H-h-5);
+    ctx.fillStyle = '#b8b098'; ctx.font = '11px sans-serif';
+    ctx.fillText(m.replace('-','/'), x+bw/2, cv.height-12);
+  });
+}
+
+function drawRank(A){
+  const arr = Object.entries(A.byStore)
+    .map(([store,s]) => [store, s.total, s.count])
+    .sort((a,b) => b[1]-a[1]).slice(0,10);
+  const max = arr.length ? arr[0][1] : 1;
+  document.getElementById('rank').innerHTML = arr.map(([store,total,count],i) => `
+    <div class="rankrow">
+      <div class="no">${i+1}</div>
+      <div class="name" title="${store}">${store}</div>
+      <div class="barbg"><div class="bar" style="width:${Math.max(3, total/max*100)}%"></div></div>
+      <div class="amt">${yen(total)} <small style="color:var(--ink-dim)">(${count}回)</small></div>
+    </div>`).join('');
+}
+
+function renderDetects(A){
+  const out = [];
+  if (A.subs.length){
+    out.push(`<div class="d">📺 <b>サブスクの疑い ${A.subs.length}件</b>（月計 ${yen(A.subs.reduce((s,x)=>s+x.monthly,0))}）: `
+      + A.subs.map(s => `${s.store}（月${yen(s.monthly)}×${s.months}ヶ月）`).join(' / ') + '</div>');
+  }
+  if (A.latte){
+    out.push(`<div class="d">💸 <b>ラテマネー検知</b>: 1,000円未満の支出が月平均${A.latte.avgPerMonth}回（平均単価${yen(A.latte.avgPrice)}・月${yen(A.latte.monthlyAmount)}）</div>`);
+  }
+  if (A.perMonth('コンビニ') >= 8){
+    out.push(`<div class="d">🏪 <b>コンビニ高頻度</b>: 月平均${Math.round(A.perMonth('コンビニ'))}回・月${yen((A.byCat['コンビニ']||0)/A.nMonths)}</div>`);
+  }
+  if (A.taxiTxs.length >= 2){
+    const night = A.nightTaxi.length ? `うち深夜${A.nightTaxi.length}回` : '深夜帯の可能性あり';
+    out.push(`<div class="d">🚕 <b>タクシー利用 ${A.taxiTxs.length}回</b>（計${yen(A.taxiTotal)}・${night}）</div>`);
+  }
+  if (A.perMonth('カフェ') >= 5){
+    out.push(`<div class="d">☕ <b>カフェ高頻度</b>: 月平均${Math.round(A.perMonth('カフェ'))}回</div>`);
+  }
+  if (!out.length) out.push('<div class="d">🕊️ 目立った浪費パターンは検出されませんでした。天晴れ。</div>');
+  document.getElementById('detects').innerHTML = out.join('');
+}
+
+function renderCoach(A){
+  const items = buildAdvice(A);
+  const totalSave = items.reduce((s,x) => s+x.save, 0);
+  document.getElementById('potential-money').textContent = yen(totalSave) + ' / 年';
+  // 例え変換
+  const conv = [];
+  const okinawa = Math.floor(totalSave / 80000);
+  const golf = Math.floor(totalSave / 15000);
+  const yakiniku = Math.floor(totalSave / 10000);
+  if (okinawa >= 1) conv.push(`沖縄旅行 約${okinawa}回分`);
+  if (golf >= 1) conv.push(`ゴルフ 約${golf}ラウンド分`);
+  if (yakiniku >= 1) conv.push(`高級焼肉 約${yakiniku}回分`);
+  document.getElementById('potential-conv').textContent = conv.length ? '＝ ' + conv.join(' ／ ') : (totalSave > 0 ? '' : '斬る隙なし!');
+
+  document.getElementById('advice').innerHTML = items.map(it => `
+    <div class="adv">
+      <div class="ic">${it.icon}</div>
+      <div class="txt">
+        <div>${tone === 'oni' ? it.oni : it.angel}</div>
+        ${it.save > 0 ? `<div class="save">💰 節約余地: 年間 ${yen(it.save)}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('titles').innerHTML = buildTitles(A).map(([t,desc]) => `
+    <div class="title-badge">${t}<small>${desc}</small></div>`).join('');
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tx-body');
+  tbody.innerHTML = transactions.map((t,i) => `
+    <tr>
+      <td>${t.date.getFullYear()}/${String(t.date.getMonth()+1).padStart(2,'0')}/${String(t.date.getDate()).padStart(2,'0')}</td>
+      <td>${escapeHtml(t.store)}</td>
+      <td class="num">${yen(t.amount)}</td>
+      <td><select data-idx="${i}">
+        ${CATEGORIES.map(c => `<option value="${c}"${c===t.cat?' selected':''}>${c}</option>`).join('')}
+      </select></td>
+    </tr>`).join('');
+  tbody.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      transactions[+sel.dataset.idx].cat = sel.value;
+      // テーブルの再構築はせず分析部分だけ更新（スクロール位置維持）
+      const A = analyze();
+      const monthlyAvg = A.total / A.nMonths;
+      document.getElementById('tiles').innerHTML = `
+        <div class="tile"><div class="lbl">総支出（${A.nMonths}ヶ月）</div><div class="val">${yen(A.total)}</div></div>
+        <div class="tile"><div class="lbl">月平均</div><div class="val">${yen(monthlyAvg)}</div></div>
+        <div class="tile"><div class="lbl">明細件数</div><div class="val">${transactions.length}件</div></div>
+        <div class="tile"><div class="lbl">サブスク疑い</div><div class="val">${A.subs.length}件</div></div>`;
+      drawPie(A); drawBars(A); drawRank(A); renderDetects(A); renderCoach(A);
+    });
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ================= 口調トグル ================= */
+document.getElementById('tone-oni').addEventListener('click', () => setTone('oni'));
+document.getElementById('tone-angel').addEventListener('click', () => setTone('angel'));
+function setTone(t){
+  tone = t;
+  document.getElementById('tone-oni').classList.toggle('on', t==='oni');
+  document.getElementById('tone-angel').classList.toggle('on', t==='angel');
+  document.getElementById('coach-face').textContent = t==='oni' ? '👹' : '😇';
+  document.body.classList.toggle('angel', t==='angel');
+  if (transactions.length) renderCoach(analyze());
+}
+</script>
+</body>
+</html>

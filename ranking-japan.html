@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本くだらないランキング研究所</title>
+<style>
+  :root{
+    --c-main:#d4a017;
+    --c-light:#fdf3d8;
+    --c-dark:#8a6a0c;
+    --c-bg:#fffdf5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+    background:var(--c-bg);
+    color:#333;
+    transition:background .4s;
+    line-height:1.6;
+  }
+  .back-link{
+    display:inline-block;
+    margin:14px 0 0 16px;
+    font-size:.9rem;
+    color:#666;
+    text-decoration:none;
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(0,0,0,.05);
+    transition:background .2s;
+  }
+  .back-link:hover{background:rgba(0,0,0,.12);}
+  header{
+    text-align:center;
+    padding:18px 16px 8px;
+  }
+  header h1{
+    font-size:clamp(1.4rem,4.5vw,2.3rem);
+    letter-spacing:.05em;
+    color:var(--c-dark);
+    transition:color .4s;
+  }
+  header h1 .flask{font-size:1.1em;}
+  header p.sub{
+    font-size:.85rem;
+    color:#888;
+    margin-top:4px;
+  }
+  /* tabs */
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    padding:14px 12px 6px;
+  }
+  .tab{
+    border:2px solid var(--c-main);
+    background:#fff;
+    color:var(--c-dark);
+    font-size:clamp(.8rem,2.5vw,.95rem);
+    font-weight:bold;
+    padding:8px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .25s;
+    font-family:inherit;
+  }
+  .tab:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(0,0,0,.15);}
+  .tab.active{
+    background:var(--c-main);
+    color:#fff;
+    box-shadow:0 3px 10px rgba(0,0,0,.2);
+  }
+  /* trivia */
+  .trivia{
+    max-width:900px;
+    margin:10px auto 4px;
+    padding:10px 18px;
+    background:var(--c-light);
+    border-left:6px solid var(--c-main);
+    border-radius:8px;
+    font-size:clamp(.85rem,2.6vw,1rem);
+    transition:background .4s,border-color .4s;
+  }
+  .trivia b{color:var(--c-dark);transition:color .4s;}
+  /* layout */
+  .main-wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    justify-content:center;
+    align-items:flex-start;
+    max-width:1100px;
+    margin:14px auto;
+    padding:0 12px;
+  }
+  .map-panel{
+    flex:1 1 480px;
+    max-width:640px;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,.08);
+    padding:16px;
+  }
+  .panel-title{
+    font-size:1rem;
+    font-weight:bold;
+    color:var(--c-dark);
+    margin-bottom:10px;
+    transition:color .4s;
+  }
+  .tile-map{
+    display:grid;
+    grid-template-columns:repeat(13,1fr);
+    gap:3px;
+    width:100%;
+  }
+  .tile{
+    aspect-ratio:1/1;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:clamp(.42rem,1.4vw,.72rem);
+    font-weight:bold;
+    color:#333;
+    cursor:pointer;
+    position:relative;
+    transition:transform .15s, background-color .5s;
+    user-select:none;
+    text-align:center;
+    line-height:1.05;
+    word-break:keep-all;
+  }
+  .tile:hover{
+    transform:scale(1.18);
+    z-index:5;
+    box-shadow:0 2px 8px rgba(0,0,0,.35);
+  }
+  .tile .crown{
+    position:absolute;
+    top:-0.9em;
+    right:-0.4em;
+    font-size:1.2em;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3));
+    pointer-events:none;
+  }
+  /* legend */
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:12px;
+    font-size:.75rem;
+    color:#777;
+  }
+  .legend-bar{
+    flex:1;
+    height:10px;
+    border-radius:5px;
+    max-width:200px;
+  }
+  /* category legend (エスカレーター立ち位置など) */
+  #catLegend{gap:14px;flex-wrap:wrap;}
+  .cat-item{display:flex;align-items:center;gap:5px;font-size:.78rem;color:#555;}
+  .cat-swatch{width:14px;height:14px;border-radius:4px;display:inline-block;flex-shrink:0;}
+  /* 勢力図パネル */
+  .power-stack{display:flex;height:28px;border-radius:999px;overflow:hidden;margin-bottom:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,.15);}
+  .power-seg{
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:.78rem;font-weight:bold;min-width:1.8em;
+    transition:width .8s cubic-bezier(.2,.8,.3,1);
+  }
+  .power-vs{text-align:center;font-size:.9rem;font-weight:bold;color:var(--c-dark);margin-bottom:14px;transition:color .4s;}
+  .power-row{margin-bottom:12px;}
+  .power-head{display:flex;align-items:center;gap:6px;font-size:.85rem;}
+  .power-count{margin-left:auto;font-weight:bold;color:var(--c-dark);transition:color .4s;}
+  .power-names{font-size:.72rem;color:#777;margin-top:3px;line-height:1.6;}
+  /* ranking */
+  .rank-panel{
+    flex:1 1 300px;
+    max-width:420px;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,.08);
+    padding:16px;
+  }
+  .rank-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .rank-num{
+    width:2em;
+    text-align:right;
+    font-weight:bold;
+    font-size:.9rem;
+    color:var(--c-dark);
+    flex-shrink:0;
+    transition:color .4s;
+  }
+  .rank-name{
+    width:4.5em;
+    font-size:.85rem;
+    font-weight:bold;
+    flex-shrink:0;
+  }
+  .rank-bar-track{
+    flex:1;
+    background:#f0f0f0;
+    border-radius:999px;
+    height:20px;
+    overflow:hidden;
+  }
+  .rank-bar{
+    height:100%;
+    width:0;
+    border-radius:999px;
+    background:linear-gradient(90deg,var(--c-main),var(--c-dark));
+    transition:width .8s cubic-bezier(.2,.8,.3,1), background .4s;
+  }
+  .rank-val{
+    width:5.5em;
+    font-size:.75rem;
+    color:#666;
+    text-align:right;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  /* tooltip */
+  #tooltip{
+    position:fixed;
+    pointer-events:none;
+    background:rgba(30,30,30,.92);
+    color:#fff;
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:.8rem;
+    z-index:100;
+    display:none;
+    white-space:nowrap;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+  }
+  #tooltip .tt-name{font-weight:bold;font-size:.9rem;}
+  #tooltip .tt-rank{color:#ffd76e;}
+  /* ---------- 遊び心ゾーン ---------- */
+  @keyframes tileJump{
+    0%{transform:translateY(0) scale(1);}
+    30%{transform:translateY(-16px) scale(1.3);}
+    55%{transform:translateY(2px) scale(.92);}
+    75%{transform:translateY(-7px) scale(1.12);}
+    100%{transform:translateY(0) scale(1);}
+  }
+  .tile.jump{animation:tileJump .9s cubic-bezier(.3,.7,.4,1);z-index:6;}
+  @keyframes crownBoyon{
+    0%{transform:scale(0) rotate(-20deg);}
+    40%{transform:scale(1.8) rotate(10deg);}
+    65%{transform:scale(.8) rotate(-6deg);}
+    85%{transform:scale(1.25) rotate(3deg);}
+    100%{transform:scale(1) rotate(0);}
+  }
+  .crown.boyon{animation:crownBoyon .85s ease .12s backwards;transform-origin:50% 100%;}
+  #toast{
+    position:fixed;left:50%;bottom:26px;
+    transform:translateX(-50%) translateY(24px);
+    background:rgba(30,30,30,.94);color:#fff;
+    padding:11px 18px;border-radius:12px;
+    font-size:.88rem;z-index:300;opacity:0;
+    pointer-events:none;max-width:92vw;
+    box-shadow:0 6px 20px rgba(0,0,0,.35);
+    transition:opacity .3s,transform .3s;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast b{color:#ffd76e;}
+  .quiz-bar{display:flex;justify-content:center;align-items:center;gap:10px;padding:6px 12px 0;flex-wrap:wrap;}
+  .quiz-btn{
+    border:none;background:var(--c-dark);color:#fff;
+    font-family:inherit;font-weight:bold;font-size:.85rem;
+    padding:8px 18px;border-radius:999px;cursor:pointer;
+    box-shadow:0 3px 8px rgba(0,0,0,.2);transition:transform .15s,background .4s;
+  }
+  .quiz-btn:hover{transform:translateY(-2px) scale(1.03);}
+  .quiz-streak{
+    font-size:.8rem;font-weight:bold;color:var(--c-dark);
+    background:rgba(255,255,255,.7);border:1px dashed var(--c-main);
+    padding:4px 12px;border-radius:999px;
+    transition:color .4s,border-color .4s;
+  }
+  .quiz-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .quiz-box{
+    background:#fff;border-radius:16px;padding:22px 20px;
+    width:100%;max-width:440px;box-shadow:0 10px 40px rgba(0,0,0,.3);
+    position:relative;overflow:hidden;
+  }
+  .quiz-box h3{color:var(--c-dark);font-size:1.05rem;margin-bottom:10px;}
+  .quiz-question{font-weight:bold;font-size:1rem;margin-bottom:12px;}
+  .quiz-choices{display:flex;flex-direction:column;gap:8px;}
+  .quiz-choice{
+    font-family:inherit;font-size:.95rem;text-align:left;
+    padding:10px 14px;border-radius:10px;border:2px solid #ddd;
+    background:#fafafa;cursor:pointer;transition:all .15s;color:#333;
+  }
+  .quiz-choice:hover:not(:disabled){border-color:var(--c-main);transform:translateY(-1px);}
+  .quiz-choice:disabled{cursor:default;}
+  .quiz-choice.correct{background:#e6f6e9;border-color:#2e9e4f;font-weight:bold;}
+  .quiz-choice.wrong{background:#fbe6e4;border-color:#d5584d;}
+  .quiz-result{margin-top:12px;font-weight:bold;font-size:.95rem;min-height:1.4em;}
+  .quiz-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+  .quiz-actions button{
+    font-family:inherit;font-weight:bold;font-size:.85rem;
+    padding:8px 16px;border-radius:999px;cursor:pointer;border:none;
+  }
+  #quizAgain{background:var(--c-main);color:#fff;}
+  #quizClose{background:#eee;color:#555;}
+  @keyframes confettiFall{
+    0%{transform:translateY(-30px) rotate(0);opacity:1;}
+    100%{transform:translateY(340px) rotate(540deg);opacity:0;}
+  }
+  .confetti{position:absolute;top:0;font-size:1.3rem;pointer-events:none;animation:confettiFall 1.6s ease-in forwards;}
+  @keyframes fanfarePop{
+    0%{transform:scale(0);}60%{transform:scale(1.25);}100%{transform:scale(1);}
+  }
+  .fanfare-pop{display:inline-block;animation:fanfarePop .5s ease;}
+  footer{
+    text-align:center;
+    font-size:.75rem;
+    color:#999;
+    padding:18px 12px 30px;
+  }
+  @media (max-width:640px){
+    .rank-name{width:4em;}
+    .rank-val{width:4.8em;}
+  }
+</style>
+</head>
+<body>
+<a class="back-link" href="index.html">← 実験ラボに戻る</a>
+<header>
+  <h1><span class="flask">🧪</span> 日本くだらないランキング研究所</h1>
+  <p class="sub">どうでもいいけど、なぜか気になる47都道府県データを真剣に可視化する研究機関（自称）</p>
+  <p class="sub" id="labMember" style="margin-top:2px;font-weight:bold;"></p>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<div class="quiz-bar">
+  <button class="quiz-btn" id="quizBtn">🎯 ランキング当てクイズ</button>
+  <span class="quiz-streak" id="quizStreak"></span>
+</div>
+
+<div class="trivia" id="trivia"></div>
+
+<div class="main-wrap">
+  <section class="map-panel">
+    <div class="panel-title" id="mapTitle"></div>
+    <div class="tile-map" id="tileMap"></div>
+    <div class="legend" id="gradLegend">
+      <span>少ない</span>
+      <div class="legend-bar" id="legendBar"></div>
+      <span>多い</span>
+    </div>
+    <div class="legend" id="catLegend" style="display:none"></div>
+  </section>
+  <section class="rank-panel">
+    <div class="panel-title" id="rankTitle">🏆 トップ10ランキング</div>
+    <div id="rankList"></div>
+    <div id="powerBox" style="display:none"></div>
+  </section>
+</div>
+
+<div id="tooltip"></div>
+
+<div id="toast"></div>
+
+<div class="quiz-overlay" id="quizOverlay" style="display:none">
+  <div class="quiz-box">
+    <h3>🎯 ランキング当てクイズ</h3>
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="quiz-choices" id="quizChoices"></div>
+    <div class="quiz-result" id="quizResult"></div>
+    <div class="quiz-actions">
+      <button id="quizAgain" style="display:none">もう一問 🎲</button>
+      <button id="quizClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  ※本サイトのデータはデモ用の概算データです。実際の統計値とは異なる場合があります。<br>
+  日本くだらないランキング研究所（架空） / 素のHTML+CSS+JSで動いています
+</footer>
+
+<script>
+"use strict";
+
+/* ---------- 都道府県マスタ（タイルグリッド座標: col 0-12, row 0-12） ---------- */
+const PREFS = [
+  {name:"北海道", col:12, row:0},
+  {name:"青森",   col:11, row:1},
+  {name:"秋田",   col:10, row:2},
+  {name:"岩手",   col:11, row:2},
+  {name:"山形",   col:10, row:3},
+  {name:"宮城",   col:11, row:3},
+  {name:"新潟",   col:9,  row:4},
+  {name:"福島",   col:10, row:4},
+  {name:"石川",   col:6,  row:5},
+  {name:"富山",   col:7,  row:5},
+  {name:"長野",   col:8,  row:5},
+  {name:"群馬",   col:9,  row:5},
+  {name:"栃木",   col:10, row:5},
+  {name:"茨城",   col:11, row:5},
+  {name:"福井",   col:6,  row:6},
+  {name:"岐阜",   col:7,  row:6},
+  {name:"山梨",   col:8,  row:6},
+  {name:"埼玉",   col:9,  row:6},
+  {name:"東京",   col:10, row:6},
+  {name:"千葉",   col:11, row:6},
+  {name:"島根",   col:2,  row:7},
+  {name:"鳥取",   col:3,  row:7},
+  {name:"兵庫",   col:4,  row:7},
+  {name:"京都",   col:5,  row:7},
+  {name:"滋賀",   col:6,  row:7},
+  {name:"愛知",   col:7,  row:7},
+  {name:"静岡",   col:8,  row:7},
+  {name:"神奈川", col:9,  row:7},
+  {name:"山口",   col:1,  row:8},
+  {name:"広島",   col:2,  row:8},
+  {name:"岡山",   col:3,  row:8},
+  {name:"大阪",   col:4,  row:8},
+  {name:"奈良",   col:5,  row:8},
+  {name:"三重",   col:6,  row:8},
+  {name:"佐賀",   col:0,  row:9},
+  {name:"福岡",   col:1,  row:9},
+  {name:"大分",   col:2,  row:9},
+  {name:"香川",   col:3,  row:9},
+  {name:"和歌山", col:4,  row:9},
+  {name:"長崎",   col:0,  row:10},
+  {name:"熊本",   col:1,  row:10},
+  {name:"愛媛",   col:2,  row:10},
+  {name:"高知",   col:3,  row:10},
+  {name:"徳島",   col:4,  row:10},
+  {name:"鹿児島", col:1,  row:11},
+  {name:"宮崎",   col:2,  row:11},
+  {name:"沖縄",   col:0,  row:12},
+];
+
+/* ---------- データセット定義（values は PREFS と同じ順） ---------- */
+const DATASETS = [
+  {
+    id:"udon",
+    label:"🍜 うどん・そば消費",
+    title:"うどん・そば年間支出額（世帯あたり・概算）",
+    unit:"円",
+    trivia:"<b>香川県民は年間200玉以上</b>うどんを食べる計算。もはや主食というか、ほぼ信仰。ちなみにそば勢は山形・長野が意地を見せています。",
+    theme:{main:"#d4a017", light:"#fdf3d8", dark:"#8a6a0c", bg:"#fffdf5", low:"#faf0d0", high:"#c8860a"},
+    values:[5200,5100,6800,6300,7900,5300,6000,5800,5200,5500,7500,6900,6100,5600,6400,5100,6000,6600,6200,5400,5900,5000,5000,5100,4900,5600,5000,5300,4800,4700,4900,5800,5100,5200,5000,5500,5200,13200,4600,4900,4700,4900,4500,5300,4300,4400,3800]
+  },
+  {
+    id:"fish",
+    label:"🐟 海面漁業漁獲量",
+    title:"海面漁業漁獲量（千トン・概算）",
+    unit:"千t",
+    trivia:"<b>北海道だけで全国の約4分の1</b>を水揚げ。ホタテとサンマとスケトウダラの本気。海なし県のみなさんは涼しい顔で0千トンです。",
+    theme:{main:"#1976d2", light:"#e0f0fc", dark:"#0d4d8c", bg:"#f4faff", low:"#ddeefb", high:"#0b5aa8"},
+    values:[870,92,6,88,4,165,25,50,35,22,0,0,0,300,11,0,0,0,30,110,83,62,40,10,0,55,185,27,23,15,3,8,0,120,8,25,30,12,15,230,15,76,60,9,52,100,15]
+  },
+  {
+    id:"sbux",
+    label:"☕ スタバ店舗数",
+    title:"スターバックス店舗数（概算）",
+    unit:"店",
+    trivia:"東京は<b>約1.6km四方に1店</b>のスタバ密度。フラペチーノに困らない街。一方、鳥取・島根は「ご当地喫茶で十分」という風格すら漂います。",
+    theme:{main:"#00704a", light:"#dff2e9", dark:"#00432c", bg:"#f5fbf8", low:"#dcefe5", high:"#005c3c"},
+    values:[55,8,5,8,6,25,14,12,11,9,20,15,17,25,6,18,8,100,400,90,3,4,75,50,14,110,45,150,10,35,20,150,10,15,5,80,9,8,6,9,15,10,4,4,12,6,25]
+  },
+  {
+    id:"jleague",
+    label:"⚽ Jリーガー輩出数",
+    title:"Jリーガー輩出数（出身都道府県別・概算）",
+    unit:"人",
+    trivia:"総数では埼玉・神奈川が横綱ですが、<b>人口あたりだと静岡が最強</b>。さすがサッカー王国、小学校の授業がもうトレセンです。",
+    theme:{main:"#2e9e4f", light:"#e2f4e7", dark:"#166c3b", bg:"#f4fbf5", low:"#ddf0e0", high:"#0f7a4d"},
+    values:[62,25,10,15,12,30,25,22,16,14,26,32,28,55,8,20,18,210,190,150,7,6,92,45,20,88,165,205,15,64,22,148,18,24,12,82,26,14,12,30,35,16,7,12,56,20,28]
+  },
+  {
+    id:"escalator",
+    type:"category",
+    label:"🚶 エスカレーター立ち位置",
+    title:"エスカレーターどっち側に立つ？（傾向・概観）",
+    trivia:"左右の<b>境界線は関ヶ原あたり</b>と言われています。右立ちは<b>1970年の大阪万博で世界標準に合わせて定着した</b>という説が有力（1967年の阪急梅田駅のアナウンス起源説も）。なお最近は鉄道各社が「歩かず2列で」を呼びかけ中です。",
+    theme:{main:"#7b4fc0", light:"#f0e8fa", dark:"#4d2b8a", bg:"#faf7ff", low:"#e6daf6", high:"#5e35a8"},
+    cats:{
+      L:{label:"左立ち（関東式）", color:"#4a7fd4"},
+      R:{label:"右立ち（関西式）", color:"#e2564a"},
+      M:{label:"混在／どちらとも", color:"#9b7fc7"}
+    },
+    catOrder:["L","R","M"],
+    /* PREFSと同順: 北海道,青森,秋田,岩手,山形,宮城,新潟,福島,石川,富山,長野,群馬,栃木,茨城,福井,岐阜,山梨,埼玉,東京,千葉,島根,鳥取,兵庫,京都,滋賀,愛知,静岡,神奈川,山口,広島,岡山,大阪,奈良,三重,佐賀,福岡,大分,香川,和歌山,長崎,熊本,愛媛,高知,徳島,鹿児島,宮崎,沖縄 */
+    values:["L","L","L","L","L","L","L","L","M","L","L","L","L","L","M","M","L","L","L","L","L","L","R","R","M","L","L","L","L","L","L","R","R","M","L","L","L","M","R","L","L","L","L","M","L","L","L"]
+  }
+];
+
+/* ---------- ユーティリティ ---------- */
+function hexToRgb(h){
+  return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+}
+function lerpColor(a, b, t){
+  const ca = hexToRgb(a), cb = hexToRgb(b);
+  const c = ca.map((v,i)=>Math.round(v + (cb[i]-v)*t));
+  return "rgb(" + c.join(",") + ")";
+}
+
+/* ---------- DOM生成（初回のみ） ---------- */
+const tileMap = document.getElementById("tileMap");
+const rankList = document.getElementById("rankList");
+const tooltip = document.getElementById("tooltip");
+const tabsEl = document.getElementById("tabs");
+
+const tiles = PREFS.map((p, i) => {
+  const el = document.createElement("div");
+  el.className = "tile";
+  el.textContent = p.name;
+  el.style.gridColumn = (p.col + 1);
+  el.style.gridRow = (p.row + 1);
+  el.dataset.index = i;
+  tileMap.appendChild(el);
+  return el;
+});
+
+const rankRows = [];
+for (let i = 0; i < 10; i++) {
+  const row = document.createElement("div");
+  row.className = "rank-row";
+  row.innerHTML =
+    '<div class="rank-num"></div>' +
+    '<div class="rank-name"></div>' +
+    '<div class="rank-bar-track"><div class="rank-bar"></div></div>' +
+    '<div class="rank-val"></div>';
+  rankList.appendChild(row);
+  rankRows.push(row);
+}
+
+DATASETS.forEach((ds, i) => {
+  const btn = document.createElement("button");
+  btn.className = "tab";
+  btn.textContent = ds.label;
+  btn.addEventListener("click", () => render(i));
+  tabsEl.appendChild(btn);
+});
+
+/* ---------- 再描画（タブ切替はこの1関数だけ） ---------- */
+let currentIndex = -1;
+
+function render(index){
+  if (index === currentIndex) return;
+  currentIndex = index;
+  const ds = DATASETS[index];
+  const t = ds.theme;
+
+  // テーマカラー
+  const rs = document.documentElement.style;
+  rs.setProperty("--c-main", t.main);
+  rs.setProperty("--c-light", t.light);
+  rs.setProperty("--c-dark", t.dark);
+  rs.setProperty("--c-bg", t.bg);
+  document.body.style.background = t.bg;
+
+  // タブのactive
+  Array.from(tabsEl.children).forEach((b, i) => b.classList.toggle("active", i === index));
+
+  // タイトル・豆知識
+  document.getElementById("mapTitle").textContent = "🗾 " + ds.title;
+  document.getElementById("trivia").innerHTML = "💡 <b>豆知識：</b>" + ds.trivia;
+
+  // カテゴリ型／数値型でパネルを切替
+  const isCat = ds.type === "category";
+  document.getElementById("gradLegend").style.display = isCat ? "none" : "flex";
+  document.getElementById("catLegend").style.display = isCat ? "flex" : "none";
+  rankList.style.display = isCat ? "none" : "";
+  document.getElementById("powerBox").style.display = isCat ? "" : "none";
+  document.getElementById("rankTitle").textContent = isCat ? "⚖️ 勢力図" : "🏆 トップ10ランキング";
+
+  if (isCat) {
+    renderCategory(ds);
+    tooltip._ds = ds;
+    tooltip._rankOf = null;
+    if (tooltip.style.display === "block" && tooltip._hoverIndex != null) {
+      setTooltipContent(tooltip._hoverIndex);
+    }
+    return;
+  }
+
+  // 順位計算（降順）
+  const max = Math.max(...ds.values);
+  const order = ds.values.map((v, i) => ({i, v})).sort((a, b) => b.v - a.v);
+  const rankOf = new Array(PREFS.length);
+  order.forEach((o, r) => { rankOf[o.i] = r + 1; });
+
+  // タイルマップ（平方根スケールで偏りを緩和）
+  tiles.forEach((el, i) => {
+    const ratio = max > 0 ? Math.sqrt(ds.values[i] / max) : 0;
+    el.style.backgroundColor = lerpColor(t.low, t.high, ratio);
+    el.style.color = ratio > 0.55 ? "#fff" : "#333";
+    const oldCrown = el.querySelector(".crown");
+    if (oldCrown) oldCrown.remove();
+    if (rankOf[i] === 1) {
+      const c = document.createElement("span");
+      c.className = "crown boyon";
+      c.textContent = "👑";
+      el.appendChild(c);
+      // 1位の県は一瞬ジャンプして王冠がポヨンと跳ねる
+      el.classList.remove("jump");
+      void el.offsetWidth; // アニメーションをリセット
+      el.classList.add("jump");
+      setTimeout(() => el.classList.remove("jump"), 950);
+    }
+  });
+
+  // 凡例
+  document.getElementById("legendBar").style.background =
+    "linear-gradient(90deg," + t.low + "," + t.high + ")";
+
+  // ランキングバー（幅0に戻してからアニメーション）
+  const top10 = order.slice(0, 10);
+  rankRows.forEach((row, r) => {
+    const item = top10[r];
+    const p = PREFS[item.i];
+    row.querySelector(".rank-num").textContent = (r + 1) + "位";
+    row.querySelector(".rank-name").textContent = p.name + (r === 0 ? " 👑" : "");
+    row.querySelector(".rank-val").textContent = item.v.toLocaleString("ja-JP") + " " + ds.unit;
+    const bar = row.querySelector(".rank-bar");
+    bar.style.transition = "none";
+    bar.style.width = "0%";
+    void bar.offsetWidth; // reflow でリセットを確定
+    bar.style.transition = "";
+    bar.style.width = (item.v / max * 100) + "%";
+  });
+
+  // ツールチップ用に現在のデータを保持
+  tooltip._ds = ds;
+  tooltip._rankOf = rankOf;
+  if (tooltip.style.display === "block" && tooltip._hoverIndex != null) {
+    setTooltipContent(tooltip._hoverIndex);
+  }
+}
+
+/* ---------- カテゴリ型データセットの描画 ---------- */
+function renderCategory(ds){
+  // タイルを3色塗り分け（王冠は外す）
+  tiles.forEach((el, i) => {
+    const cat = ds.cats[ds.values[i]];
+    el.style.backgroundColor = cat.color;
+    el.style.color = "#fff";
+    const oldCrown = el.querySelector(".crown");
+    if (oldCrown) oldCrown.remove();
+  });
+
+  // カテゴリ凡例
+  document.getElementById("catLegend").innerHTML = ds.catOrder.map(k =>
+    '<span class="cat-item"><span class="cat-swatch" style="background:' +
+    ds.cats[k].color + '"></span>' + ds.cats[k].label + "</span>"
+  ).join("");
+
+  // 勢力図パネル
+  const counts = {};
+  ds.catOrder.forEach(k => { counts[k] = 0; });
+  ds.values.forEach(v => { counts[v]++; });
+  const total = ds.values.length;
+
+  const stack = ds.catOrder.map(k =>
+    '<div class="power-seg" style="width:' + (counts[k] / total * 100) +
+    '%;background:' + ds.cats[k].color + '">' + counts[k] + "</div>"
+  ).join("");
+
+  const rows = ds.catOrder.map(k => {
+    const names = PREFS.filter((p, i) => ds.values[i] === k).map(p => p.name).join("・");
+    return '<div class="power-row">' +
+      '<div class="power-head"><span class="cat-swatch" style="background:' + ds.cats[k].color + '"></span>' +
+      "<b>" + ds.cats[k].label + '</b><span class="power-count">' + counts[k] + "県</span></div>" +
+      '<div class="power-names">' + names + "</div></div>";
+  }).join("");
+
+  document.getElementById("powerBox").innerHTML =
+    '<div class="power-stack">' + stack + "</div>" +
+    '<div class="power-vs">左 ' + counts.L + "県 vs 右 " + counts.R + "県 vs 混在 " + counts.M + "県</div>" +
+    rows;
+}
+
+/* ---------- ツールチップ ---------- */
+function setTooltipContent(i){
+  const ds = tooltip._ds, rankOf = tooltip._rankOf;
+  if (ds.type === "category") {
+    const cat = ds.cats[ds.values[i]];
+    tooltip.innerHTML =
+      '<div class="tt-name">' + PREFS[i].name + "</div>" +
+      '<span style="color:' + cat.color + '">●</span> ' + cat.label;
+    return;
+  }
+  tooltip.innerHTML =
+    '<div class="tt-name">' + PREFS[i].name + '</div>' +
+    ds.values[i].toLocaleString("ja-JP") + " " + ds.unit +
+    ' <span class="tt-rank">（' + rankOf[i] + "位 / 47）</span>";
+}
+function moveTooltip(x, y){
+  const pad = 14;
+  const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+  let left = x + pad, top = y + pad;
+  if (left + w > window.innerWidth - 4) left = x - w - pad;
+  if (top + h > window.innerHeight - 4) top = y - h - pad;
+  tooltip.style.left = Math.max(4, left) + "px";
+  tooltip.style.top = Math.max(4, top) + "px";
+}
+tiles.forEach((el, i) => {
+  el.addEventListener("mouseenter", (e) => {
+    tooltip._hoverIndex = i;
+    setTooltipContent(i);
+    tooltip.style.display = "block";
+    moveTooltip(e.clientX, e.clientY);
+  });
+  el.addEventListener("mousemove", (e) => moveTooltip(e.clientX, e.clientY));
+  el.addEventListener("mouseleave", () => {
+    tooltip._hoverIndex = null;
+    tooltip.style.display = "none";
+  });
+  // タッチ端末向け：タップで表示 ＋ ひとことコメントのトースト
+  el.addEventListener("click", (e) => {
+    tooltip._hoverIndex = i;
+    setTooltipContent(i);
+    tooltip.style.display = "block";
+    moveTooltip(e.clientX, e.clientY);
+    showComment(i);
+  });
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".tile")) tooltip.style.display = "none";
+});
+
+/* ---------- 初期表示 ---------- */
+render(0);
+
+/* ================================================================
+   ここから遊び心ゾーン
+   ================================================================ */
+
+/* ---------- 本日の研究員No.（ヘッダーの小ネタ） ---------- */
+(function(){
+  const depts = ["くだらない統計課","うどん計測係","王冠管理室","タイル整列課","脱線研究室","豆知識検品係","エスカレーター観察班"];
+  const no = String(Math.floor(Math.random() * 9000) + 1000);
+  const dept = depts[Math.floor(Math.random() * depts.length)];
+  document.getElementById("labMember").textContent =
+    "🔖 本日のあなたの研究員No.：第" + no + "号（" + dept + " 所属）";
+})();
+
+/* ---------- ひとことコメント（タイルクリックでトースト） ---------- */
+const SPECIAL_COMMENTS = {
+  udon:{
+    "香川":"もはや血液がだし。年間200玉は通過点です",
+    "山形":"そば勢の筆頭。冷たい肉そばという最終兵器を持つ",
+    "長野":"信州そばの誇りで、うどん県に真っ向勝負を挑むそば藩",
+    "群馬":"水沢うどんを擁する隠れ麺大国。小麦文化の底力",
+    "秋田":"稲庭うどんの気品でエレガントに上位入り",
+    "東京":"意外とそば派。立ち食いそばの聖地でもある",
+    "沖縄":"最下位。しかしそこにはソーキそばという別の宇宙がある",
+    "鹿児島":"麺より、しろくまとさつま揚げで忙しい",
+    "宮崎":"うどんはやわらか派。急がない、それが宮崎時間"
+  },
+  fish:{
+    "北海道":"全国の約4分の1を水揚げする海の横綱。ホタテの覇者",
+    "茨城":"実は漁業強豪。サバとイワシで静かに上位に食い込む",
+    "長崎":"アジ・サバの聖地。港の数は日本トップクラス",
+    "静岡":"桜えびとしらすの二刀流。駿河湾は宝箱",
+    "宮城":"気仙沼のカツオが唸る、三陸の実力者",
+    "長野":"海はない。しかし信州サーモンという発明がある",
+    "埼玉":"海なし県の絶対王者。0千トンに一切の迷いなし",
+    "奈良":"海はないが、鹿がいる。それでいい"
+  },
+  sbux:{
+    "東京":"約1.6km四方に1店。もはやインフラです",
+    "神奈川":"横浜のおしゃれ力で首都に食らいつく2位タイ",
+    "大阪":"新作フラペチーノの行列にも、ツッコミながら並ぶ",
+    "愛知":"上位常連。でも本音はコメダのモーニングも捨てがたい",
+    "埼玉":"通勤前の一杯を支える、埼玉都民のオアシス",
+    "島根":"「日本最後のスタバ空白地」の伝説を持つ（2015年開店）",
+    "鳥取":"『スタバはないが日本一のスナバ（砂場）はある』の名言と共に",
+    "高知":"カフェより喫茶店とカツオ。ブレない土佐っ子"
+  },
+  jleague:{
+    "埼玉":"浦和と大宮。県民の血中サッカー濃度が全国屈指",
+    "神奈川":"クラブ数も日本有数の激戦区。育成の総本山",
+    "東京":"人口パワーで押し切る首都。街クラブの層が厚い",
+    "静岡":"人口あたりなら実質王者。小学校の授業がもうトレセン",
+    "千葉":"柏と市原、名門アカデミーの二枚看板",
+    "鳥取":"少数精鋭。砂丘ダッシュで鍛えた脚力に期待",
+    "島根":"サッカーより神話の国。でもポテンシャルは無限大",
+    "高知":"よさこいのリズム感、絶対サッカーに向いてると思う"
+  },
+  escalator:{
+    "大阪":"右立ちの総本山。万博育ちの国際派スタイル",
+    "東京":"左立ちの総本山。ただし公式は『歩かないで』とのこと",
+    "京都":"右立ち文化圏。ただし観光客が多すぎて毎日カオス",
+    "香川":"うどんのことを考えていて、立ち位置は割とどちらでも",
+    "北海道":"左立ち。ただし冬は『滑らないこと』が最優先事項"
+  }
+};
+
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+
+function genericComment(i){
+  const ds = tooltip._ds;
+  if (ds.type === "category") {
+    const generic = {
+      L:"堂々の左立ち文化圏。右側は追い越し車線です",
+      R:"右立ちの関西式。左をあける粋なスタイル",
+      M:"どちらでもOKの平和主義。混在エリアの余裕"
+    };
+    return generic[ds.values[i]];
+  }
+  const rank = tooltip._rankOf[i];
+  const v = ds.values[i];
+  if (v === 0) return "記録は堂々の0" + ds.unit + "。そもそも海がないので仕方ない";
+  if (rank === 1) return "全国1位！" + v.toLocaleString("ja-JP") + ds.unit + "は伊達じゃない。研究所も脱帽";
+  if (rank <= 5)  return "全国" + rank + "位の実力者。表彰台が見えている";
+  if (rank <= 10) return "トップ10入りの" + rank + "位。なかなかの研究対象";
+  if (rank <= 25) return rank + "位。中堅の安定感。派手さはないが堅実";
+  if (rank <= 40) return rank + "位。まだ本気を出していないだけ";
+  if (rank === 47) return "まさかの47位。でも最下位って、逆にレアで貴重";
+  return rank + "位。伸びしろしかない。研究所は応援しています";
+}
+
+function showComment(i){
+  const ds = tooltip._ds;
+  if (!ds) return;
+  const name = PREFS[i].name;
+  const sp = SPECIAL_COMMENTS[ds.id];
+  const msg = (sp && sp[name]) || genericComment(i);
+  toastEl.innerHTML = "<b>" + name + "</b>｜" + msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3200);
+}
+
+/* ---------- ランキング当てクイズ ---------- */
+const quizOverlay = document.getElementById("quizOverlay");
+const quizQuestion = document.getElementById("quizQuestion");
+const quizChoices = document.getElementById("quizChoices");
+const quizResult = document.getElementById("quizResult");
+const quizAgainBtn = document.getElementById("quizAgain");
+let quizStreak = 0;
+
+function updateQuizStreak(){
+  document.getElementById("quizStreak").textContent = "🔥 連続正解 " + quizStreak;
+}
+
+function playFanfare(){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[523.25,0],[659.25,.12],[783.99,.24],[1046.5,.36]].forEach(pair => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "triangle";
+      o.frequency.value = pair[0];
+      g.gain.setValueAtTime(.18, ctx.currentTime + pair[1]);
+      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + pair[1] + .35);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + pair[1]);
+      o.stop(ctx.currentTime + pair[1] + .4);
+    });
+  } catch(e) { /* 音が出せない環境では静かに正解を祝う */ }
+}
+
+function dropConfetti(box){
+  const emojis = ["🎉","✨","🎊","⭐","👑"];
+  for (let k = 0; k < 18; k++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = (Math.random() * 95) + "%";
+    s.style.animationDelay = (Math.random() * .4) + "s";
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 2200);
+  }
+}
+
+function startQuiz(){
+  const ds = DATASETS[currentIndex];
+  quizResult.textContent = "";
+  quizAgainBtn.style.display = "none";
+  quizChoices.innerHTML = "";
+  const i = Math.floor(Math.random() * PREFS.length);
+  const name = PREFS[i].name;
+
+  let correctLabel, choices;
+  if (ds.type === "category") {
+    quizQuestion.textContent = "Q. 「" + ds.title.replace(/（.*$/, "") + "」…" + name + "はどれでしょう？";
+    correctLabel = ds.cats[ds.values[i]].label;
+    choices = ds.catOrder.map(k => ds.cats[k].label);
+  } else {
+    const order = ds.values.map((v, j) => ({j, v})).sort((a, b) => b.v - a.v);
+    let rank = 0;
+    order.forEach((o, r) => { if (o.j === i) rank = r + 1; });
+    quizQuestion.textContent = "Q. 「" + ds.label.replace(/^\S+\s*/, "") + "」で、" + name + "は47都道府県中なんと何位でしょう？";
+    const set = new Set([rank]);
+    while (set.size < 3) {
+      const off = (Math.floor(Math.random() * 10) + 2) * (Math.random() < .5 ? -1 : 1);
+      set.add(Math.min(47, Math.max(1, rank + off)));
+    }
+    correctLabel = rank + "位";
+    choices = Array.from(set).sort((a, b) => a - b).map(r => r + "位");
+  }
+  choices.forEach(label => {
+    const btn = document.createElement("button");
+    btn.className = "quiz-choice";
+    btn.textContent = label;
+    btn.addEventListener("click", () => answerRankQuiz(btn, label === correctLabel, correctLabel));
+    quizChoices.appendChild(btn);
+  });
+  quizOverlay.style.display = "flex";
+}
+
+function answerRankQuiz(btn, isRight, correctLabel){
+  Array.from(quizChoices.children).forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correctLabel) b.classList.add("correct");
+  });
+  if (isRight) {
+    quizStreak++;
+    quizResult.innerHTML = '<span class="fanfare-pop">🎺 大正解！！ ファンファーレ〜！ 🎉</span>';
+    playFanfare();
+    dropConfetti(quizOverlay.querySelector(".quiz-box"));
+  } else {
+    btn.classList.add("wrong");
+    quizStreak = 0;
+    quizResult.textContent = "😢 残念！ 正解は「" + correctLabel + "」でした";
+  }
+  updateQuizStreak();
+  quizAgainBtn.style.display = "";
+}
+
+document.getElementById("quizBtn").addEventListener("click", startQuiz);
+quizAgainBtn.addEventListener("click", startQuiz);
+document.getElementById("quizClose").addEventListener("click", () => { quizOverlay.style.display = "none"; });
+quizOverlay.addEventListener("click", (e) => { if (e.target === quizOverlay) quizOverlay.style.display = "none"; });
+updateQuizStreak();
+</script>
+</body>
+</html>

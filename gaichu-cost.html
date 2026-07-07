@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外注費せつめい職人 | 外注費設定&説明テキストメーカー</title>
+<style>
+  :root {
+    --navy: #1b2a4a;
+    --navy-deep: #12203a;
+    --navy-light: #2e4370;
+    --accent: #c9a227;
+    --accent-soft: #f5ecd0;
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --line: #dde3ee;
+    --text: #24304a;
+    --muted: #6b7691;
+    --ok: #1e7f4f;
+    --radius: 12px;
+    font-size: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  a { color: var(--navy-light); }
+
+  header {
+    background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, var(--navy-light) 100%);
+    color: #fff;
+    padding: 28px 20px 34px;
+  }
+  .header-inner { max-width: 1080px; margin: 0 auto; }
+  .back-link {
+    display: inline-block;
+    color: #cfd9ef;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 4px 12px;
+    border-radius: 999px;
+    transition: background 0.2s;
+  }
+  .back-link:hover { background: rgba(255,255,255,0.12); }
+  h1 {
+    font-size: 1.75rem;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  h1 .hanko {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px; height: 46px;
+    border: 2.5px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent);
+    font-size: 1.05rem;
+    font-weight: bold;
+    transform: rotate(-8deg);
+    flex-shrink: 0;
+  }
+  .tagline { color: #b9c6e2; font-size: 0.92rem; margin-top: 8px; }
+
+  main {
+    max-width: 1080px;
+    margin: -18px auto 60px;
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+    align-items: start;
+  }
+  .col-main { min-width: 0; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(27,42,74,0.06);
+  }
+  .card h2 {
+    font-size: 1.05rem;
+    color: var(--navy);
+    border-left: 4px solid var(--accent);
+    padding-left: 10px;
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+  }
+  .card h2 .step {
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.72rem;
+    border-radius: 4px;
+    padding: 2px 7px;
+    margin-right: 8px;
+    vertical-align: 2px;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label.lbl {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--navy);
+    margin-bottom: 5px;
+  }
+  .field .hint { font-size: 0.76rem; color: var(--muted); font-weight: normal; margin-left: 6px; }
+  input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #fbfcfe;
+    color: var(--text);
+    font-family: inherit;
+  }
+  input:focus, select:focus {
+    outline: 2px solid rgba(46,67,112,0.35);
+    border-color: var(--navy-light);
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .yen-wrap { position: relative; }
+  .yen-wrap input { padding-right: 38px; }
+  .yen-wrap .unit {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 0.85rem; pointer-events: none;
+  }
+
+  .radio-group, .check-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    background: #fbfcfe;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pill input { accent-color: var(--navy); cursor: pointer; }
+  .pill:hover { border-color: var(--navy-light); }
+  .pill.checked {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+  .pill.checked input { accent-color: var(--accent); }
+
+  .opt-line {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px dashed var(--line);
+    font-size: 0.92rem; flex-wrap: wrap;
+  }
+  .opt-line:last-child { border-bottom: none; }
+  .opt-line input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--navy); cursor: pointer; }
+  .opt-line label { cursor: pointer; }
+  .trial-price-wrap { display: none; align-items: center; gap: 6px; }
+  .trial-price-wrap.show { display: inline-flex; }
+  .trial-price-wrap input { width: 130px; padding: 5px 8px; }
+
+  .btn-area { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+  }
+  .btn-generate {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: bold;
+    padding: 14px 34px;
+    letter-spacing: 0.08em;
+    box-shadow: 0 4px 12px rgba(27,42,74,0.3);
+  }
+  .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(27,42,74,0.38); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-clear {
+    background: #fff;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.82rem;
+    padding: 9px 16px;
+  }
+  .btn-clear:hover { color: #b03030; border-color: #d8a0a0; }
+  .regen-note { font-size: 0.78rem; color: var(--muted); }
+
+  .out-card { display: none; }
+  .out-card.show { display: block; animation: fadein 0.35s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .out-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .out-head h2 { margin-bottom: 0; }
+  .btn-copy {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    color: #7a6212;
+    font-size: 0.82rem;
+    font-weight: bold;
+    padding: 7px 16px;
+  }
+  .btn-copy:hover { background: #efe0ac; }
+  .btn-copy.copied { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+  table.estimate {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  table.estimate th, table.estimate td {
+    border: 1px solid var(--line);
+    padding: 9px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.estimate th {
+    background: var(--navy);
+    color: #fff;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  table.estimate td.amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.estimate tr:nth-child(even) td { background: #f8fafd; }
+  .table-wrap { overflow-x: auto; }
+  .hourly-note {
+    margin-top: 10px;
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    padding: 8px 14px;
+    font-size: 0.88rem;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .script-box {
+    background: #f8fafd;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-size: 0.93rem;
+    white-space: pre-wrap;
+    line-height: 1.9;
+  }
+  .script-box .sec-label {
+    display: inline-block;
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.72rem;
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin: 4px 0 2px;
+  }
+
+  .tips-card { position: sticky; top: 16px; }
+  .tips-card h2 { font-size: 1rem; }
+  .tip {
+    border-bottom: 1px dashed var(--line);
+    padding: 10px 0;
+  }
+  .tip:last-child { border-bottom: none; }
+  .tip .tip-title {
+    font-size: 0.88rem;
+    font-weight: bold;
+    color: var(--navy);
+    display: flex;
+    gap: 7px;
+    align-items: baseline;
+  }
+  .tip .tip-title .no {
+    color: var(--accent);
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .tip p { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 20px 0 40px;
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .tips-card { position: static; }
+    .row2 { grid-template-columns: 1fr; }
+    h1 { font-size: 1.35rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="back-link" href="index.html">&larr; 実験ラボに戻る</a>
+    <h1><span class="hanko">職人</span>外注費せつめい職人</h1>
+    <p class="tagline">見積もりの「なぜこの金額?」に、堂々と答えられるようになるツール。入力するだけで内訳表・面談トーク・送付用テキストを一式仕上げます。</p>
+  </div>
+</header>
+
+<main>
+  <div class="col-main">
+
+    <!-- 1. 案件情報 -->
+    <section class="card">
+      <h2><span class="step">STEP 1</span>案件情報</h2>
+      <div class="row2">
+        <div class="field">
+          <label class="lbl" for="workPreset">業務内容（よくある例から選ぶ）</label>
+          <select id="workPreset">
+            <option value="">-- 選択してください --</option>
+            <option>システム開発</option>
+            <option>Web制作</option>
+            <option>運用保守</option>
+            <option>コンサルティング</option>
+            <option>デザイン</option>
+            <option>事務代行</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="workDetail">業務内容（自由入力）<span class="hint">こちらが優先されます</span></label>
+          <input type="text" id="workDetail" placeholder="例: 業務システムの保守・機能追加開発">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">契約形態</label>
+        <div class="radio-group" id="contractGroup">
+          <label class="pill"><input type="radio" name="contract" value="monthly" checked>月額固定</label>
+          <label class="pill"><input type="radio" name="contract" value="hourly">時間単価</label>
+          <label class="pill"><input type="radio" name="contract" value="lump">プロジェクト一括</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 費用の組み立て -->
+    <section class="card">
+      <h2><span class="step">STEP 2</span>費用の組み立て</h2>
+      <div class="row2">
+        <div class="field">
+          <label class="lbl" for="basePrice" id="basePriceLabel">基本単価（月額）</label>
+          <div class="yen-wrap">
+            <input type="number" id="basePrice" min="0" step="1000" placeholder="例: 200000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl" for="hours" id="hoursLabel">想定稼働（時間/月）</label>
+          <div class="yen-wrap">
+            <input type="number" id="hours" min="0" step="1" placeholder="例: 40">
+            <span class="unit">h</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">料金に含まれる作業<span class="hint">チェックしたものが説明文に反映されます</span></label>
+        <div class="check-group" id="taskGroup">
+          <label class="pill"><input type="checkbox" value="定例ミーティングへの参加">定例MTG</label>
+          <label class="pill"><input type="checkbox" value="軽微な修正対応">軽微な修正対応</label>
+          <label class="pill"><input type="checkbox" value="緊急時の優先対応">緊急対応</label>
+          <label class="pill"><input type="checkbox" value="月次レポートの作成">レポート作成</label>
+          <label class="pill"><input type="checkbox" value="チャットでの随時のご相談対応">チャット相談</label>
+          <label class="pill"><input type="checkbox" value="ドキュメント・手順書の整備">ドキュメント整備</label>
+          <label class="pill"><input type="checkbox" value="進捗の定期報告">進捗報告</label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="extraRate">スコープ外対応の時間単価<span class="hint">追加料金が発生するケースの単価（空欄なら「都度お見積もり」と表現）</span></label>
+        <div class="yen-wrap" style="max-width:280px;">
+          <input type="number" id="extraRate" min="0" step="500" placeholder="例: 5000">
+          <span class="unit">円/h</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. オプション -->
+    <section class="card">
+      <h2><span class="step">STEP 3</span>オプション</h2>
+      <div class="opt-line">
+        <input type="checkbox" id="optMarket">
+        <label for="optMarket">相場とのくらべ方コメントをトークに入れる</label>
+      </div>
+      <div class="opt-line">
+        <input type="checkbox" id="optDiscount">
+        <label for="optDiscount">条件次第での調整余地（値引きの話）に触れる</label>
+      </div>
+      <div class="opt-line">
+        <input type="checkbox" id="optTrial">
+        <label for="optTrial">初月お試し価格を用意する</label>
+        <span class="trial-price-wrap" id="trialWrap">
+          → <input type="number" id="trialPrice" min="0" step="1000" placeholder="初月価格"> 円
+        </span>
+      </div>
+    </section>
+
+    <!-- 生成ボタン -->
+    <section class="card">
+      <div class="btn-area">
+        <button class="btn-generate" id="btnGenerate">テキスト生成</button>
+        <button class="btn-clear" id="btnClear">入力をクリア</button>
+        <span class="regen-note">※ 押すたびに言い回しが少し変わります。入力は自動保存されます。</span>
+      </div>
+    </section>
+
+    <!-- 出力 (a) 見積もり内訳表 -->
+    <section class="card out-card" id="outEstimate">
+      <div class="out-head">
+        <h2>(a) 見積もり内訳表</h2>
+        <button class="btn-copy" data-target="estimate">コピー</button>
+      </div>
+      <div class="table-wrap">
+        <table class="estimate">
+          <thead><tr><th>項目</th><th>内容</th><th>金額</th></tr></thead>
+          <tbody id="estimateBody"></tbody>
+        </table>
+      </div>
+      <div class="hourly-note" id="hourlyNote" style="display:none;"></div>
+    </section>
+
+    <!-- 出力 (b) トークスクリプト -->
+    <section class="card out-card" id="outScript">
+      <div class="out-head">
+        <h2>(b) 面談用トークスクリプト</h2>
+        <button class="btn-copy" data-target="script">コピー</button>
+      </div>
+      <div class="script-box" id="scriptBox"></div>
+    </section>
+
+    <!-- 出力 (c) 短縮版 -->
+    <section class="card out-card" id="outShort">
+      <div class="out-head">
+        <h2>(c) メール/チャット用 短縮版</h2>
+        <button class="btn-copy" data-target="short">コピー</button>
+      </div>
+      <div class="script-box" id="shortBox"></div>
+    </section>
+  </div>
+
+  <!-- Tips -->
+  <aside>
+    <section class="card tips-card">
+      <h2>説明のコツ 七か条</h2>
+      <div class="tip">
+        <div class="tip-title"><span class="no">一</span>金額より先に価値を語る</div>
+        <p>「何をしてくれる人か」が伝わる前に出た数字は、必ず高く聞こえます。業務内容と成果イメージを話してから金額へ。</p>
+      </div>
+      <div class="tip">
+        <div class="tip-title"><span class="no">二</span>内訳を見せると交渉が建設的になる</div>
+        <p>総額だけだと「もう少し安く」で終わりますが、内訳があれば「どの作業を削るか」という前向きな相談に変わります。</p>
+      </div>
+      <div class="tip">
+        <div class="tip-title"><span class="no">三</span>時給換算の提示は諸刃の剣</div>
+        <p>換算して「安く見える」場合だけ有効です。高く見えてしまうなら、成果や責任範囲の話で語りましょう。</p>
+      </div>
+      <div class="tip">
+        <div class="tip-title"><span class="no">四</span>「含まれないもの」こそ先に言う</div>
+        <p>スコープ外の条件を最初に明示しておくと、後からの追加請求が「約束どおり」になり、信頼が守られます。</p>
+      </div>
+      <div class="tip">
+        <div class="tip-title"><span class="no">五</span>沈黙を恐れない</div>
+        <p>金額を伝えた直後に焦って値引きを口にしないこと。相手が考える時間は、不満のサインではありません。</p>
+      </div>
+      <div class="tip">
+        <div class="tip-title"><span class="no">六</span>値引きするなら条件とセットで</div>
+        <p>「長期契約なら」「まとめてご依頼なら」など、理由のある値引きは単価の信頼を壊しません。理由のない値引きは次回も求められます。</p>
+      </div>
+      <div class="tip">
+        <div class="tip-title"><span class="no">七</span>書面と口頭の数字を一致させる</div>
+        <p>面談で話した金額と見積書の金額がズレると、それだけで信用が揺らぎます。このツールの数字は全部同じ入力から作られます。</p>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<footer>外注費せつめい職人 — 入力データはこのブラウザの中（localStorage）にだけ保存されます。</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "gaichuCostMaker_v1";
+
+  // ---------- utilities ----------
+  function $(id) { return document.getElementById(id); }
+  function yen(n) { return "¥" + Math.round(n).toLocaleString("ja-JP"); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // ---------- state read ----------
+  function readState() {
+    var contract = document.querySelector('input[name="contract"]:checked').value;
+    var tasks = [];
+    document.querySelectorAll("#taskGroup input:checked").forEach(function (c) { tasks.push(c.value); });
+    return {
+      workPreset: $("workPreset").value,
+      workDetail: $("workDetail").value.trim(),
+      contract: contract,
+      basePrice: parseFloat($("basePrice").value) || 0,
+      hours: parseFloat($("hours").value) || 0,
+      extraRate: parseFloat($("extraRate").value) || 0,
+      tasks: tasks,
+      optMarket: $("optMarket").checked,
+      optDiscount: $("optDiscount").checked,
+      optTrial: $("optTrial").checked,
+      trialPrice: parseFloat($("trialPrice").value) || 0
+    };
+  }
+
+  function workName(s) {
+    return s.workDetail || s.workPreset || "ご依頼業務";
+  }
+
+  // ---------- localStorage ----------
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(readState())); } catch (e) {}
+  }
+  function restore() {
+    var raw;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return; }
+    if (!raw) return;
+    var s;
+    try { s = JSON.parse(raw); } catch (e) { return; }
+    if (s.workPreset) $("workPreset").value = s.workPreset;
+    if (s.workDetail) $("workDetail").value = s.workDetail;
+    if (s.contract) {
+      var r = document.querySelector('input[name="contract"][value="' + s.contract + '"]');
+      if (r) r.checked = true;
+    }
+    if (s.basePrice) $("basePrice").value = s.basePrice;
+    if (s.hours) $("hours").value = s.hours;
+    if (s.extraRate) $("extraRate").value = s.extraRate;
+    if (Array.isArray(s.tasks)) {
+      document.querySelectorAll("#taskGroup input").forEach(function (c) {
+        c.checked = s.tasks.indexOf(c.value) !== -1;
+      });
+    }
+    $("optMarket").checked = !!s.optMarket;
+    $("optDiscount").checked = !!s.optDiscount;
+    $("optTrial").checked = !!s.optTrial;
+    if (s.trialPrice) $("trialPrice").value = s.trialPrice;
+  }
+  function clearAll() {
+    if (!confirm("入力内容と保存データをすべてクリアします。よろしいですか?")) return;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    $("workPreset").value = "";
+    $("workDetail").value = "";
+    document.querySelector('input[name="contract"][value="monthly"]').checked = true;
+    $("basePrice").value = "";
+    $("hours").value = "";
+    $("extraRate").value = "";
+    document.querySelectorAll("#taskGroup input").forEach(function (c) { c.checked = false; });
+    $("optMarket").checked = false;
+    $("optDiscount").checked = false;
+    $("optTrial").checked = false;
+    $("trialPrice").value = "";
+    syncUI();
+    ["outEstimate", "outScript", "outShort"].forEach(function (id) { $(id).classList.remove("show"); });
+  }
+
+  // ---------- UI sync ----------
+  function syncUI() {
+    var s = readState();
+    // labels by contract type
+    if (s.contract === "monthly") {
+      $("basePriceLabel").textContent = "基本単価（月額）";
+      $("hoursLabel").textContent = "想定稼働（時間/月）";
+    } else if (s.contract === "hourly") {
+      $("basePriceLabel").textContent = "基本単価（時給）";
+      $("hoursLabel").textContent = "想定稼働（時間/月）";
+    } else {
+      $("basePriceLabel").textContent = "基本単価（プロジェクト一括額）";
+      $("hoursLabel").textContent = "想定稼働（総時間）";
+    }
+    // pill highlight
+    document.querySelectorAll(".pill").forEach(function (p) {
+      var inp = p.querySelector("input");
+      p.classList.toggle("checked", inp.checked);
+    });
+    // trial price field
+    $("trialWrap").classList.toggle("show", $("optTrial").checked);
+  }
+
+  // ---------- calculations ----------
+  function calc(s) {
+    var c = { total: 0, hourlyEquiv: 0, unitLabel: "" };
+    if (s.contract === "monthly") {
+      c.total = s.basePrice;
+      c.unitLabel = "月額";
+      if (s.hours > 0) c.hourlyEquiv = s.basePrice / s.hours;
+    } else if (s.contract === "hourly") {
+      c.unitLabel = "時給";
+      c.hourlyEquiv = s.basePrice;
+      c.total = s.basePrice * s.hours; // 月額目安
+    } else {
+      c.total = s.basePrice;
+      c.unitLabel = "一括";
+      if (s.hours > 0) c.hourlyEquiv = s.basePrice / s.hours;
+    }
+    return c;
+  }
+
+  // ---------- (a) estimate table ----------
+  var lastEstimateText = "";
+  function buildEstimate(s, c) {
+    var rows = [];
+    var wn = workName(s);
+    rows.push(["業務内容", wn, "—"]);
+
+    if (s.contract === "monthly") {
+      rows.push(["基本料金（月額固定）", "想定稼働 " + s.hours + "時間/月 を含む", yen(s.basePrice) + " /月"]);
+    } else if (s.contract === "hourly") {
+      rows.push(["基本単価（時間単価）", "実稼働時間に応じてご請求", yen(s.basePrice) + " /時間"]);
+      if (s.hours > 0) {
+        rows.push(["月額の目安", "想定稼働 " + s.hours + "時間/月 の場合", yen(c.total) + " /月（目安）"]);
+      }
+    } else {
+      rows.push(["プロジェクト費用（一括）", "想定稼働 " + s.hours + "時間 相当", yen(s.basePrice)]);
+    }
+
+    if (s.tasks.length > 0) {
+      rows.push(["料金に含まれる作業", s.tasks.join(" / "), "上記料金内"]);
+    }
+
+    var extraDesc = "上記スコープ外のご依頼・仕様追加など";
+    var extraAmt = s.extraRate > 0 ? yen(s.extraRate) + " /時間（別途）" : "都度お見積もり";
+    rows.push(["スコープ外対応", extraDesc, extraAmt]);
+
+    if (s.optTrial && s.trialPrice > 0) {
+      rows.push(["初月お試し価格", "初月のみの特別価格（2か月目以降は通常料金）", yen(s.trialPrice)]);
+    }
+
+    var tbody = $("estimateBody");
+    tbody.innerHTML = "";
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      r.forEach(function (cell, i) {
+        var td = document.createElement("td");
+        td.textContent = cell;
+        if (i === 2) td.className = "amount";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    // hourly equivalent note (monthly & lump)
+    var note = $("hourlyNote");
+    if (s.contract === "monthly" && s.hours > 0) {
+      note.style.display = "block";
+      note.textContent = "時給換算: 月額" + yen(s.basePrice) + " ÷ 稼働" + s.hours + "h = 実質時給 " + yen(c.hourlyEquiv);
+    } else if (s.contract === "lump" && s.hours > 0) {
+      note.style.display = "block";
+      note.textContent = "時給換算: 一括" + yen(s.basePrice) + " ÷ 想定稼働" + s.hours + "h = 実質時給 " + yen(c.hourlyEquiv);
+    } else {
+      note.style.display = "none";
+    }
+
+    // plain text for copy
+    var lines = ["【お見積もり内訳】", "項目 | 内容 | 金額"];
+    rows.forEach(function (r) { lines.push(r.join(" | ")); });
+    if (note.style.display === "block") lines.push("※ " + note.textContent);
+    lastEstimateText = lines.join("\n");
+  }
+
+  // ---------- (b) talk script ----------
+  var lastScriptText = "";
+
+  function priceSentencePart(s, c) {
+    if (s.contract === "monthly") {
+      return { main: "月額 " + yen(s.basePrice), sub: "月々の固定料金として" };
+    } else if (s.contract === "hourly") {
+      var m = s.hours > 0 ? "（想定稼働" + s.hours + "時間ですと、月あたりの目安は" + yen(c.total) + "ほどになります）" : "";
+      return { main: "1時間あたり " + yen(s.basePrice) + m, sub: "実際に稼働した時間分のご請求として" };
+    }
+    return { main: "プロジェクト全体で " + yen(s.basePrice), sub: "一括のお見積もりとして" };
+  }
+
+  function buildScript(s, c) {
+    var wn = workName(s);
+    var p = priceSentencePart(s, c);
+    var sections = [];
+
+    // ① 金額の提示
+    var s1 = pick([
+      "まず結論の金額から先にお伝えいたします。今回の「" + wn + "」につきましては、" + p.sub + " " + p.main + " でご提案させていただければと考えております。",
+      "本日は金額のところを一番気にされているかと思いますので、先に申し上げますね。「" + wn + "」のご料金は、" + p.sub + " " + p.main + " でお願いできればと考えております。",
+      "はじめに費用感からご説明いたします。「" + wn + "」については、" + p.sub + " " + p.main + " という形でお見積もりいたしました。"
+    ]);
+    sections.push(["① 金額の提示", s1]);
+
+    // ② 内訳と根拠
+    var basis = [];
+    if (s.contract === "monthly" && s.hours > 0) {
+      basis.push("この金額には、毎月およそ" + s.hours + "時間分の稼働を見込んでおります。時給に換算いたしますと" + yen(c.hourlyEquiv) + "ほどになります。");
+    } else if (s.contract === "hourly" && s.hours > 0) {
+      basis.push("月の稼働は" + s.hours + "時間前後を想定しておりますので、ご予算のイメージとしては月" + yen(c.total) + "程度とお考えいただければと思います。");
+    } else if (s.contract === "lump" && s.hours > 0) {
+      basis.push("作業全体でおよそ" + s.hours + "時間の稼働を見込んで積算しております。時間あたりに直しますと" + yen(c.hourlyEquiv) + "ほどの水準です。");
+    }
+    var taskSent = "";
+    if (s.tasks.length > 0) {
+      taskSent = pick([
+        "また、この料金の中には、" + s.tasks.join("、") + "を含めております。これらは追加のご請求なしで対応いたします。",
+        "料金の範囲には、" + s.tasks.join("、") + "が含まれます。日々の細かいやり取りの中で別料金が発生する心配はございません。",
+        "なお、" + s.tasks.join("、") + "につきましては、すべてこの料金の中で対応させていただきます。"
+      ]);
+    }
+    var s2 = pick([
+      "根拠となる内訳をご説明いたします。",
+      "この金額の中身を少しご説明させてください。"
+    ]) + basis.join("") + taskSent;
+    sections.push(["② 内訳と根拠", s2]);
+
+    // ③ 含まれないもの / 追加費用
+    var extraCond = s.extraRate > 0
+      ? "1時間あたり" + yen(s.extraRate) + "の追加料金"
+      : "都度お見積もり";
+    var s3 = pick([
+      "一方で、あらかじめお伝えしておきたいのが、料金に含まれない部分です。今回の想定範囲を超えるご依頼——たとえば大きな仕様変更や新規のご要望——につきましては、" + extraCond + "とさせていただいております。事前に必ずご相談のうえで進めますので、知らないうちに費用が膨らむことはございません。",
+      "あわせて、追加費用が発生するケースも正直にお話しさせてください。上記のスコープを超える作業が発生した場合は、" + extraCond + "という形でお願いしております。着手前に内容と金額をご確認いただいてから進めますので、ご安心ください。",
+      "誠実にお付き合いしたいので、含まれないものも先に明確にしておきます。想定範囲外の対応が必要になった際は、" + extraCond + "にて別途承ります。その際は必ず事前にお見積もりをご提示いたします。"
+    ]);
+    sections.push(["③ 含まれないもの・追加費用の条件", s3]);
+
+    // ④ 相場との比較(オプション)
+    if (s.optMarket) {
+      var s4 = pick([
+        "ご参考までに相場感について申し上げますと、同種の業務を外部の会社に依頼された場合と比べても、無理のない水準に収めているつもりです。私のように直接契約のフリーランスですと、間に入る会社の経費がかからない分、同じ品質でもコストを抑えやすいのが正直なところです。",
+        "相場との比較で申し上げますと、この種の業務の外注費としては標準的なレンジかと認識しております。金額の安さよりも、同じ担当者が継続して関わることで生まれる品質とスピードでお返しできればと考えております。"
+      ]);
+      sections.push(["④ 相場との比較", s4]);
+    }
+
+    // trial (goes near the close)
+    var trialSent = "";
+    if (s.optTrial && s.trialPrice > 0) {
+      trialSent = pick([
+        "また、初めてのお取引で不安もおありかと思いますので、初月のみ" + yen(s.trialPrice) + "のお試し価格をご用意しております。まずは1か月、仕事ぶりを見ていただければ幸いです。",
+        "なお、初月につきましては" + yen(s.trialPrice) + "のトライアル価格でお受けいたします。相性をご確認いただいたうえで、継続をご判断いただければと思います。"
+      ]);
+    }
+    var discountSent = "";
+    if (s.optDiscount) {
+      discountSent = pick([
+        "金額につきましては、契約期間やご依頼範囲の調整によって多少の相談余地もございますので、ご予算のご事情があれば率直にお聞かせください。",
+        "もしご予算と開きがあるようでしたら、作業範囲の組み替えなども含めて一緒に調整できればと思っております。"
+      ]);
+    }
+
+    // ⑤ 締め
+    var s5 = trialSent + discountSent + pick([
+      "ご説明は以上です。ここまでで、分かりにくい点やご不明な点はございませんでしょうか。内訳のどの部分でも、遠慮なくご質問いただければと思います。",
+      "以上が費用のご説明となります。気になる点があれば何でもおっしゃってください。長くお付き合いできる形を一緒に見つけられれば嬉しく思います。",
+      "私からのご説明は以上です。ご不明点やご要望がございましたら、この場でもメールでも結構ですので、お気軽にお知らせください。"
+    ]);
+    sections.push(["⑤ 締め", s5]);
+
+    // render
+    var box = $("scriptBox");
+    box.innerHTML = "";
+    var plain = [];
+    sections.forEach(function (sec) {
+      var lbl = document.createElement("span");
+      lbl.className = "sec-label";
+      lbl.textContent = sec[0];
+      box.appendChild(lbl);
+      box.appendChild(document.createTextNode("\n" + sec[1] + "\n\n"));
+      plain.push("【" + sec[0] + "】\n" + sec[1]);
+    });
+    lastScriptText = plain.join("\n\n");
+    return lastScriptText;
+  }
+
+  // ---------- (c) short version ----------
+  var lastShortText = "";
+  function buildShort(s, c) {
+    var wn = workName(s);
+    var lines = [];
+
+    lines.push(pick([
+      "お世話になっております。「" + wn + "」のお見積もりをお送りいたします。",
+      "お世話になっております。ご相談いただいておりました「" + wn + "」について、費用のご案内です。"
+    ]));
+    lines.push("");
+
+    if (s.contract === "monthly") {
+      lines.push("■ ご料金: 月額 " + yen(s.basePrice) + "（想定稼働 " + s.hours + "時間/月)");
+      if (s.hours > 0) lines.push("  ※時給換算で約" + yen(c.hourlyEquiv) + "です");
+    } else if (s.contract === "hourly") {
+      lines.push("■ ご料金: " + yen(s.basePrice) + "/時間");
+      if (s.hours > 0) lines.push("  ※想定稼働" + s.hours + "h/月の場合、月" + yen(c.total) + "程度が目安です");
+    } else {
+      lines.push("■ ご料金: 一括 " + yen(s.basePrice) + "（想定稼働 " + s.hours + "時間)");
+    }
+
+    if (s.tasks.length > 0) {
+      lines.push("■ 料金に含まれるもの: " + s.tasks.join("、"));
+    }
+    lines.push("■ スコープ外のご依頼: " + (s.extraRate > 0 ? yen(s.extraRate) + "/時間で別途承ります（事前にご相談します)" : "都度お見積もりいたします"));
+    if (s.optTrial && s.trialPrice > 0) {
+      lines.push("■ 初月お試し価格: " + yen(s.trialPrice) + "（2か月目以降は通常料金)");
+    }
+    lines.push("");
+
+    var closing = [];
+    if (s.optDiscount) {
+      closing.push("ご予算のご事情があれば、範囲の調整も含めてご相談ください。");
+    }
+    closing.push(pick([
+      "内訳の詳細やご不明点など、お気軽にお知らせください。どうぞよろしくお願いいたします。",
+      "ご質問やご要望がございましたら、お気軽にご返信ください。引き続きよろしくお願いいたします。"
+    ]));
+    lines.push(closing.join(""));
+
+    lastShortText = lines.join("\n");
+    $("shortBox").textContent = lastShortText;
+  }
+
+  // ---------- generate ----------
+  function generate() {
+    var s = readState();
+    if (!s.basePrice) {
+      alert("基本単価を入力してください。");
+      $("basePrice").focus();
+      return;
+    }
+    var c = calc(s);
+    buildEstimate(s, c);
+    buildScript(s, c);
+    buildShort(s, c);
+    ["outEstimate", "outScript", "outShort"].forEach(function (id) { $(id).classList.add("show"); });
+    save();
+    $("outEstimate").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ---------- copy ----------
+  function copyText(text, btn) {
+    function done() {
+      var orig = btn.textContent;
+      btn.textContent = "コピーしました";
+      btn.classList.add("copied");
+      setTimeout(function () {
+        btn.textContent = orig;
+        btn.classList.remove("copied");
+      }, 1500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } else {
+      fallbackCopy(text);
+      done();
+    }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  // ---------- events ----------
+  $("btnGenerate").addEventListener("click", generate);
+  $("btnClear").addEventListener("click", clearAll);
+
+  document.querySelectorAll(".btn-copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var t = btn.getAttribute("data-target");
+      var text = t === "estimate" ? lastEstimateText : t === "script" ? lastScriptText : lastShortText;
+      if (text) copyText(text, btn);
+    });
+  });
+
+  document.querySelectorAll("input, select").forEach(function (el) {
+    el.addEventListener("change", function () { syncUI(); save(); });
+    if (el.type === "text" || el.type === "number") {
+      el.addEventListener("input", save);
+    }
+  });
+
+  // preset -> convenience: fill detail placeholder feel (do not overwrite user's text)
+  $("workPreset").addEventListener("change", function () {
+    save();
+  });
+
+  restore();
+  syncUI();
+})();
+</script>
+</body>
+</html>

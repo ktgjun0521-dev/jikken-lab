@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゴルフ性格診断 16タイプ</title>
+<style>
+  :root{
+    --green:#15803d;
+    --green-dark:#14532d;
+    --green-light:#dcfce7;
+    --green-mid:#22c55e;
+    --bg:#f6faf7;
+    --card:#ffffff;
+    --text:#1f2937;
+    --sub:#6b7280;
+    --border:#e5e7eb;
+    --shadow:0 4px 20px rgba(20,83,45,.08);
+    --radius:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.7;
+    min-height:100vh;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:16px 16px 64px;}
+  .backlink{
+    display:inline-block;
+    font-size:.85rem;
+    color:var(--sub);
+    text-decoration:none;
+    padding:6px 2px;
+  }
+  .backlink:hover{color:var(--green);}
+  header.site{
+    text-align:center;
+    padding:8px 0 20px;
+  }
+  header.site h1{
+    font-size:1.55rem;
+    color:var(--green-dark);
+    letter-spacing:.02em;
+  }
+  header.site .tagline{font-size:.85rem;color:var(--sub);margin-top:4px;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:28px 22px;
+  }
+
+  /* ---------- start screen ---------- */
+  #screen-start .hero-emoji{font-size:3.2rem;text-align:center;margin-bottom:8px;}
+  #screen-start h2{font-size:1.2rem;color:var(--green-dark);text-align:center;margin-bottom:14px;}
+  #screen-start p.lead{font-size:.95rem;color:var(--sub);margin-bottom:18px;}
+  .axes-preview{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:22px;}
+  .axis-chip{
+    background:var(--green-light);
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:.86rem;
+    color:var(--green-dark);
+  }
+  .axis-chip b{display:block;font-size:.8rem;opacity:.75;margin-bottom:2px;}
+  .btn{
+    display:block;width:100%;
+    border:none;cursor:pointer;
+    background:var(--green);
+    color:#fff;font-size:1.05rem;font-weight:700;
+    padding:15px 20px;border-radius:999px;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s;
+    box-shadow:0 6px 16px rgba(21,128,61,.3);
+    font-family:inherit;
+  }
+  .btn:hover{transform:translateY(-2px);background:#166534;}
+  .btn:active{transform:translateY(0);}
+  .btn.secondary{
+    background:#fff;color:var(--green);
+    border:2px solid var(--green);
+    box-shadow:none;
+  }
+  .btn.secondary:hover{background:var(--green-light);}
+  .btn.ghost{
+    background:transparent;color:var(--sub);
+    box-shadow:none;font-weight:500;font-size:.9rem;padding:10px;
+  }
+  .btn.ghost:hover{color:var(--green);transform:none;}
+  .btn + .btn{margin-top:12px;}
+
+  /* ---------- quiz ---------- */
+  .progress-area{margin-bottom:18px;}
+  .progress-label{
+    display:flex;justify-content:space-between;
+    font-size:.8rem;color:var(--sub);margin-bottom:6px;
+  }
+  .progress-track{
+    height:10px;background:#e5efe8;border-radius:999px;overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;width:0;
+    background:linear-gradient(90deg,var(--green-mid),var(--green));
+    border-radius:999px;
+    transition:width .35s cubic-bezier(.4,0,.2,1);
+  }
+  .q-card{animation:slideIn .35s ease both;}
+  @keyframes slideIn{
+    from{opacity:0;transform:translateX(28px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+  .q-card.back-anim{animation:slideBack .3s ease both;}
+  @keyframes slideBack{
+    from{opacity:0;transform:translateX(-28px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+  .q-scene{
+    font-size:.78rem;font-weight:700;color:var(--green);
+    background:var(--green-light);
+    display:inline-block;padding:3px 12px;border-radius:999px;
+    margin-bottom:12px;letter-spacing:.05em;
+  }
+  .q-text{font-size:1.08rem;font-weight:700;line-height:1.6;margin-bottom:22px;color:var(--text);}
+  .opts{display:grid;gap:10px;}
+  .opt{
+    display:flex;align-items:center;gap:12px;
+    width:100%;text-align:left;cursor:pointer;
+    background:#fff;border:2px solid var(--border);
+    border-radius:14px;padding:13px 16px;
+    font-size:.95rem;font-family:inherit;color:var(--text);
+    transition:border-color .15s, background .15s, transform .1s;
+  }
+  .opt:hover{border-color:var(--green-mid);background:#f0fdf4;}
+  .opt:active{transform:scale(.98);}
+  .opt .dot{
+    flex:none;width:20px;height:20px;border-radius:50%;
+    border:2px solid #cbd5d1;transition:all .15s;
+  }
+  .opt:hover .dot{border-color:var(--green);}
+  .opt.selected{border-color:var(--green);background:var(--green-light);font-weight:700;}
+  .opt.selected .dot{border-color:var(--green);background:var(--green);box-shadow:inset 0 0 0 4px #fff;}
+  .quiz-nav{margin-top:18px;display:flex;justify-content:flex-start;}
+  .back-btn{
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    color:var(--sub);font-size:.88rem;padding:8px 12px;border-radius:8px;
+  }
+  .back-btn:hover{color:var(--green);background:var(--green-light);}
+  .back-btn:disabled{opacity:.35;cursor:default;}
+  .back-btn:disabled:hover{background:none;color:var(--sub);}
+
+  /* ---------- result ---------- */
+  .result-hero{
+    text-align:center;
+    border-radius:var(--radius);
+    padding:38px 22px 30px;
+    color:#fff;
+    position:relative;overflow:hidden;
+    animation:popIn .6s cubic-bezier(.2,1.4,.4,1) both;
+    box-shadow:0 12px 36px rgba(0,0,0,.18);
+  }
+  @keyframes popIn{
+    0%{opacity:0;transform:scale(.6) translateY(30px);}
+    100%{opacity:1;transform:scale(1) translateY(0);}
+  }
+  .result-hero .sparkle{
+    position:absolute;inset:0;pointer-events:none;opacity:.15;
+    background:
+      radial-gradient(circle at 15% 20%, #fff 0 2px, transparent 3px),
+      radial-gradient(circle at 85% 15%, #fff 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 80%, #fff 0 2px, transparent 3px),
+      radial-gradient(circle at 25% 75%, #fff 0 2px, transparent 3px),
+      radial-gradient(circle at 50% 40%, #fff 0 1.5px, transparent 2.5px);
+  }
+  .result-hero .r-label{font-size:.8rem;letter-spacing:.2em;opacity:.85;margin-bottom:6px;}
+  .result-hero .r-emoji{font-size:4rem;line-height:1.2;animation:bounceIn .8s .25s cubic-bezier(.2,1.6,.4,1) both;}
+  @keyframes bounceIn{
+    0%{opacity:0;transform:scale(0);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  .result-hero .r-code{
+    font-size:1rem;font-weight:800;letter-spacing:.35em;
+    opacity:.9;margin-top:8px;
+  }
+  .result-hero .r-name{font-size:1.7rem;font-weight:800;margin-top:2px;text-shadow:0 2px 8px rgba(0,0,0,.2);}
+  .result-hero .r-catch{font-size:.95rem;margin-top:8px;opacity:.95;}
+
+  .section{margin-top:20px;animation:fadeUp .5s .3s ease both;}
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(16px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .section h3{
+    font-size:1rem;color:var(--green-dark);
+    margin-bottom:12px;display:flex;align-items:center;gap:8px;
+  }
+  .section h3::before{
+    content:"";display:block;width:5px;height:20px;
+    background:var(--green);border-radius:3px;
+  }
+  .analysis-text{font-size:.94rem;}
+
+  .axis-bars{display:grid;gap:16px;}
+  .axis-bar .ab-head{
+    display:flex;justify-content:space-between;
+    font-size:.82rem;font-weight:700;margin-bottom:5px;
+  }
+  .axis-bar .ab-head .win{color:var(--green-dark);}
+  .axis-bar .ab-head .lose{color:#9ca3af;font-weight:500;}
+  .axis-bar .ab-track{
+    height:14px;border-radius:999px;background:#e8ede9;
+    overflow:hidden;display:flex;
+  }
+  .axis-bar .ab-fill{
+    height:100%;border-radius:999px;
+    width:0;
+    transition:width 1s .4s cubic-bezier(.4,0,.2,1);
+  }
+  .axis-bar .ab-name{font-size:.72rem;color:var(--sub);margin-top:3px;display:flex;justify-content:space-between;}
+
+  .sw-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:480px){.sw-grid{grid-template-columns:1fr;}}
+  .sw-box{border-radius:14px;padding:14px 16px;font-size:.88rem;}
+  .sw-box.strong{background:#f0fdf4;border:1px solid #bbf7d0;}
+  .sw-box.weak{background:#fef2f2;border:1px solid #fecaca;}
+  .sw-box h4{font-size:.85rem;margin-bottom:8px;}
+  .sw-box.strong h4{color:#15803d;}
+  .sw-box.weak h4{color:#b91c1c;}
+  .sw-box ul{list-style:none;}
+  .sw-box li{padding:3px 0 3px 1.3em;position:relative;}
+  .sw-box.strong li::before{content:"◎";position:absolute;left:0;color:#22c55e;font-size:.8em;top:6px;}
+  .sw-box.weak li::before{content:"△";position:absolute;left:0;color:#ef4444;font-size:.8em;top:6px;}
+
+  .aruaru{
+    background:#fffbeb;border:1px dashed #fcd34d;
+    border-radius:14px;padding:14px 16px;font-size:.9rem;
+  }
+  .aruaru::before{content:"🗣 ";}
+
+  .compat{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:480px){.compat{grid-template-columns:1fr;}}
+  .compat-box{
+    border-radius:14px;padding:14px;text-align:center;cursor:pointer;
+    border:1px solid var(--border);background:#fff;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .compat-box:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
+  .compat-box .c-tag{font-size:.75rem;font-weight:700;margin-bottom:6px;}
+  .compat-box.good .c-tag{color:#15803d;}
+  .compat-box.bad .c-tag{color:#b91c1c;}
+  .compat-box .c-emoji{font-size:1.8rem;}
+  .compat-box .c-name{font-size:.88rem;font-weight:700;margin-top:2px;}
+  .compat-box .c-code{font-size:.72rem;color:var(--sub);letter-spacing:.15em;}
+
+  .result-actions{margin-top:26px;}
+  .copy-done{
+    text-align:center;font-size:.82rem;color:var(--green);
+    height:1.4em;margin-top:8px;opacity:0;transition:opacity .3s;
+  }
+  .copy-done.show{opacity:1;}
+
+  /* ---------- all types grid ---------- */
+  #screen-all h2{font-size:1.15rem;color:var(--green-dark);margin-bottom:4px;text-align:center;}
+  #screen-all .sub{text-align:center;font-size:.82rem;color:var(--sub);margin-bottom:18px;}
+  .type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  @media(min-width:560px){.type-grid{grid-template-columns:repeat(4,1fr);}}
+  .type-cell{
+    background:#fff;border:1px solid var(--border);
+    border-radius:14px;padding:14px 8px;text-align:center;
+    transition:transform .15s, box-shadow .15s;
+    position:relative;overflow:hidden;
+  }
+  .type-cell:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+  .type-cell::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:5px;
+    background:var(--tc, var(--green));
+  }
+  .type-cell .t-emoji{font-size:1.9rem;}
+  .type-cell .t-code{font-size:.72rem;font-weight:800;letter-spacing:.2em;color:var(--sub);margin-top:4px;}
+  .type-cell .t-name{font-size:.82rem;font-weight:700;margin-top:2px;line-height:1.4;}
+  .type-cell .t-catch{font-size:.68rem;color:var(--sub);margin-top:4px;line-height:1.5;}
+  .type-cell.me{
+    border:2px solid var(--tc, var(--green));
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--tc, var(--green)) 20%, transparent);
+    animation:mePulse 1.6s ease infinite alternate;
+  }
+  @keyframes mePulse{
+    from{transform:scale(1);}
+    to{transform:scale(1.03);}
+  }
+  .type-cell.me::after{
+    content:"YOU";
+    position:absolute;top:8px;right:-26px;
+    background:var(--tc, var(--green));color:#fff;
+    font-size:.58rem;font-weight:800;letter-spacing:.1em;
+    padding:2px 28px;transform:rotate(38deg);
+  }
+  .hidden{display:none !important;}
+  footer{
+    text-align:center;font-size:.72rem;color:#9ca3af;margin-top:40px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="index.html">← 実験ラボに戻る</a>
+  <header class="site">
+    <h1>⛳ ゴルフ性格診断 16タイプ</h1>
+    <div class="tagline">12の質問で、あなたのゴルフ人格を丸裸にします</div>
+  </header>
+
+  <!-- START -->
+  <section id="screen-start" class="card">
+    <div class="hero-emoji">🏌️‍♂️</div>
+    <h2>あなたは16タイプのどのゴルファー?</h2>
+    <p class="lead">
+      「残り210y、池越え」——その一瞬の判断に、あなたの全人格が出ます。
+      4つの軸 × 3問、計12問の「あるある」に直感で答えてください。
+      所要時間は約2分。スコアは伸びませんが、自己理解は深まります。
+    </p>
+    <div class="axes-preview">
+      <div class="axis-chip"><b>軸1|攻め方</b>🔥 アグレッシブ(A) vs 🛡 セーフティ(S)</div>
+      <div class="axis-chip"><b>軸2|判断</b>💫 フィーリング(F) vs 📐 ロジック(L)</div>
+      <div class="axis-chip"><b>軸3|メンタル</b>🪨 鋼(Z) vs 🥂 ガラス(G)</div>
+      <div class="axis-chip"><b>軸4|スタイル</b>🍻 ワイワイ(W) vs 🎯 モクモク(M)</div>
+    </div>
+    <button class="btn" id="btn-start">診断をはじめる</button>
+    <button class="btn ghost" id="btn-all-from-start">先に全16タイプを見る</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="screen-quiz" class="hidden">
+    <div class="progress-area">
+      <div class="progress-label">
+        <span id="p-count">Q1 / 12</span>
+        <span id="p-axis">軸1: 攻め方</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="p-fill"></div></div>
+    </div>
+    <div class="card q-card" id="q-card">
+      <div class="q-scene" id="q-scene"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="opts" id="q-opts"></div>
+      <div class="quiz-nav">
+        <button class="back-btn" id="btn-back">← 前の質問に戻る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="screen-result" class="hidden">
+    <div class="result-hero" id="r-hero">
+      <div class="sparkle"></div>
+      <div class="r-label">YOUR GOLF TYPE</div>
+      <div class="r-emoji" id="r-emoji"></div>
+      <div class="r-code" id="r-code"></div>
+      <div class="r-name" id="r-name"></div>
+      <div class="r-catch" id="r-catch"></div>
+    </div>
+
+    <div class="section card">
+      <h3>性格分析</h3>
+      <p class="analysis-text" id="r-analysis"></p>
+    </div>
+
+    <div class="section card">
+      <h3>あなたの4軸バランス</h3>
+      <div class="axis-bars" id="r-bars"></div>
+    </div>
+
+    <div class="section">
+      <div class="sw-grid">
+        <div class="sw-box strong">
+          <h4>💪 強み</h4>
+          <ul id="r-strengths"></ul>
+        </div>
+        <div class="sw-box weak">
+          <h4>🫠 弱み</h4>
+          <ul id="r-weaknesses"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="section card">
+      <h3>ラウンドあるある</h3>
+      <div class="aruaru" id="r-aruaru"></div>
+    </div>
+
+    <div class="section card">
+      <h3>相性</h3>
+      <div class="compat">
+        <div class="compat-box good" id="r-good">
+          <div class="c-tag">💚 ベストパートナー</div>
+          <div class="c-emoji"></div>
+          <div class="c-name"></div>
+          <div class="c-code"></div>
+        </div>
+        <div class="compat-box bad" id="r-bad">
+          <div class="c-tag">💥 火花が散る相手</div>
+          <div class="c-emoji"></div>
+          <div class="c-name"></div>
+          <div class="c-code"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn" id="btn-copy">📋 結果をコピー(SNSシェア用)</button>
+      <div class="copy-done" id="copy-done">コピーしました!</div>
+      <button class="btn secondary" id="btn-show-all">全16タイプ一覧を見る</button>
+      <button class="btn ghost" id="btn-retry">↺ もう一度診断する</button>
+    </div>
+  </section>
+
+  <!-- ALL TYPES -->
+  <section id="screen-all" class="hidden">
+    <h2>全16タイプ図鑑</h2>
+    <div class="sub" id="all-sub">あなたのタイプが光っています</div>
+    <div class="type-grid" id="type-grid"></div>
+    <div class="result-actions">
+      <button class="btn secondary" id="btn-back-result">結果に戻る</button>
+      <button class="btn ghost" id="btn-retry2">↺ もう一度診断する</button>
+    </div>
+  </section>
+
+  <footer>ゴルフ性格診断 16タイプ — 診断結果に法的効力はありませんが、あるあるには自信があります。</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ================= データ ================= */
+
+// 軸定義: 各軸 [第1極, 第2極]。スコアが正なら第1極。
+const AXES = [
+  { id:0, label:"攻め方",   pos:{key:"A", name:"アグレッシブ", emoji:"🔥"}, neg:{key:"S", name:"セーフティ",   emoji:"🛡"} },
+  { id:1, label:"判断",     pos:{key:"F", name:"フィーリング", emoji:"💫"}, neg:{key:"L", name:"ロジック",     emoji:"📐"} },
+  { id:2, label:"メンタル", pos:{key:"Z", name:"鋼メンタル",   emoji:"🪨"}, neg:{key:"G", name:"ガラス",       emoji:"🥂"} },
+  { id:3, label:"スタイル", pos:{key:"W", name:"ワイワイ",     emoji:"🍻"}, neg:{key:"M", name:"モクモク",     emoji:"🎯"} },
+];
+
+// dir: +1 = 「そう思う」で第1極(A/F/Z/W)に加点、-1 = 第2極に加点
+const QUESTIONS = [
+  // 軸1: 攻め方
+  { axis:0, dir:+1, scene:"PAR5 セカンド地点",
+    text:"残り210y、グリーン手前はドーンと池。気づいたら手にウッドを握っている。" },
+  { axis:0, dir:-1, scene:"ドッグレッグのティー",
+    text:"林越えショートカット成功率2割。「今日は無理しない日」と自分に言い聞かせて素直に刻む。" },
+  { axis:0, dir:+1, scene:"OB直後の打ち直し",
+    text:"OBを打った直後こそ「次はもっと振れば取り返せる」とフルスイングしたくなる。" },
+  // 軸2: 判断
+  { axis:1, dir:+1, scene:"クラブ選択",
+    text:"キャディさんの「残り135yです」より、「今日は8番が打てる気がする」という直感を優先する。" },
+  { axis:1, dir:-1, scene:"スタート前の練習場",
+    text:"ラウンド前夜、天気予報・コースレイアウト・自分の平均飛距離をチェックしないと落ち着かない。" },
+  { axis:1, dir:+1, scene:"グリーン上",
+    text:"ラインは読むというより「足の裏で感じる」。同伴者に理由を聞かれても説明できない。" },
+  // 軸3: メンタル
+  { axis:2, dir:+1, scene:"朝イチのティーショット",
+    text:"朝イチで盛大にOBを打っても、カートに乗った瞬間にはもう忘れて次の作戦を考えている。" },
+  { axis:2, dir:-1, scene:"3パット直後",
+    text:"3パットした後の3ホールくらいは口数が減り、同伴者に「大丈夫?」と心配される。" },
+  { axis:2, dir:+1, scene:"同伴者からの一言",
+    text:"「さっきのは惜しかったね〜」と言われても全然気にならない。むしろ自分からネタにする。" },
+  // 軸4: スタイル
+  { axis:3, dir:+1, scene:"ハーフ終了・昼食",
+    text:"正直、ゴルフの楽しみの半分以上は「ラウンド中の会話」と「昼のビール」でできている。" },
+  { axis:3, dir:-1, scene:"ラウンド中",
+    text:"同伴者が盛り上がっていても、自分の番が近づくと会話が耳に入らなくなる。頭の中はスコアのことだけ。" },
+  { axis:3, dir:+1, scene:"ラウンド終了後",
+    text:"自分のスコアが崩れても、みんなが笑っていれば「今日はいいゴルフだった」と本気で思える。" },
+];
+
+const LIKERT = [
+  { label:"そう思う",         value:+2 },
+  { label:"ややそう思う",     value:+1 },
+  { label:"どちらともいえない", value:0 },
+  { label:"あまり思わない",   value:-1 },
+  { label:"思わない",         value:-2 },
+];
+
+const TYPES = {
+  AFZW: { name:"祭りのエース", emoji:"🎉", color:"#f59e0b",
+    catch:"ナイスショットもOBも全部ネタ",
+    analysis:"あなたは、コースに出た瞬間からラウンドを「祭り」に変えてしまうタイプです。池越えは狙うためにあり、OBは笑いを取るためにあると本気で信じています。直感でクラブを選び、結果がどうであれ3秒後には切り替えている姿は、同伴者に「一緒に回ると楽しい」と言わせる天性の才能です。ただしスコアカードを見ると本人が一番驚いていることも多く、「あんなに盛り上がったのに98?」は毎回のお約束。あなたにとってベストスコアより大事なのは、ベストな思い出なのです。",
+    strengths:["場の空気を一瞬で温めるムードメーカー力","ミスを引きずらない驚異の回復力","ここ一番で本当に池を越えてくる勝負強さ"],
+    weaknesses:["「刻む」という選択肢がメニューにない","盛り上がりすぎて素振りを忘れる","スコア集計時に初めて現実と向き合う"],
+    aruaru:"OBを打った瞬間「今のは風!」と言い、3秒後には自分で「いや、俺だわ」とオチをつける。",
+    good:"SLZM", bad:"SLGW" },
+  AFZM: { name:"一撃必殺のハンター", emoji:"🦅", color:"#dc2626",
+    catch:"「刻む」という言葉を知らずに育った",
+    analysis:"あなたは、獲物(ピン)しか見えていない孤高のハンタータイプです。感覚を研ぎ澄ませ、誰にも相談せず、狙えるものはすべて狙う。ドラコンホールでは同伴者が全員あなたのティーショットを見に来ます。メンタルは鋼で、OBを打っても表情ひとつ変えずに打ち直しでさらに振ってくる姿は、もはや畏怖の対象です。会話よりも一打、ビールよりもバーディー。その潔さは美しいものの、同伴者はあなたが今日楽しいのかどうか最後まで分かりません。",
+    strengths:["当たった日の爆発力はプロ級","ミス直後でもスイングが縮こまらない","静かな集中力が同組に緊張感(良い意味)を生む"],
+    weaknesses:["レイアップという概念の欠如","好調・不調のスコア差が30打ある","無口すぎて接待ゴルフに向かない"],
+    aruaru:"「刻む?」と聞かれて、本気で数秒フリーズしてから「あ、刻まないです」と答える。",
+    good:"SFZW", bad:"SLGW" },
+  AFGW: { name:"打ち上げ花火", emoji:"🎆", color:"#ec4899",
+    catch:"前半38、後半54",
+    analysis:"あなたは、打ち上がる時は誰よりも高く、落ちる時は誰よりも派手な花火タイプです。ノリと勢いで前半は神がかったプレーを見せ、同伴者から「今日ベスト出るんじゃない?」と言われた瞬間から歯車が狂い始めます。感覚派なので好調の理由も不調の理由も分からず、ガラスのメンタルはOB一発で粉々に。それでも持ち前の明るさで「後半の私は別人だから!」と笑いに変え、結局その日一番の思い出を作って帰るのがあなたです。",
+    strengths:["ゾーンに入った時の輝きは同組の語り草になる","落ち込んでも周りを暗くしない明るさ","盛り上げ役とドラマ担当を一人でこなす"],
+    weaknesses:["「ベスト更新ペース」と言われた瞬間に崩れる","ミスの原因分析を一切しないので再発する","ハーフのスコア差で天気が変わる"],
+    aruaru:"前半終了時に生ビールで祝杯→後半スタートのティーショットでいきなりチョロ。",
+    good:"SLZW", bad:"ALZM" },
+  AFGM: { name:"情熱のアーティスト", emoji:"🎨", color:"#f97316",
+    catch:"神ショットとOBは紙一重",
+    analysis:"あなたは、ゴルフを芸術だと思っている情熱のアーティストタイプです。理屈では説明できない「イメージ」でスーパーショットを描き、同じ筆づかいで盛大にOBも描きます。傑作が出れば無言でガッツポーズ、駄作が出れば3ホール分の沈黙。あなたにとって1打1打は作品なので、妥協した安全策など筆を折るに等しい行為です。周りは静かに見守るしかありませんが、たまに出る「今のどうやって打ったの?」という一打のために、みんなあなたと回りたがるのです。",
+    strengths:["教科書に載っていない創造的なリカバリー","一打への没入力と集中力","当たり日の芸術点は同組で断トツ"],
+    weaknesses:["再現性という言葉と絶縁している","駄作(ミス)への沈黙が長い","アドバイスを「作風への口出し」と感じがち"],
+    aruaru:"林の中から木と木の間20cmを抜くミラクルショット→直後のアプローチをザックリして無言。",
+    good:"SLZW", bad:"ALGM" },
+  ALZW: { name:"語れる司令塔", emoji:"🎙", color:"#0ea5e9",
+    catch:"データで笑いを取る男",
+    analysis:"あなたは、攻めの判断をデータで下し、その根拠を面白おかしく実況できる司令塔タイプです。「この池、越えられる確率は俺調べで71%」などと言いながら本当に打っていき、成功しても失敗しても場が沸きます。鋼のメンタルでミスを引きずらず、むしろミスすら統計サンプルとして回収する前向きさ。理論派なのに宴会部長もこなせる稀有な人材で、コンペの幹事から解説役まで何でも任される、同組にいると一番賑やかで一番頼れる存在です。",
+    strengths:["攻めの判断に根拠があるので大崩れしにくい","失敗を即ネタ化&データ化する切り替え力","初対面の同伴者ともすぐ打ち解ける"],
+    weaknesses:["解説が長くてプレーファストを注意される","たまにデータより酒量が上回る","「俺調べ」の精度には波がある"],
+    aruaru:"「風速3m、打ち下ろし15y、よって7番!」と宣言してナイスオン。ドヤ顔で全員とグータッチ。",
+    good:"SFGM", bad:"AFGM" },
+  ALZM: { name:"冷徹スナイパー", emoji:"🏹", color:"#7c3aed",
+    catch:"ピンしか見えていない",
+    analysis:"あなたは、コースを戦場、ピンをターゲットとして捉える冷徹なスナイパータイプです。距離、風、ライ、すべてを計算した上で「行ける」と判断すれば躊躇なく撃ち抜きます。ミスをしても感情の揺れはゼロ。淡々と原因を分析し、次の一打で修正してくる姿は同伴者を静かに震え上がらせます。会話は最小限、笑顔はバーディーの時だけ。とっつきにくく見えますが、聞けばクラブセッティングについて40分語ってくれる、実は熱い人でもあります。",
+    strengths:["計算に裏打ちされた攻めの精度","感情に左右されない安定したルーティン","同組のヤーデージ計測係として絶大な信頼"],
+    weaknesses:["計算外の事態(ディボット跡など)に世界の理不尽を感じる","無表情すぎて初対面に怖がられる","接待ゴルフで空気より数字を読んでしまう"],
+    aruaru:"同伴者の「何番で打った?」に、番手ではなく「キャリー182、トータル194」と答える。",
+    good:"AFZW", bad:"SFGW" },
+  ALGW: { name:"解説者エンターテイナー", emoji:"🎭", color:"#d946ef",
+    catch:"理論は完璧、実演で崩壊",
+    analysis:"あなたは、レッスン動画を年間500本視聴し、スイング理論を誰よりも語れるエンターテイナータイプです。攻めのマネジメント論をワイワイと展開し、同伴者への的確なアドバイスで「先生」と呼ばれることも。しかし自分の番になると理論と身体が絶縁状態になり、解説通りにいかない現実にメンタルが音を立てて崩れます。それでも「今のは理論的にはこうなるはずだった」と語り出す姿に、同伴者は愛を込めて笑うのです。教えたら上手い、打ったら惜しい。それがあなたです。",
+    strengths:["理論知識は同組でティーチングプロ級","人に教えると本当に上手くなる(相手が)","失敗も講義に変える話術"],
+    weaknesses:["自分のスイングにだけ理論が適用されない","うまくいかないと饒舌さが倍増する(動揺のサイン)","知識のアップデートで手打ちが直る前に理論が変わる"],
+    aruaru:"「シャローイングはね…」と語った直後のティーショットがド天ぷら。「今のは例外」と即答。",
+    good:"SFZM", bad:"AFZM" },
+  ALGM: { name:"完璧主義の求道者", emoji:"⚡", color:"#6366f1",
+    catch:"計算外は許さない(計算外だらけ)",
+    analysis:"あなたは、理想のゴルフを設計図として頭の中に持っている完璧主義の求道者タイプです。攻めるべき場面を理論で導き、その通りに攻める勇気もある。しかし設計図と1mmでもズレた瞬間、あなたの世界には暗雲が立ち込めます。3パットの後の沈黙は深く、同伴者は話しかけるタイミングをグループLINEで相談するほど。それでも黙々と練習場に通い、確実に上達していくストイックさは本物です。理想が高いのは、それだけゴルフを愛している証拠なのです。",
+    strengths:["向上心と練習量は16タイプ随一","攻めと理論が噛み合った日のスコアは本物","自分に厳しいぶん、他人のミスには実は寛容"],
+    weaknesses:["ワングリップOKすら自分に許さない","理想と現実の差分でメンタルが削れる","楽しむためのゴルフを時々忘れる"],
+    aruaru:"練習場では完璧だったドローが出ず、ラウンド中に真顔で「なぜだ」と3回つぶやく。",
+    good:"SFZW", bad:"AFGM" },
+  SFZW: { name:"太陽のムードメーカー", emoji:"☀️", color:"#eab308",
+    catch:"スコアより空気を読む",
+    analysis:"あなたは、同伴者全員のその日の調子と機嫌を把握している太陽のようなタイプです。自分は感覚のまま無理なく刻み、ミスしても「まあこんな日もある!」と即切り替え。それより誰かが3パットで沈んでいないか、お茶が足りているかの方が気になります。あなたがいる組は不思議とトラブルが起きず、起きても笑い話になります。スコアはいつも90台で安定していますが、あなたの本当のハンディキャップは「人の良さ」。全ゴルフ場があなたを求めています。",
+    strengths:["どんなメンバー構成でも場を成立させる調整力","無理をしないので大叩きが少ない","ミスした人への声かけが天才的"],
+    weaknesses:["人の世話を焼きすぎて自分のルーティンを忘れる","「ナイスショット!」を言いすぎて声が枯れる","自分のベスト更新チャンスに気づいていない"],
+    aruaru:"同伴者のボールの行方を自分のボールより真剣に目で追い、探すのも一番早い。",
+    good:"ALGM", bad:"ALZM" },
+  SFZM: { name:"感覚の職人", emoji:"🍵", color:"#78716c",
+    catch:"黙って刻んで、気づけばパーオン",
+    analysis:"あなたは、長年の勘だけを頼りに静かにコースを攻略していく職人タイプです。派手さは一切ありませんが、フェアウェイど真ん中に淡々と置いていく様子は、まるで熟練の蕎麦打ち。理屈は語らず「なんとなくこっち」で正解を引き当て、ミスしても顔色ひとつ変えずに次の仕事(一打)へ。同伴者が気づいた時には、あなただけがパーを重ねています。多くを語らないため何を考えているか分かりませんが、実はラウンド後の温泉を楽しみにしていることは秘密です。",
+    strengths:["再現性の高い「いつものショット」を持っている","メンタルが凪。スコアの波が小さい","無駄打ちしないコースマネジメントが身体に染みている"],
+    weaknesses:["感覚が狂った日の修正方法が「いつもの感じ」しかない","静かすぎて存在を忘れられ、順番を飛ばされる","若手に技術を聞かれても「こう、スッと」しか言えない"],
+    aruaru:"「ナイスパー!」と言われて初めて、周りが自分のスコアに注目していたことに気づく。",
+    good:"ALGW", bad:"AFGW" },
+  SFGW: { name:"気配りのガラス細工", emoji:"🌸", color:"#f472b6",
+    catch:"人に優しく、自分に厳しい",
+    analysis:"あなたは、同伴者への気配りと繊細な感性を併せ持つ、美しくも壊れやすいガラス細工タイプです。安全にコースを回りたい気持ちと、みんなに楽しんでほしい気持ちでいつも頑張っています。しかし自分のミスには人一倍敏感で、OBの後は笑顔のまま心が3ホール分留守になります。それでも「大丈夫?」と聞かれれば「全然大丈夫!」と気丈に振る舞うのがあなた。本当は大丈夫じゃないことを、みんな知っています。そして、そんなあなたをみんなが好きです。",
+    strengths:["同伴者の緊張をほぐす柔らかい雰囲気","無理な攻めをしない堅実なゴルフ","ミスした人の気持ちが誰よりも分かる共感力"],
+    weaknesses:["自分のミスだけ3日間覚えている","「今の私のせいで流れが…」と背負いすぎる","励まされると逆に泣きそうになる"],
+    aruaru:"バンカーで2回出なかった後、レーキで砂を直す時間がいつもより長い(心を整えている)。",
+    good:"ALZW", bad:"ALZM" },
+  SFGM: { name:"求道の修行僧", emoji:"🧘", color:"#0d9488",
+    catch:"静かに刻み、静かに凹む",
+    analysis:"あなたは、ゴルフを自分と向き合う修行だと捉えている求道者タイプです。感覚を研ぎ澄まし、欲を捨て、ひたすら安全なルートを刻んでいく。その姿はまさに禅。しかし悟りへの道は険しく、3パットひとつで無の境地から一気に煩悩まみれに戻ります。落ち込んでいても表情が変わらないため、同伴者は気づきません(本人比でかなり凹んでいます)。淡々としたプレーの奥に激しい内面の戦いを抱えるあなたは、静かなる情熱の人なのです。",
+    strengths:["欲をかかないマネジメントで大叩き回避","黙々と自分のペースを守れる胆力","感覚が冴えた日のショートゲームは芸術"],
+    weaknesses:["内心の動揺を誰にも共有できず一人で抱える","攻めれば獲れる場面でも刻んでしまう","楽しいのかどうか同伴者に永遠に伝わらない"],
+    aruaru:"ラウンド後「今日楽しかった?」と聞かれ、0.5秒間を置いてから「…うん」と答える(本当に楽しかった)。",
+    good:"ALZW", bad:"AFZW" },
+  SLZW: { name:"安定の幹事長", emoji:"🍺", color:"#16a34a",
+    catch:"段取り八分、ゴルフ二分",
+    analysis:"あなたは、コンペの日程調整から組み合わせ、賞品の手配まで完璧にこなす幹事長タイプです。プレーも人生設計と同じく手堅く、ボギーオン狙いの計画的ゴルフでスコアはいつも安定。ミスしても「想定内、想定内」と笑い、宴会では中心にいる。理性と社交性のバランスが取れた、組織に一人は欲しい人材です。ただし段取りに全力を注ぎすぎて、肝心の自分のゴルフの調整が後回しになりがち。あなたの練習不足は、みんなの楽しさと引き換えなのです。",
+    strengths:["絶対に大崩れしない計画的コースマネジメント","トラブル時の段取り力(雷雨中断でも動じない)","コンペを成立させる圧倒的な調整力"],
+    weaknesses:["幹事業務が忙しくて自分のスコアが二の次","冒険しないのでベストスコアが5年更新されていない","打つ前に「保険」の話をしがち"],
+    aruaru:"スタート前に全員分のスコアカードに名前を書き終えており、昼食のメニューまで把握している。",
+    good:"AFGW", bad:"AFZM" },
+  SLZM: { name:"鉄壁の計算機", emoji:"🤖", color:"#475569",
+    catch:"ボギーオン戦略に狂いなし",
+    analysis:"あなたは、感情という機能を(ゴルフ中だけ)オフにできる鉄壁の計算機タイプです。すべてのホールでリスクとリターンを演算し、期待値が最も高いルートを淡々と実行。池が見えれば迷わず刻み、ピンが端に切られていればグリーンセンター狙い。ミスしてもエラーログを記録して次に活かすだけで、動揺という概念がありません。派手さはゼロですが、気づけばコンペで入賞しているのはいつもあなた。「面白みがない」と言われても、トロフィーは面白いので問題ありません。",
+    strengths:["トリプル以上を叩かない鉄壁の安定感","ハンデ戦・ペリア戦での勝率の高さ","同組の距離・ルール質問にすべて即答できる"],
+    weaknesses:["攻めれば伝説になれた場面を計算で見送る","ナイスショットしても喜びの表現が小さく損をする","「楽しかった?」より「何位だった?」で会話しがち"],
+    aruaru:"同伴者が池越えに挑んで散っていく横で、静かに刻んでパーを拾い、心の中でだけ頷く。",
+    good:"AFZW", bad:"AFGM" },
+  SLGW: { name:"心配性の軍師", emoji:"📋", color:"#8b5cf6",
+    catch:"プランCまで用意して、前夜眠れない",
+    analysis:"あなたは、あらゆるリスクを想定し尽くす心配性の軍師タイプです。前日にコースレイアウトを暗記し、雨用・風用・絶不調用のプランまで準備。同伴者には「あの池、右から巻けるよ」と的確な助言を配り、みんなの安全を守ります。しかし自分のこととなると、想定していたリスクが実際に起きた瞬間「ほらやっぱり!」とメンタルが揺れるのが玉に瑕。あなたの用意したプランBが同伴者を救った回数は数知れず。もう少しだけ、自分の心のケアプランも用意してあげてください。",
+    strengths:["準備力・情報収集力は16タイプNo.1","同伴者への危険予知アラートが的確","堅実プレーで平均スコアは実は良い"],
+    weaknesses:["想定通りのミスでも普通に凹む","考えすぎてルーティンが年々長くなる","前夜の睡眠不足という最大リスクを管理できない"],
+    aruaru:"「このホール、右OB浅いから気をつけて」と全員に周知した上で、自分が右に打つ。",
+    good:"AFZW", bad:"AFZM" },
+  SLGM: { name:"静かなる参謀", emoji:"🦉", color:"#1e40af",
+    catch:"風速まで計算するが3パットで崩壊",
+    analysis:"あなたは、フクロウのように静かにコースを観察し、緻密な戦略を組み立てる参謀タイプです。風速、傾斜、芝目、ピンポジションまで計算に入れ、安全マージンを確保した完璧なプランを実行していきます。序盤のあなたは間違いなく賢者。しかし読み切ったはずのラインが外れて3パットした瞬間、精密機械は静かに崩壊し、残りのホールを「計算が合わない…」という顔で回ることになります。それでも翌週にはグリーン読みの本を買って対策してくるあなたの探究心は、確実にあなたを上達させています。",
+    strengths:["データに基づく戦略立案能力","静かな環境なら発揮される高い集中力","敗因分析力が高く、同じミスを翌月にはしない"],
+    weaknesses:["計算が狂った時の復旧に3ホールかかる","繊細すぎて同伴者の私語でパットを外す(顔には出さない)","楽しむより検証してしまう性分"],
+    aruaru:"パットを外した後、カップの反対側からラインを確認しに行く(もう打ち終わっている)。",
+    good:"SFZW", bad:"AFZW" },
+};
+
+const TYPE_ORDER = Object.keys(TYPES);
+
+/* ================= 状態 ================= */
+let answers = new Array(QUESTIONS.length).fill(null);
+let current = 0;
+let myType = null;
+let myPercents = null; // [{pct(第1極%), axis}]
+
+/* ================= 要素 ================= */
+const $ = id => document.getElementById(id);
+const screens = {
+  start: $("screen-start"),
+  quiz: $("screen-quiz"),
+  result: $("screen-result"),
+  all: $("screen-all"),
+};
+
+function showScreen(name){
+  Object.values(screens).forEach(s => s.classList.add("hidden"));
+  screens[name].classList.remove("hidden");
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ================= クイズ ================= */
+function renderQuestion(isBack){
+  const q = QUESTIONS[current];
+  const axis = AXES[q.axis];
+  $("p-count").textContent = "Q" + (current+1) + " / " + QUESTIONS.length;
+  $("p-axis").textContent = "軸" + (q.axis+1) + ": " + axis.label;
+  $("p-fill").style.width = ((current) / QUESTIONS.length * 100) + "%";
+
+  const card = $("q-card");
+  card.classList.remove("back-anim");
+  // reflowでアニメを再発火
+  card.style.animation = "none";
+  void card.offsetWidth;
+  card.style.animation = "";
+  if(isBack) card.classList.add("back-anim");
+
+  $("q-scene").textContent = "⛳ " + q.scene;
+  $("q-text").textContent = q.text;
+
+  const opts = $("q-opts");
+  opts.innerHTML = "";
+  LIKERT.forEach((opt) => {
+    const btn = document.createElement("button");
+    btn.className = "opt" + (answers[current] === opt.value ? " selected" : "");
+    btn.innerHTML = '<span class="dot"></span><span>' + opt.label + '</span>';
+    btn.addEventListener("click", () => selectAnswer(opt.value, btn));
+    opts.appendChild(btn);
+  });
+
+  $("btn-back").disabled = current === 0;
+}
+
+function selectAnswer(value, btn){
+  answers[current] = value;
+  // 選択の見た目を反映してから少し待って次へ
+  document.querySelectorAll("#q-opts .opt").forEach(o => o.classList.remove("selected"));
+  btn.classList.add("selected");
+  setTimeout(() => {
+    if(current < QUESTIONS.length - 1){
+      current++;
+      renderQuestion(false);
+    }else{
+      finishQuiz();
+    }
+  }, 280);
+}
+
+$("btn-back").addEventListener("click", () => {
+  if(current > 0){
+    current--;
+    renderQuestion(true);
+  }
+});
+
+/* ================= 判定 ================= */
+function computeResult(){
+  // 各軸: -6..+6 (3問 × ±2)。正なら第1極。
+  const scores = [0,0,0,0];
+  QUESTIONS.forEach((q, i) => {
+    scores[q.axis] += (answers[i] || 0) * q.dir;
+  });
+  let code = "";
+  const percents = [];
+  scores.forEach((s, i) => {
+    const axis = AXES[i];
+    let pct = Math.round((s + 6) / 12 * 100); // 第1極の割合
+    pct = Math.max(0, Math.min(100, pct));
+    // 50%ちょうどは第1極に寄せる(表示は51/49にして同点感を回避)
+    let letter;
+    if(pct >= 50){ letter = axis.pos.key; if(pct === 50) pct = 51; }
+    else{ letter = axis.neg.key; }
+    code += letter;
+    percents.push({axis, pct});
+  });
+  return { code, percents };
+}
+
+function finishQuiz(){
+  $("p-fill").style.width = "100%";
+  const r = computeResult();
+  myType = r.code;
+  myPercents = r.percents;
+  setTimeout(() => {
+    renderResult(r.code, r.percents);
+    showScreen("result");
+  }, 350);
+}
+
+/* ================= 結果描画 ================= */
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) + amt, g = ((n >> 8) & 0xff) + amt, b = (n & 0xff) + amt;
+  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
+  return "#" + ((r << 16) | (g << 8) | b).toString(16).padStart(6, "0");
+}
+
+function renderResult(code, percents){
+  const t = TYPES[code];
+  const hero = $("r-hero");
+  hero.style.background = "linear-gradient(135deg," + t.color + "," + shade(t.color, -60) + ")";
+  hero.style.animation = "none";
+  void hero.offsetWidth;
+  hero.style.animation = "";
+
+  $("r-emoji").textContent = t.emoji;
+  $("r-code").textContent = code.split("").join(" ");
+  $("r-name").textContent = t.name;
+  $("r-catch").textContent = "— " + t.catch;
+  $("r-analysis").textContent = t.analysis;
+
+  // 4軸バー
+  const bars = $("r-bars");
+  bars.innerHTML = "";
+  percents.forEach(({axis, pct}) => {
+    const posWin = pct >= 50;
+    const winSide = posWin ? axis.pos : axis.neg;
+    const loseSide = posWin ? axis.neg : axis.pos;
+    const winPct = posWin ? pct : 100 - pct;
+    const div = document.createElement("div");
+    div.className = "axis-bar";
+    div.innerHTML =
+      '<div class="ab-head">' +
+        '<span class="win">' + winSide.emoji + ' ' + winSide.name + ' ' + winPct + '%</span>' +
+        '<span class="lose">' + loseSide.name + ' ' + (100 - winPct) + '%</span>' +
+      '</div>' +
+      '<div class="ab-track"><div class="ab-fill" style="background:' + t.color + '"></div></div>' +
+      '<div class="ab-name"><span>軸' + (axis.id+1) + ':' + axis.label + '</span></div>';
+    bars.appendChild(div);
+    // アニメーション発火
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        div.querySelector(".ab-fill").style.width = winPct + "%";
+      });
+    });
+  });
+
+  // 強み・弱み
+  const st = $("r-strengths"), wk = $("r-weaknesses");
+  st.innerHTML = ""; wk.innerHTML = "";
+  t.strengths.forEach(s => { const li = document.createElement("li"); li.textContent = s; st.appendChild(li); });
+  t.weaknesses.forEach(s => { const li = document.createElement("li"); li.textContent = s; wk.appendChild(li); });
+
+  $("r-aruaru").textContent = t.aruaru;
+
+  // 相性
+  fillCompat($("r-good"), t.good);
+  fillCompat($("r-bad"), t.bad);
+}
+
+function fillCompat(box, code){
+  const t = TYPES[code];
+  box.querySelector(".c-emoji").textContent = t.emoji;
+  box.querySelector(".c-name").textContent = t.name;
+  box.querySelector(".c-code").textContent = code;
+  box.onclick = () => { renderAllTypes(code); showScreen("all"); };
+}
+
+/* ================= コピー ================= */
+$("btn-copy").addEventListener("click", () => {
+  const t = TYPES[myType];
+  const barText = myPercents.map(({axis, pct}) => {
+    const posWin = pct >= 50;
+    const winSide = posWin ? axis.pos : axis.neg;
+    const winPct = posWin ? pct : 100 - pct;
+    return axis.label + ": " + winSide.name + " " + winPct + "%";
+  }).join(" / ");
+  const text =
+    "【ゴルフ性格診断 16タイプ】\n" +
+    "私は「" + myType + " " + t.name + " " + t.emoji + "」でした!\n" +
+    "— " + t.catch + "\n" +
+    barText + "\n" +
+    "#ゴルフ性格診断 #ゴルフ16タイプ";
+  copyText(text);
+});
+
+function copyText(text){
+  const done = () => {
+    const el = $("copy-done");
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2000);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  }else{
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ================= 全タイプ一覧 ================= */
+function renderAllTypes(highlight){
+  const grid = $("type-grid");
+  grid.innerHTML = "";
+  $("all-sub").textContent = highlight ? "枠が光っているのが" + (highlight === myType ? "あなた" : "選択中のタイプ") + "です" : "診断すると、あなたのタイプがここで光ります";
+  TYPE_ORDER.forEach(code => {
+    const t = TYPES[code];
+    const cell = document.createElement("div");
+    cell.className = "type-cell" + (code === highlight ? " me" : "");
+    cell.style.setProperty("--tc", t.color);
+    cell.innerHTML =
+      '<div class="t-emoji">' + t.emoji + '</div>' +
+      '<div class="t-code">' + code + '</div>' +
+      '<div class="t-name">' + t.name + '</div>' +
+      '<div class="t-catch">' + t.catch + '</div>';
+    grid.appendChild(cell);
+  });
+  $("btn-back-result").classList.toggle("hidden", !myType);
+}
+
+/* ================= ナビゲーション ================= */
+$("btn-start").addEventListener("click", () => {
+  answers = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  renderQuestion(false);
+  showScreen("quiz");
+});
+$("btn-all-from-start").addEventListener("click", () => {
+  renderAllTypes(myType);
+  showScreen("all");
+});
+$("btn-show-all").addEventListener("click", () => {
+  renderAllTypes(myType);
+  showScreen("all");
+});
+$("btn-back-result").addEventListener("click", () => {
+  if(myType) showScreen("result");
+  else showScreen("start");
+});
+function retry(){
+  answers = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  renderQuestion(false);
+  showScreen("quiz");
+}
+$("btn-retry").addEventListener("click", retry);
+$("btn-retry2").addEventListener("click", retry);
+</script>
+</body>
+</html>

@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ポーカー検討ラボ</title>
+<style>
+  :root {
+    --felt: #1a5c38;
+    --felt-dark: #0e3b23;
+    --bg: #0b1512;
+    --panel: #122019;
+    --panel-2: #16281f;
+    --border: #2c4a3a;
+    --gold: #d4af37;
+    --text: #e8f0ea;
+    --muted: #9ab8a6;
+    --red: #d43b3b;
+    --win: #3fbf6f;
+    --tie: #8a97a0;
+    --lose: #d4574e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    background:
+      radial-gradient(ellipse 120% 80% at 50% -10%, var(--felt) 0%, var(--felt-dark) 55%, var(--bg) 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .back-link {
+    display: inline-block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: rgba(0,0,0,.25);
+  }
+  .back-link:hover { color: var(--gold); border-color: var(--gold); }
+  h1 {
+    font-size: 28px;
+    letter-spacing: .12em;
+    text-align: center;
+    margin: 4px 0 2px;
+    color: var(--gold);
+    text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  }
+  .subtitle { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  .panel h2 {
+    font-size: 15px;
+    color: var(--gold);
+    letter-spacing: .08em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ---- スロット ---- */
+  .slot-groups { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+  .slot-group .label { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .slots { display: flex; gap: 6px; }
+  .slot {
+    width: 46px; height: 64px;
+    border: 2px dashed rgba(255,255,255,.28);
+    border-radius: 7px;
+    background: rgba(0,0,0,.22);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: border-color .15s;
+    position: relative;
+  }
+  .slot.next-target { border-color: var(--gold); box-shadow: 0 0 8px rgba(212,175,55,.35); }
+  .slot .placeholder { color: rgba(255,255,255,.25); font-size: 20px; }
+
+  /* ---- カード共通 ---- */
+  .pcard {
+    background: #fdfdf7;
+    border: 1px solid #b8b8ae;
+    border-radius: 6px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    user-select: none;
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  .pcard .rk { font-weight: 700; }
+  .pcard.red { color: var(--red); }
+  .pcard.black { color: #1c1c22; }
+  .slot .pcard { width: 100%; height: 100%; border-radius: 5px; }
+  .slot .pcard .rk { font-size: 19px; }
+  .slot .pcard .st { font-size: 17px; }
+
+  /* ---- ピッカー ---- */
+  .picker-row { display: grid; grid-template-columns: repeat(13, 1fr); gap: 4px; margin-bottom: 5px; }
+  .picker-card {
+    aspect-ratio: 5 / 7;
+    min-width: 0;
+    cursor: pointer;
+    font-size: clamp(9px, 1.5vw, 13px);
+    padding: 2px 0;
+    transition: transform .08s;
+  }
+  .picker-card .st { font-size: .95em; }
+  .picker-card:hover:not(.used) { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,.5); }
+  .picker-card.used {
+    opacity: .22;
+    cursor: not-allowed;
+    filter: grayscale(1);
+  }
+
+  .controls { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .controls label { font-size: 13px; color: var(--muted); }
+  select, input[type=number] {
+    background: #0d1a13;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+  input[type=number] { width: 110px; }
+  button.btn {
+    background: linear-gradient(180deg, #35543f, #24402f);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ---- 結果 ---- */
+  .progress-wrap { height: 8px; background: rgba(0,0,0,.35); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+  .progress-bar { height: 100%; width: 0%; background: var(--gold); transition: width .1s linear; }
+
+  .rates { display: flex; gap: 8px; text-align: center; margin-bottom: 12px; }
+  .rate-box { flex: 1; background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 10px; padding: 10px 4px; }
+  .rate-box .val { font-size: 30px; font-weight: 700; }
+  .rate-box .cap { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .rate-box.win .val { color: var(--win); }
+  .rate-box.tie .val { color: var(--tie); }
+  .rate-box.lose .val { color: var(--lose); }
+
+  .band { display: flex; height: 22px; border-radius: 11px; overflow: hidden; background: rgba(0,0,0,.3); margin-bottom: 14px; }
+  .band .seg-win { background: var(--win); }
+  .band .seg-tie { background: var(--tie); }
+  .band .seg-lose { background: var(--lose); }
+  .band div { transition: width .2s; }
+
+  .hand-name {
+    background: rgba(0,0,0,.25);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+  .hand-name b { color: var(--gold); font-size: 17px; }
+  .hint { font-size: 12px; color: var(--muted); }
+
+  /* ---- 状況入力 ---- */
+  .sit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  @media (max-width: 420px) { .sit-grid { grid-template-columns: 1fr; } }
+  .sit-grid .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  .sit-grid select, .sit-grid input[type=number] { width: 100%; }
+  .street-badge {
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 14px;
+    text-align: center;
+    letter-spacing: .08em;
+  }
+  .sit-note { font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+
+  /* ---- アドバイス ---- */
+  .advice-disclaimer { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .advice {
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.25);
+  }
+  .advice .verdict { font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+  .advice .reason { font-size: 13px; line-height: 1.7; white-space: pre-line; }
+  .advice.aggressive { border-color: var(--win); }
+  .advice.aggressive .verdict { color: var(--win); }
+  .advice.call { border-color: var(--gold); }
+  .advice.call .verdict { color: var(--gold); }
+  .advice.fold { border-color: var(--lose); }
+  .advice.fold .verdict { color: var(--lose); }
+  .advice.neutral .verdict { color: var(--muted); }
+
+  footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+    padding-bottom: 20px;
+  }
+  #testStatus { font-size: 11px; opacity: .8; }
+
+  /* ---- 今日の格言 ---- */
+  .quote {
+    text-align: center;
+    color: var(--gold);
+    font-size: 13px;
+    opacity: .85;
+    margin: -8px 0 16px;
+    font-style: italic;
+    letter-spacing: .04em;
+  }
+
+  /* ---- ミュートボタン ---- */
+  .mute-btn {
+    position: fixed;
+    top: 14px; right: 14px;
+    z-index: 80;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.45);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    transition: border-color .15s, transform .1s;
+  }
+  .mute-btn:hover { border-color: var(--gold); transform: scale(1.08); }
+
+  /* ---- 勝率演出 ---- */
+  @keyframes sparkle-sweep {
+    0%   { transform: translateX(-160%) rotate(18deg); }
+    60%, 100% { transform: translateX(280%) rotate(18deg); }
+  }
+  .pcard.sparkle { position: relative; overflow: hidden; }
+  .pcard.sparkle::after {
+    content: '';
+    position: absolute;
+    top: -30%; left: 0;
+    width: 45%; height: 160%;
+    background: linear-gradient(105deg, transparent, rgba(255,238,160,.9), transparent);
+    animation: sparkle-sweep 1.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .result-badge {
+    display: none;
+    text-align: center;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .06em;
+  }
+  .result-badge.monster {
+    display: block;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    background: rgba(212,175,55,.12);
+    text-shadow: 0 0 10px rgba(212,175,55,.55);
+    animation: badge-pulse 1.2s ease-in-out infinite;
+  }
+  .result-badge.danger {
+    display: block;
+    color: #8fb6dd;
+    border: 1px solid #3c5a7a;
+    background: rgba(60,100,160,.14);
+  }
+
+  #coldOverlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(70,110,190,.08), rgba(35,60,130,.28));
+    opacity: 0;
+    transition: opacity .8s;
+    pointer-events: none;
+    z-index: 40;
+  }
+  #coldOverlay.on { opacity: 1; }
+
+  @keyframes confetti-fall {
+    to { transform: translateY(108vh) rotate(720deg); }
+  }
+  .confetti-piece {
+    position: fixed;
+    top: -14px;
+    width: 8px; height: 13px;
+    z-index: 60;
+    pointer-events: none;
+    border-radius: 2px;
+    opacity: .95;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* ---- 役名ドン！ ---- */
+  @keyframes hand-pop {
+    0%   { transform: scale(.5); }
+    45%  { transform: scale(1.7); }
+    70%  { transform: scale(.92); }
+    100% { transform: scale(1); }
+  }
+  #handName { display: inline-block; }
+  #handName.pop {
+    animation: hand-pop .65s cubic-bezier(.2, 1.3, .4, 1);
+    text-shadow: 0 0 12px rgba(212,175,55,.8);
+  }
+</style>
+</head>
+<body>
+<div id="coldOverlay"></div>
+<button class="mute-btn" id="muteBtn" title="効果音のON/OFF" aria-label="効果音のON/OFF">🔊</button>
+<div class="wrap">
+  <a class="back-link" href="index.html">&larr; 実験ラボに戻る</a>
+  <h1>&spades; ポーカー検討ラボ &clubs;</h1>
+  <div class="subtitle">テキサスホールデム 勝率計算＋アクション提案（モンテカルロ法 約20,000試行）</div>
+  <div class="quote" id="quote"></div>
+
+  <div class="layout">
+    <!-- 左：入力 -->
+    <div>
+      <div class="panel" style="margin-bottom:16px;">
+        <h2>カード選択</h2>
+        <div class="slot-groups">
+          <div class="slot-group">
+            <div class="label">自分の手札（2枚）</div>
+            <div class="slots" id="slots-hand"></div>
+          </div>
+          <div class="slot-group">
+            <div class="label">フロップ（3枚）</div>
+            <div class="slots" id="slots-flop"></div>
+          </div>
+          <div class="slot-group">
+            <div class="label">ターン</div>
+            <div class="slots" id="slots-turn"></div>
+          </div>
+          <div class="slot-group">
+            <div class="label">リバー</div>
+            <div class="slots" id="slots-river"></div>
+          </div>
+        </div>
+        <div id="picker"></div>
+        <div class="controls">
+          <button class="btn" id="clearBtn">クリア</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px;">
+        <h2>状況入力</h2>
+        <div class="sit-grid">
+          <div class="field">自分のポジション（6-max）
+            <select id="position">
+              <option value="UTG">UTG</option>
+              <option value="MP">MP（HJ）</option>
+              <option value="CO">CO</option>
+              <option value="BTN" selected>BTN</option>
+              <option value="SB">SB</option>
+              <option value="BB">BB</option>
+            </select>
+          </div>
+          <div class="field">相手人数（6-max想定）
+            <select id="oppCount">
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="field">ストリート（ボードから自動判定）
+            <div class="street-badge" id="streetLabel">プリフロップ</div>
+          </div>
+          <div class="field">直面しているアクション
+            <select id="facingAction">
+              <option value="none" selected>誰もベットしていない</option>
+              <option value="limp">リンプあり</option>
+              <option value="open">オープンレイズに直面</option>
+              <option value="bet">ベットに直面</option>
+              <option value="raise">レイズに直面</option>
+            </select>
+          </div>
+          <div class="field" id="limperField" style="display:none;">リンパー人数
+            <input type="number" id="limperCount" min="1" max="8" step="1" value="1">
+          </div>
+          <div class="field" id="betField" style="display:none;">相手のベット額（円）
+            <input type="number" id="betAmount" min="0" placeholder="例: 100">
+          </div>
+          <div class="field">ポットサイズ（円・相手のベット額を除く）
+            <input type="number" id="potSize" min="0" placeholder="例: 300">
+          </div>
+          <div class="field">ブラインド額 1BB（円）
+            <input type="number" id="bbSize" min="0" placeholder="例: 100" value="100">
+          </div>
+        </div>
+        <div class="sit-note">※ストリートはボードのカード枚数（0枚=プリフロップ / 3枚=フロップ / 4枚=ターン / 5枚=リバー）から自動で判定します。</div>
+      </div>
+    </div>
+
+    <!-- 右：結果＋アドバイス -->
+    <div>
+      <div class="panel" style="margin-bottom:16px;">
+        <h2>勝率（エクイティ）</h2>
+        <div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
+        <div class="rates">
+          <div class="rate-box win"><div class="val" id="winRate">--</div><div class="cap">勝率 %</div></div>
+          <div class="rate-box tie"><div class="val" id="tieRate">--</div><div class="cap">引き分け %</div></div>
+          <div class="rate-box lose"><div class="val" id="loseRate">--</div><div class="cap">負け %</div></div>
+        </div>
+        <div class="band" id="band">
+          <div class="seg-win" style="width:0%"></div>
+          <div class="seg-tie" style="width:0%"></div>
+          <div class="seg-lose" style="width:0%"></div>
+        </div>
+        <div class="result-badge" id="resultBadge"></div>
+        <div class="hand-name">現在の完成役：<b id="handName">--</b></div>
+        <div class="hint" id="simInfo">手札2枚を選ぶと自動計算します。</div>
+      </div>
+
+      <div class="panel">
+        <h2>アクション提案</h2>
+        <div class="advice-disclaimer">※GTOではなく学習用の簡易ヒューリスティックです（プリフロップ: Chen式スコア＋ポジション別レンジ目安 / ポストフロップ: モンテカルロ勝率＋ポットオッズ）。</div>
+        <div class="advice neutral" id="advice">
+          <div class="verdict" id="verdict">--</div>
+          <div class="reason" id="reason">手札を選択し、状況入力パネルでポジション・アクション・金額を入力してください。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    ※学習・ハンドレビュー用ツールです。リアルマネーゲームでのリアルタイム使用は各サイトの規約をご確認ください<br>
+    <span id="testStatus"></span>
+  </footer>
+</div>
+
+<!-- ================= コアロジック（DOM非依存・テスト対象） ================= -->
+<script id="core-logic">
+"use strict";
+/*
+ * カード表現: 0〜51 の整数
+ *   rank = card % 13   (0=2, 1=3, ..., 8=T, 9=J, 10=Q, 11=K, 12=A)
+ *   suit = Math.floor(card / 13)  (0=♠, 1=♥, 2=♦, 3=♣)
+ */
+var RANK_LABELS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+var SUIT_LABELS = ['♠','♥','♦','♣']; // ♠♥♦♣
+var SUIT_IS_RED = [false, true, true, false];
+
+function cardRank(c) { return c % 13; }
+function cardSuit(c) { return Math.floor(c / 13); }
+
+/* "As" "Kd" "Th" "2c" 形式のパース（テスト用） */
+function parseCard(str) {
+  var rmap = {'2':0,'3':1,'4':2,'5':3,'6':4,'7':5,'8':6,'9':7,'T':8,'J':9,'Q':10,'K':11,'A':12};
+  var smap = {'s':0,'h':1,'d':2,'c':3};
+  return smap[str[1]] * 13 + rmap[str[0]];
+}
+function parseCards(str) { return str.trim().split(/\s+/).map(parseCard); }
+
+/*
+ * ランクビットマスクからストレートの最高位ランクを返す（無ければ -1）
+ * ホイール(A-2-3-4-5)は high=3 ('5') を返す。
+ */
+function straightHigh(mask) {
+  for (var hi = 12; hi >= 4; hi--) {
+    var need = 0;
+    for (var k = 0; k < 5; k++) need |= (1 << (hi - k));
+    if ((mask & need) === need) return hi;
+  }
+  // ホイール: A,2,3,4,5 -> ランク 12,0,1,2,3
+  var wheel = (1 << 12) | (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+  if ((mask & wheel) === wheel) return 3;
+  return -1;
+}
+
+/*
+ * 5〜7枚のカードから最強5枚の役を評価し、比較可能な整数値を返す。
+ * value = (category << 20) | (t1 << 16) | (t2 << 12) | (t3 << 8) | (t4 << 4) | t5
+ * category: 8=ストレートフラッシュ 7=フォーカード 6=フルハウス 5=フラッシュ
+ *           4=ストレート 3=スリーカード 2=ツーペア 1=ワンペア 0=ハイカード
+ */
+function evaluateHand(cards) {
+  var rankCount = [0,0,0,0,0,0,0,0,0,0,0,0,0];
+  var suitCount = [0,0,0,0];
+  var suitRankMask = [0,0,0,0];
+  var i, r, s;
+  for (i = 0; i < cards.length; i++) {
+    r = cards[i] % 13;
+    s = Math.floor(cards[i] / 13);
+    rankCount[r]++;
+    suitCount[s]++;
+    suitRankMask[s] |= (1 << r);
+  }
+
+  // フラッシュ判定
+  var flushSuit = -1;
+  for (s = 0; s < 4; s++) if (suitCount[s] >= 5) flushSuit = s;
+
+  // ストレートフラッシュ
+  if (flushSuit >= 0) {
+    var sfHigh = straightHigh(suitRankMask[flushSuit]);
+    if (sfHigh >= 0) return (8 << 20) | (sfHigh << 16);
+  }
+
+  // ランクをグループ化（降順）
+  var quads = [], trips = [], pairs = [], singles = [];
+  for (r = 12; r >= 0; r--) {
+    if (rankCount[r] === 4) quads.push(r);
+    else if (rankCount[r] === 3) trips.push(r);
+    else if (rankCount[r] === 2) pairs.push(r);
+    else if (rankCount[r] === 1) singles.push(r);
+  }
+
+  // フォーカード
+  if (quads.length >= 1) {
+    var q = quads[0], kick = 0;
+    for (r = 12; r >= 0; r--) { if (r !== q && rankCount[r] > 0) { kick = r; break; } }
+    return (7 << 20) | (q << 16) | (kick << 12);
+  }
+
+  // フルハウス（トリップス2組の場合は下位トリップスをペアとして使用）
+  if (trips.length >= 1 && (trips.length >= 2 || pairs.length >= 1)) {
+    var t = trips[0];
+    var p = -1;
+    if (trips.length >= 2) p = trips[1];
+    if (pairs.length >= 1 && pairs[0] > p) p = pairs[0];
+    return (6 << 20) | (t << 16) | (p << 12);
+  }
+
+  // フラッシュ
+  if (flushSuit >= 0) {
+    var fr = [];
+    for (r = 12; r >= 0 && fr.length < 5; r--) {
+      if (suitRankMask[flushSuit] & (1 << r)) fr.push(r);
+    }
+    return (5 << 20) | (fr[0] << 16) | (fr[1] << 12) | (fr[2] << 8) | (fr[3] << 4) | fr[4];
+  }
+
+  // ストレート
+  var allMask = 0;
+  for (r = 0; r < 13; r++) if (rankCount[r] > 0) allMask |= (1 << r);
+  var sh = straightHigh(allMask);
+  if (sh >= 0) return (4 << 20) | (sh << 16);
+
+  // スリーカード
+  if (trips.length >= 1) {
+    return (3 << 20) | (trips[0] << 16) | ((singles[0] || 0) << 12) | ((singles[1] || 0) << 8);
+  }
+
+  // ツーペア（3組ある場合は上位2組＋残り最高ランクのキッカー）
+  if (pairs.length >= 2) {
+    var p1 = pairs[0], p2 = pairs[1], k2 = 0;
+    for (r = 12; r >= 0; r--) {
+      if (r !== p1 && r !== p2 && rankCount[r] > 0) { k2 = r; break; }
+    }
+    return (2 << 20) | (p1 << 16) | (p2 << 12) | (k2 << 8);
+  }
+
+  // ワンペア
+  if (pairs.length === 1) {
+    return (1 << 20) | (pairs[0] << 16) | ((singles[0] || 0) << 12) | ((singles[1] || 0) << 8) | ((singles[2] || 0) << 4);
+  }
+
+  // ハイカード
+  return ((singles[0] || 0) << 16) | ((singles[1] || 0) << 12) | ((singles[2] || 0) << 8) | ((singles[3] || 0) << 4) | (singles[4] || 0);
+}
+
+/* 評価値から日本語の役名を生成 */
+function handNameJa(value) {
+  var cat = value >> 20;
+  var t1 = (value >> 16) & 15;
+  var t2 = (value >> 12) & 15;
+  var R = RANK_LABELS;
+  switch (cat) {
+    case 8:
+      if (t1 === 12) return 'ロイヤルフラッシュ'; // ロイヤルフラッシュ
+      return 'ストレートフラッシュ（' + R[t1] + 'ハイ）';
+    case 7: return 'フォーカード（' + R[t1] + '）';
+    case 6: return 'フルハウス（' + R[t1] + '・' + R[t2] + '）';
+    case 5: return 'フラッシュ（' + R[t1] + 'ハイ）';
+    case 4: return 'ストレート（' + R[t1] + 'ハイ）';
+    case 3: return 'スリーカード（' + R[t1] + '）';
+    case 2: return 'ツーペア（' + R[t1] + 'と' + R[t2] + '）';
+    case 1: return 'ワンペア（' + R[t1] + '）';
+    default: return 'ハイカード（' + R[t1] + '）';
+  }
+}
+
+/*
+ * Chen式スコア（プリフロップハンド強度の簡易指標）
+ *   ハイカード: A=10, K=8, Q=7, J=6, T=5, 9=4.5, ... 2=1
+ *   ペア: 2倍（最低5点） / スーテッド: +2
+ *   ギャップ: 1つ飛び-1, 2つ飛び-2, 3つ飛び-4, 4つ以上-5
+ *   0〜1ギャップで両方Q未満: +1 / 0.5点は切り上げ
+ */
+function chenPoints(rank) {
+  if (rank === 12) return 10; // A
+  if (rank === 11) return 8;  // K
+  if (rank === 10) return 7;  // Q
+  if (rank === 9)  return 6;  // J
+  return (rank + 2) / 2;      // T以下は額面/2
+}
+function chenScore(c1, c2) {
+  var r1 = cardRank(c1), r2 = cardRank(c2);
+  var hi = Math.max(r1, r2), lo = Math.min(r1, r2);
+  var score = chenPoints(hi);
+  if (r1 === r2) {
+    return Math.round(Math.max(score * 2, 5));
+  }
+  if (cardSuit(c1) === cardSuit(c2)) score += 2;
+  var gap = hi - lo - 1;
+  if (gap === 1) score -= 1;
+  else if (gap === 2) score -= 2;
+  else if (gap === 3) score -= 4;
+  else if (gap >= 4) score -= 5;
+  if (gap <= 1 && hi < 10) score += 1; // 両方Q未満・コネクター気味ボーナス
+  return Math.round(score);
+}
+
+/* "AKs" / "AKo" / "QQ" 形式のハンド表記 */
+function handCode(c1, c2) {
+  var L = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+  var r1 = cardRank(c1), r2 = cardRank(c2);
+  var hi = Math.max(r1, r2), lo = Math.min(r1, r2);
+  if (r1 === r2) return L[hi] + L[lo];
+  return L[hi] + L[lo] + (cardSuit(c1) === cardSuit(c2) ? 's' : 'o');
+}
+
+/* ================= 評価器テスト ================= */
+function runEvaluatorTests() {
+  var results = [];
+  function test(name, fn) {
+    var ok = false, err = null;
+    try { ok = !!fn(); } catch (e) { err = e; }
+    results.push({ name: name, pass: ok && !err, err: err });
+  }
+  function ev(str) { return evaluateHand(parseCards(str)); }
+  function cat(v) { return v >> 20; }
+
+  test('1. ロイヤルフラッシュ検出 (cat=8, Aハイ)', function () {
+    var v = ev('As Ks Qs Js Ts 2d 3c');
+    return cat(v) === 8 && ((v >> 16) & 15) === 12;
+  });
+  test('2. ロイヤル > 9ハイストレートフラッシュ', function () {
+    return ev('As Ks Qs Js Ts 2d 3c') > ev('9h 8h 7h 6h 5h Ad Ac');
+  });
+  test('3. ホイール(A-2-3-4-5)をストレートと判定 (5ハイ)', function () {
+    var v = ev('As 2d 3c 4h 5s Kd 9c');
+    return cat(v) === 4 && ((v >> 16) & 15) === 3;
+  });
+  test('4. ホイール < 6ハイストレート', function () {
+    return ev('As 2d 3c 4h 5s Kd 9c') < ev('2s 3d 4c 5h 6s Kd 9c');
+  });
+  test('5. フラッシュ > ストレート', function () {
+    return ev('2h 7h 9h Jh Kh As 3d') > ev('9s Td Jc Qh Ks 2d 3c');
+  });
+  test('6. フルハウス > フラッシュ', function () {
+    return ev('Ks Kd Kc 2h 2d 7s 9c') > ev('Ah Kh 9h 7h 2h Qs Jd');
+  });
+  test('7. フォーカード > フルハウス', function () {
+    return ev('7s 7h 7d 7c Kd 2s 3c') > ev('As Ad Ac Kh Kd 2s 3c');
+  });
+  test('8. ストレートフラッシュ > フォーカード', function () {
+    return ev('5h 6h 7h 8h 9h 2s 3c') > ev('As Ah Ad Ac Kd 2s 3c');
+  });
+  test('9. キッカー勝負: Aペア+K > Aペア+Q', function () {
+    // ボード: Ah 7d 4c 9s 2h / AK vs AQ
+    var board = 'Ah 7d 4c 9s 2h';
+    return ev('As Kd ' + board) > ev('Ad Qc ' + board);
+  });
+  test('10. ツーペア > ワンペア', function () {
+    return ev('As Ad Ks Kd 3c 5h 8d') > ev('As Ad Qs Jd 3c 5h 8d');
+  });
+  test('11. ツーペアのキッカー比較 (A&Q + Kキッカー > A&Q + Jキッカー)', function () {
+    return ev('As Ad Qs Qd Kc 5h 2d') > ev('Ah Ac Qh Qc Jc 5s 2s');
+  });
+  test('12. スリーカード > ツーペア', function () {
+    return ev('7s 7h 7d Ks 2d 4c 9h') > ev('As Ad Ks Kd 3c 5h 8d');
+  });
+  test('13. ボードプレイで引き分け (完全同値)', function () {
+    var board = 'As Ks Qd Jc Th'; // ボードでブロードウェイ
+    return ev('2h 3d ' + board) === ev('4c 5s ' + board);
+  });
+  test('14. 3ペアから最強のツーペア+キッカー選択', function () {
+    // A,A,K,K,Q,Q,J → ツーペア(A,K) キッカーQ
+    var v = ev('As Ad Ks Kd Qs Qd Jc');
+    return cat(v) === 2 && ((v >> 16) & 15) === 12 && ((v >> 12) & 15) === 11 && ((v >> 8) & 15) === 10;
+  });
+  test('15. トリップス2組はフルハウス (上位トリップス+下位ペア)', function () {
+    // K,K,K,7,7,7,2 → フルハウス K over 7
+    var v = ev('Ks Kd Kc 7s 7d 7c 2h');
+    return cat(v) === 6 && ((v >> 16) & 15) === 11 && ((v >> 12) & 15) === 5;
+  });
+  test('16. ハイカード同士のキッカー比較 (5枚目まで)', function () {
+    // A K 9 7 5 vs A K 9 7 4
+    return ev('As Kd 9c 7h 5s 3d 2c') > ev('Ah Kc 9d 7s 4h 3s 2d');
+  });
+  test('17. ストレート: 7枚中6連続でも最高位を選択 (9ハイ)', function () {
+    var v = ev('4s 5d 6c 7h 8s 9d Ac');
+    return cat(v) === 4 && ((v >> 16) & 15) === 7; // rank 7 = '9'
+  });
+  test('18. フラッシュ6枚から上位5枚を選択', function () {
+    // ♥: A K Q 9 7 3 → A K Q 9 7
+    var v = ev('Ah Kh Qh 9h 7h 3h 2s');
+    return cat(v) === 5 &&
+      ((v >> 16) & 15) === 12 && ((v >> 12) & 15) === 11 &&
+      ((v >> 8) & 15) === 10 && ((v >> 4) & 15) === 7 && (v & 15) === 5;
+  });
+
+  test('19. Chen式: AA=20点 / QQ=14点', function () {
+    return chenScore(parseCard('As'), parseCard('Ah')) === 20 &&
+           chenScore(parseCard('Qs'), parseCard('Qd')) === 14;
+  });
+  test('20. Chen式: AKs=12点 / AKo=10点', function () {
+    return chenScore(parseCard('As'), parseCard('Ks')) === 12 &&
+           chenScore(parseCard('As'), parseCard('Kd')) === 10;
+  });
+  test('21. Chen式: 22=5点(ペア最低保証) / 72oは1点未満', function () {
+    return chenScore(parseCard('2s'), parseCard('2h')) === 5 &&
+           chenScore(parseCard('7s'), parseCard('2d')) < 1;
+  });
+  test('22. ハンド表記: AKs / AKo / QQ', function () {
+    return handCode(parseCard('As'), parseCard('Ks')) === 'AKs' &&
+           handCode(parseCard('Kd'), parseCard('As')) === 'AKo' &&
+           handCode(parseCard('Qs'), parseCard('Qd')) === 'QQ';
+  });
+
+  var passed = results.filter(function (r) { return r.pass; }).length;
+  var summary = '評価器テスト: ' + passed + '/' + results.length + ' pass';
+  if (typeof console !== 'undefined') {
+    console.group('%c[' + summary + ']', 'font-weight:bold');
+    results.forEach(function (r) {
+      if (r.pass) console.log('%cPASS%c ' + r.name, 'color:#3fbf6f;font-weight:bold', '');
+      else console.error('FAIL ' + r.name + (r.err ? ' (' + r.err + ')' : ''));
+    });
+    console.groupEnd();
+  }
+  return { passed: passed, total: results.length, results: results, summary: summary };
+}
+</script>
+
+<!-- ================= UI・シミュレーション ================= -->
+<script id="ui">
+"use strict";
+(function () {
+  if (typeof document === 'undefined') return; // Node等での実行時はUIをスキップ
+
+  /* ---------- 状態 ---------- */
+  // スロット定義: hand[0,1], flop[2,3,4], turn[5], river[6]
+  var SLOT_DEFS = [
+    { group: 'hand',  el: null }, { group: 'hand',  el: null },
+    { group: 'flop',  el: null }, { group: 'flop',  el: null }, { group: 'flop', el: null },
+    { group: 'turn',  el: null },
+    { group: 'river', el: null }
+  ];
+  var slotCards = [null, null, null, null, null, null, null];
+  var pickerEls = {}; // card -> element
+  var simToken = 0;
+  var lastResult = null; // {win, tie, lose, equity, iterations}
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- カードDOM生成 ---------- */
+  function makeCardEl(card, extraClass) {
+    var d = document.createElement('div');
+    d.className = 'pcard ' + (SUIT_IS_RED[cardSuit(card)] ? 'red' : 'black') + (extraClass ? ' ' + extraClass : '');
+    var rk = document.createElement('div');
+    rk.className = 'rk';
+    rk.textContent = RANK_LABELS[cardRank(card)];
+    var st = document.createElement('div');
+    st.className = 'st';
+    st.textContent = SUIT_LABELS[cardSuit(card)];
+    d.appendChild(rk);
+    d.appendChild(st);
+    return d;
+  }
+
+  /* ---------- スロット構築 ---------- */
+  var groupContainers = {
+    hand: $('slots-hand'), flop: $('slots-flop'), turn: $('slots-turn'), river: $('slots-river')
+  };
+  SLOT_DEFS.forEach(function (def, idx) {
+    var slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.title = 'クリックで選択解除';
+    slot.addEventListener('click', function () {
+      if (slotCards[idx] !== null) {
+        removeSlotCard(idx);
+        render();
+        onStateChanged();
+      }
+    });
+    def.el = slot;
+    groupContainers[def.group].appendChild(slot);
+  });
+
+  /* ---------- ピッカー構築 ---------- */
+  var picker = $('picker');
+  for (var s = 0; s < 4; s++) {
+    var row = document.createElement('div');
+    row.className = 'picker-row';
+    for (var r = 12; r >= 0; r--) {
+      (function (card) {
+        var el = makeCardEl(card, 'picker-card');
+        el.addEventListener('click', function () {
+          if (usedSet().has(card)) return;
+          var idx = nextEmptySlot();
+          if (idx === -1) return;
+          slotCards[idx] = card;
+          playClick(); // チップを置くようなクリック音
+          render();
+          onStateChanged();
+        });
+        pickerEls[card] = el;
+        row.appendChild(el);
+      })(s * 13 + r);
+    }
+    picker.appendChild(row);
+  }
+
+  /*
+   * スロットからカードを外す。
+   * ボード（idx>=2）の場合は後ろのスロットのカードを前に詰めて、
+   * 表示スロットと内部状態（boardCards）のずれを防ぐ。
+   * 例: 5枚あるうちフロップ2枚目を外す → 残り4枚がフロップ3枚＋ターンに詰まる。
+   */
+  function removeSlotCard(idx) {
+    if (idx < 2) {
+      slotCards[idx] = null;
+      return;
+    }
+    var rest = slotCards.slice(2);
+    rest.splice(idx - 2, 1);
+    rest.push(null);
+    for (var k = 0; k < 5; k++) slotCards[2 + k] = rest[k];
+  }
+
+  function usedSet() {
+    var set = new Set();
+    slotCards.forEach(function (c) { if (c !== null) set.add(c); });
+    return set;
+  }
+  function nextEmptySlot() {
+    for (var i = 0; i < 7; i++) if (slotCards[i] === null) return i;
+    return -1;
+  }
+  function handCards() { return slotCards.slice(0, 2).filter(function (c) { return c !== null; }); }
+  function boardCards() { return slotCards.slice(2).filter(function (c) { return c !== null; }); }
+
+  /* 相手人数（6-max想定なので最大5人。5超の値は5に丸める） */
+  function oppCountVal() {
+    var v = parseInt($('oppCount').value, 10);
+    if (!(v >= 1)) v = 1;
+    return Math.min(5, v);
+  }
+
+  /* ---------- 効果音（Web Audio API・外部ファイルなし） ---------- */
+  var muted = false;
+  try { muted = localStorage.getItem('pokerLabMuted') === '1'; } catch (e) {}
+  var audioCtx = null;
+  function getAudioCtx() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  /* チップを置くような「コトッ」というクリック音 */
+  function playClick() {
+    if (muted) return;
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var t = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1900, t);
+    osc.frequency.exponentialRampToValueAtTime(650, t + 0.06);
+    g.gain.setValueAtTime(0.22, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.1);
+    // 短いノイズでチップの「カチッ」感を足す
+    var len = Math.floor(ctx.sampleRate * 0.03);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var g2 = ctx.createGain();
+    g2.gain.setValueAtTime(0.1, t);
+    src.connect(g2); g2.connect(ctx.destination);
+    src.start(t);
+  }
+  /* 強役完成時のアタリ音（上昇アルペジオ） */
+  function playFanfare() {
+    if (muted) return;
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var t = ctx.currentTime;
+    var notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+    notes.forEach(function (f, i) {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.value = f;
+      var st = t + i * 0.11;
+      var dur = (i === notes.length - 1) ? 0.5 : 0.14;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.exponentialRampToValueAtTime(0.11, st + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, st + dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(st); o.stop(st + dur + 0.05);
+    });
+  }
+  function updateMuteBtn() {
+    $('muteBtn').textContent = muted ? '🔇' : '🔊';
+    $('muteBtn').title = muted ? '効果音: OFF（クリックでON）' : '効果音: ON（クリックでOFF）';
+  }
+  $('muteBtn').addEventListener('click', function () {
+    muted = !muted;
+    try { localStorage.setItem('pokerLabMuted', muted ? '1' : '0'); } catch (e) {}
+    updateMuteBtn();
+    if (!muted) playClick(); // ON にした瞬間に試し鳴らし
+  });
+  updateMuteBtn();
+
+  /* ---------- 勝率演出 ---------- */
+  function clearResultEffects() {
+    var badge = $('resultBadge');
+    badge.className = 'result-badge';
+    badge.textContent = '';
+    $('coldOverlay').classList.remove('on');
+    SLOT_DEFS.forEach(function (def) {
+      var pc = def.el.querySelector('.pcard');
+      if (pc) pc.classList.remove('sparkle');
+    });
+  }
+  function launchConfetti() {
+    var colors = ['#d4af37', '#3fbf6f', '#d4574e', '#e8f0ea', '#8fb6dd'];
+    for (var i = 0; i < 36; i++) {
+      var p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = (Math.random() * 100) + 'vw';
+      p.style.background = colors[i % colors.length];
+      p.style.animationDuration = (2 + Math.random() * 1.6) + 's';
+      p.style.animationDelay = (Math.random() * 0.5) + 's';
+      document.body.appendChild(p);
+      (function (el) { setTimeout(function () { el.remove(); }, 5000); })(p);
+    }
+  }
+  function applyResultEffects(res) {
+    clearResultEffects();
+    var badge = $('resultBadge');
+    if (res.win >= 80) {
+      SLOT_DEFS.forEach(function (def) {
+        var pc = def.el.querySelector('.pcard');
+        if (pc) pc.classList.add('sparkle');
+      });
+      badge.textContent = '🔥 モンスターハンド！';
+      badge.className = 'result-badge monster';
+      if (res.win >= 90) launchConfetti(); // 90%以上は控えめな紙吹雪も
+    } else if (res.win < 20) {
+      $('coldOverlay').classList.add('on');
+      badge.textContent = '無理はするな…';
+      badge.className = 'result-badge danger';
+    }
+  }
+
+  /* ---------- 今日の格言 ---------- */
+  var QUOTES = [
+    'フォールドも立派なアクション。',
+    'ポットに恋をするな。ポットはあなたを愛していない。',
+    '強いのはカードではなく、降りられる心。',
+    '勝てるハンドを待つ忍耐が、最大の武器になる。',
+    'ティルトした瞬間、あなたのスタックは半分になったと思え。',
+    '昨日の負けを今日取り返そうとするな。それがティルトの始まり。',
+    'レンジで考えろ。1枚の奇跡に祈るな。',
+    'ブラフは嘘ではない。もう一つのストーリーだ。',
+    '観察されるより、先に観察せよ。',
+    '勝った日の反省が、負けた日のあなたを救う。',
+    'オールインは覚悟ではなく、計算で撃て。',
+    'テーブルで一番のカモが誰か分からないなら、それはあなただ。'
+  ];
+  $('quote').textContent = '「' + QUOTES[Math.floor(Math.random() * QUOTES.length)] + '」';
+
+  /* ---------- 描画 ---------- */
+  function render() {
+    var used = usedSet();
+    var next = nextEmptySlot();
+    SLOT_DEFS.forEach(function (def, idx) {
+      var el = def.el;
+      el.innerHTML = '';
+      el.classList.toggle('next-target', idx === next);
+      if (slotCards[idx] !== null) {
+        el.appendChild(makeCardEl(slotCards[idx]));
+      } else {
+        var ph = document.createElement('span');
+        ph.className = 'placeholder';
+        ph.textContent = '+';
+        el.appendChild(ph);
+      }
+    });
+    for (var c = 0; c < 52; c++) {
+      pickerEls[c].classList.toggle('used', used.has(c));
+    }
+  }
+
+  /* ---------- 完成役表示 ---------- */
+  var prevHandCat = -1; // 直前の役カテゴリ（ストレート以上への昇格検出用）
+  function updateHandName() {
+    var hand = handCards(), board = boardCards();
+    var el = $('handName');
+    if (hand.length < 2) {
+      el.textContent = '--';
+      el.classList.remove('pop');
+      prevHandCat = -1;
+      return;
+    }
+    var v = evaluateHand(hand.concat(board));
+    var cat = v >> 20;
+    el.textContent = handNameJa(v);
+    // ストレート(cat=4)以上の役になった瞬間、役名をドンと拡大＋アタリ音
+    if (cat >= 4 && cat !== prevHandCat) {
+      el.classList.remove('pop');
+      void el.offsetWidth; // アニメーション再トリガー
+      el.classList.add('pop');
+      playFanfare();
+    }
+    prevHandCat = cat;
+  }
+
+  /* ---------- モンテカルロシミュレーション ---------- */
+  var TOTAL_ITER = 20000;
+  var CHUNK = 2500;
+
+  function onStateChanged() {
+    updateHandName();
+    clearResultEffects();
+    var hand = handCards(), board = boardCards();
+    var token = ++simToken; // 進行中のシミュレーションを打ち切り
+    if (hand.length < 2) {
+      lastResult = null;
+      showRates(null);
+      $('progress').style.width = '0%';
+      $('simInfo').textContent = '手札2枚を選ぶと自動計算します。';
+      updateAdvice();
+      return;
+    }
+    if (board.length !== 0 && board.length !== 3 && board.length !== 4 && board.length !== 5) {
+      $('simInfo').textContent = 'ボードの選択を完了してください（現在 ' + board.length + ' 枚）。';
+      updateAdvice();
+      return;
+    }
+    runSimulation(hand, board, oppCountVal(), token);
+  }
+
+  function runSimulation(hand, board, numOpp, token) {
+    // 残りデッキ
+    var used = usedSet();
+    var deck = [];
+    for (var c = 0; c < 52; c++) if (!used.has(c)) deck.push(c);
+
+    var needBoard = 5 - board.length;
+    var needTotal = numOpp * 2 + needBoard;
+    var win = 0, tie = 0, lose = 0, done = 0;
+    var fullBoard = board.slice();
+    $('simInfo').textContent = '計算中... (相手 ' + numOpp + ' 人 / ' + TOTAL_ITER.toLocaleString() + ' 試行)';
+
+    function chunk() {
+      if (token !== simToken) return; // キャンセル
+      var n = Math.min(CHUNK, TOTAL_ITER - done);
+      for (var it = 0; it < n; it++) {
+        // 部分Fisher-Yatesで必要枚数だけシャッフル
+        var d = deck.slice();
+        for (var i = 0; i < needTotal; i++) {
+          var j = i + Math.floor(Math.random() * (d.length - i));
+          var tmp = d[i]; d[i] = d[j]; d[j] = tmp;
+        }
+        var pos = 0;
+        fullBoard.length = board.length;
+        for (i = 0; i < needBoard; i++) fullBoard.push(d[pos++]);
+
+        var myVal = evaluateHand(hand.concat(fullBoard));
+        var beaten = false, tied = false;
+        for (var o = 0; o < numOpp; o++) {
+          var oppVal = evaluateHand([d[pos], d[pos + 1]].concat(fullBoard));
+          pos += 2;
+          if (oppVal > myVal) { beaten = true; break; }
+          if (oppVal === myVal) tied = true;
+        }
+        if (beaten) lose++;
+        else if (tied) tie++;
+        else win++;
+      }
+      done += n;
+      $('progress').style.width = (done / TOTAL_ITER * 100).toFixed(1) + '%';
+      var res = {
+        win: win / done * 100,
+        tie: tie / done * 100,
+        lose: lose / done * 100,
+        equity: (win + tie / 2) / done * 100,
+        iterations: done
+      };
+      lastResult = res;
+      showRates(res);
+      if (done < TOTAL_ITER) {
+        setTimeout(chunk, 0);
+      } else {
+        $('simInfo').textContent = '計算完了: ' + done.toLocaleString() + ' 試行 / 相手 ' + numOpp + ' 人。エクイティ ' + res.equity.toFixed(1) + '%';
+        applyResultEffects(res); // 勝率に応じた演出（キラーン／紙吹雪／青ざめ）
+      }
+      updateAdvice();
+    }
+    setTimeout(chunk, 0);
+  }
+
+  function showRates(res) {
+    if (!res) {
+      $('winRate').textContent = '--';
+      $('tieRate').textContent = '--';
+      $('loseRate').textContent = '--';
+      var segs0 = $('band').children;
+      segs0[0].style.width = '0%'; segs0[1].style.width = '0%'; segs0[2].style.width = '0%';
+      return;
+    }
+    $('winRate').textContent = res.win.toFixed(1);
+    $('tieRate').textContent = res.tie.toFixed(1);
+    $('loseRate').textContent = res.lose.toFixed(1);
+    var segs = $('band').children;
+    segs[0].style.width = res.win + '%';
+    segs[1].style.width = res.tie + '%';
+    segs[2].style.width = res.lose + '%';
+  }
+
+  /* ---------- 状況入力・アクション提案 ---------- */
+  /*
+   * 学習用の簡易ヒューリスティック（GTOではありません）
+   *  プリフロップ: Chen式スコア × ポジション別オープン目安（6-max）
+   *  ポストフロップ: モンテカルロ勝率 vs ポットオッズ必要勝率 ＋ ベットサイズ目安
+   */
+  var POSITION_INFO = {
+    UTG: { open: 9, ip: false, note: 'UTGは6-maxで最も早く動く不利な席。ポストフロップもOOPになりやすいため、参加レンジは最もタイトに。' },
+    MP:  { open: 8, ip: false, note: 'MP（HJ）は後ろにまだ4人。UTGよりわずかに広げられますが、まだタイト寄りが無難です。' },
+    CO:  { open: 7, ip: true,  note: 'COは後方ポジション。BTN以外にはIP（後で行動）を取りやすく、やや広く参加できます。' },
+    BTN: { open: 5, ip: true,  note: 'BTNはポストフロップで常にIP（最後に行動）となる最有利ポジション。最も広いレンジで参加できます。' },
+    SB:  { open: 7, ip: false, note: 'SBはポストフロップで常にOOP（最初に行動）の不利な席。参加するならレイズ主体（3ベットかフォールド寄り）が無難です。' },
+    BB:  { open: 8, ip: false, note: 'BBはプリフロップこそ最後に選択できますが、ポストフロップはほぼ常にOOPです。すでに1BB払っている分、防御はやや広めでOK。' }
+  };
+
+  function yen(v) { return Math.round(v).toLocaleString() + '円'; }
+
+  function streetOf(boardLen) {
+    if (boardLen === 0) return 'プリフロップ';
+    if (boardLen < 3) return 'フロップ入力中（' + boardLen + '/3枚）';
+    if (boardLen === 3) return 'フロップ';
+    if (boardLen === 4) return 'ターン';
+    return 'リバー';
+  }
+  function updateStreetLabel() {
+    $('streetLabel').textContent = streetOf(boardCards().length);
+  }
+  function syncSituationUI() {
+    var a = $('facingAction').value;
+    $('limperField').style.display = (a === 'limp') ? '' : 'none';
+    $('betField').style.display = (a === 'open' || a === 'bet' || a === 'raise') ? '' : 'none';
+  }
+
+  function updateAdvice() {
+    var adviceEl = $('advice'), verdictEl = $('verdict'), reasonEl = $('reason');
+    function setAdvice(cls, verdict, lines) {
+      adviceEl.className = 'advice ' + cls;
+      verdictEl.textContent = verdict;
+      reasonEl.textContent = lines.filter(function (l) { return !!l; }).join('\n');
+    }
+
+    updateStreetLabel();
+    var hand = handCards(), board = boardCards();
+    if (hand.length < 2) {
+      setAdvice('neutral', '--', ['手札2枚を選択すると、状況に応じたアドバイスを表示します。']);
+      return;
+    }
+
+    var pos = $('position').value;
+    var pinfo = POSITION_INFO[pos];
+    var numOpp = oppCountVal();
+    var action = $('facingAction').value; // none|limp|open|bet|raise
+    var bet = parseFloat($('betAmount').value);
+    var pot = parseFloat($('potSize').value);
+    var bbv = parseFloat($('bbSize').value);
+    var limpers = Math.max(1, parseInt($('limperCount').value, 10) || 1);
+
+    // "2.5BB（250円）" 形式
+    function bbAmt(mult) {
+      var s = (Math.round(mult * 10) / 10) + 'BB';
+      if (bbv > 0) s += '（' + yen(mult * bbv) + '）';
+      return s;
+    }
+
+    /* ===== プリフロップ: Chen式 × ポジション別レンジ ===== */
+    if (board.length === 0) {
+      var score = chenScore(hand[0], hand[1]);
+      var code = handCode(hand[0], hand[1]);
+      var head = code + '：Chenスコア ' + score + ' 点（' + pos + ' のオープン目安は ' + pinfo.open + ' 点以上）';
+      var eqLine = lastResult ? '参考: 対ランダムハンド' + numOpp + '人へのエクイティ ' + lastResult.equity.toFixed(1) + '%' : null;
+      var ip3bet = (pos === 'CO' || pos === 'BTN'); // 3ベット時にIPを取りやすいか
+
+      if (action === 'none') {
+        if (pos === 'BB') {
+          if (score >= 12) {
+            setAdvice('aggressive', 'レイズ推奨 ' + bbAmt(3) + '（オプションを強く行使）',
+              [head, 'BBで誰もベットしていなくてもこの強さならレイズしてポットを育てましょう。目安は' + bbAmt(3) + '。', pinfo.note, eqLine]);
+          } else {
+            setAdvice('call', 'チェックでOK',
+              [head, 'BBで誰もベットしていなければ、チェックで無料でフロップを見られます。', pinfo.note, eqLine]);
+          }
+        } else if (score >= pinfo.open) {
+          setAdvice('aggressive', 'オープンレイズ推奨 ' + bbAmt(2.5),
+            [head, pos + 'のオープンレンジに十分入るハンドです。' + bbAmt(2.5) + 'のオープンレイズを推奨します。リンプは避け、参加するならレイズが基本です。', pinfo.note, eqLine]);
+        } else if (score >= pinfo.open - 2) {
+          setAdvice('neutral', '境界ハンド（フォールド寄り）',
+            [head, pos + 'のオープン基準にわずかに届きません。もっと後ろのポジション（CO/BTN）なら参加できる強さです。迷ったらフォールドが無難。', pinfo.note, eqLine]);
+        } else {
+          setAdvice('fold', 'フォールド推奨',
+            [head, pos + 'から参加するには弱いハンドです。無理に参加せず次のハンドを待ちましょう。', pinfo.note, eqLine]);
+        }
+
+      } else if (action === 'limp') {
+        var isoBB = 2.5 + limpers; // 基本2.5BB + リンパー1人につき+1BB
+        if (score >= pinfo.open) {
+          setAdvice('aggressive', 'アイソレートレイズ推奨 ' + bbAmt(isoBB),
+            [head, 'リンパーがいる場合のレイズサイズは「2.5BB＋リンパー1人につき+1BB」が目安。リンパー' + limpers + '人なので ' + bbAmt(isoBB) + ' のレイズを推奨します。', pinfo.note, eqLine]);
+        } else if (pos === 'BB') {
+          setAdvice('call', 'チェックでOK',
+            [head, 'レイズするほどの強さではありませんが、BBならチェックで無料のフロップを見られます。', pinfo.note, eqLine]);
+        } else if (score >= pinfo.open - 2) {
+          setAdvice('call', 'オーバーリンプ（1BBで参加）も可',
+            [head, 'レイズ基準には届きませんが、' + bbAmt(1) + 'で安くフロップを見る価値はあります。フォールドでも問題ありません。', pinfo.note, eqLine]);
+        } else {
+          setAdvice('fold', 'フォールド推奨',
+            [head, 'リンプで安く参加できるとはいえ、このハンドは期待値が低く見送りが無難です。', pinfo.note, eqLine]);
+        }
+
+      } else if (action === 'open' || action === 'bet') {
+        var mult3 = ip3bet ? 3 : 4;
+        var sizeRule = ip3bet ? 'オープン額の3倍（IPのため）' : 'オープン額の4倍（OOPのため）';
+        var amt3 = (bet > 0) ? '＝' + yen(bet * mult3) : '（相手のベット額を入力すると金額を計算します）';
+        var callTh = (pos === 'BB') ? 7 : (ip3bet ? 9 : 10);
+        if (score >= 12) {
+          setAdvice('aggressive', '3ベット推奨: ' + sizeRule + amt3,
+            [head, 'プレミアム級のハンドです。3ベットのサイズ目安は' + sizeRule + '。' + (bet > 0 ? '相手のオープンが' + yen(bet) + 'なので ' + yen(bet * mult3) + ' へのレイズを推奨します。' : ''), pinfo.note, eqLine]);
+        } else if (score >= callTh) {
+          setAdvice('call', 'コール妥当' + (bet > 0 ? '（' + yen(bet) + 'をコール）' : ''),
+            [head, 'オープンレイズに対してコールで参加できる強さです。' + (pos === 'BB' ? 'BBはすでに1BB払っているため割引価格でコールでき、広めに防御できます。' : (ip3bet ? 'IPを取りやすいのでコール参加の価値が上がります。' : 'OOPになりやすいため、これより弱いハンドのコールは避けましょう。')), pinfo.note, eqLine]);
+        } else {
+          setAdvice('fold', 'フォールド推奨',
+            [head, 'オープンレイズに立ち向かうには不足しています。' + (pos === 'SB' ? 'SBは特に「3ベットかフォールド」の二択が無難です。' : 'コールで様子見したくなる誘惑に注意。'), pinfo.note, eqLine]);
+        }
+
+      } else { // raise: 3ベットなどのレイズに直面
+        if (score >= 14) {
+          setAdvice('aggressive', '4ベット/スタック勝負も視野' + (bet > 0 ? '（' + yen(bet * 2.5) + ' 程度へ）' : ''),
+            [head, 'QQ以上級の非常に強いハンドです。4ベット（相手レイズ額の約2.2〜2.5倍）またはオールインも選択肢です。', pinfo.note, eqLine]);
+        } else if (score >= 12) {
+          setAdvice('call', 'コール妥当（慎重に）' + (bet > 0 ? '（' + yen(bet) + 'をコール）' : ''),
+            [head, '強いハンドですが、レイズに立ち向かう際は相手のレンジも強いことに注意。コールしてフロップを見るのが無難です。', pinfo.note, eqLine]);
+        } else {
+          setAdvice('fold', 'フォールド推奨',
+            [head, 'レイズ（3ベット等）に直面した場合、相手のレンジは非常に強いです。この強さでは降りるのが無難です。', pinfo.note, eqLine]);
+        }
+      }
+      return;
+    }
+
+    /* ===== ボード入力途中 ===== */
+    if (board.length === 1 || board.length === 2) {
+      setAdvice('neutral', 'ボード入力中', ['フロップは3枚選択してください（現在 ' + board.length + ' 枚）。']);
+      return;
+    }
+
+    /* ===== ポストフロップ: 勝率 × ポットオッズ ===== */
+    if (!lastResult) {
+      setAdvice('neutral', '計算中...', ['勝率の計算が完了するとアドバイスを表示します。']);
+      return;
+    }
+    var eq = lastResult.equity;
+    var eqStr = eq.toFixed(1);
+    var street = streetOf(board.length);
+    var ipNote = pinfo.ip
+      ? 'ポジション: ' + pos + 'はIP（相手より後に行動）を取りやすく有利。相手の行動を見てから決められます。'
+      : 'ポジション: ' + pos + 'はOOP（相手より先に行動）になりやすく不利。やや慎重めの判断が無難です。';
+
+    var facingBet = (action === 'open' || action === 'bet' || action === 'raise');
+
+    if (!facingBet) {
+      // 誰もベットしていない → 勝率に応じたベットサイズ提案
+      var baseline = 100 / (numOpp + 1);
+      if (eq >= 65) {
+        var sizeStr = pot > 0 ? yen(pot * 0.66) + '〜' + yen(pot * 0.75) : '（ポットサイズを入力すると金額を計算します）';
+        setAdvice('aggressive', 'ベット推奨: ポットの66〜75%' + (pot > 0 ? '＝' + sizeStr : ''),
+          [street + '・勝率' + eqStr + '%（相手' + numOpp + '人の平均は約' + baseline.toFixed(0) + '%）と十分強い状況です。',
+           '大きめのベットでバリューを取りに行きましょう。目安はポットの66〜75%' + (pot > 0 ? '＝' + sizeStr : sizeStr) + '。',
+           ipNote]);
+      } else if (eq >= 45) {
+        var smallBet = pot > 0 ? '＝' + yen(pot * 0.33) : '';
+        setAdvice('call', '小さめベット（ポットの33%' + smallBet + '）またはチェック',
+          [street + '・勝率' + eqStr + '%。中程度の強さで、大きなポットにする必要はありません。',
+           '小さめのベット（ポットの33%' + smallBet + '）で薄いバリューを取るか、チェックしてコール寄りに構えるのが目安です。',
+           ipNote + (pinfo.ip ? 'IPならチェックバックして無料でカードを見るのも有力。' : '')]);
+      } else {
+        setAdvice('neutral', 'チェック推奨',
+          [street + '・勝率' + eqStr + '%と弱めです。自分からポットを膨らませるのは避けましょう。',
+           pinfo.ip ? 'IPならチェックで無料の1枚を見られます。相手が弱そうなら小さいブラフも選択肢ですが、基本はチェックです。'
+                    : 'OOPではチェックし、大きなベットを受けたらフォールド想定（チェック→フォールド）が無難です。',
+           ipNote]);
+      }
+    } else {
+      // ベット/レイズに直面 → ポットオッズ
+      if (!(bet > 0)) {
+        setAdvice('neutral', '相手のベット額を入力してください',
+          ['勝率は' + eqStr + '%です。状況入力パネルの「相手のベット額」と「ポットサイズ」を入力すると、ポットオッズに基づくコール/フォールド/レイズ判断を表示します。', ipNote]);
+        return;
+      }
+      if (!(pot > 0)) {
+        setAdvice('neutral', 'ポットサイズを入力してください',
+          ['勝率は' + eqStr + '%です。「ポットサイズ（相手のベット額を除く）」を入力すると必要勝率を計算できます。', ipNote]);
+        return;
+      }
+      // 必要勝率 = コール額 ÷（元のポット + 相手ベット + コール額）
+      var required = bet / (pot + bet * 2) * 100;
+      var reqStr = required.toFixed(1);
+      var oddsLine = '必要勝率 = ' + yen(bet) + ' ÷（ポット' + yen(pot) + '＋相手ベット' + yen(bet) + '＋コール' + yen(bet) + '）= ' + reqStr + '%';
+      var raiseStr = yen(bet * 2.5) + '〜' + yen(bet * 3);
+
+      if (eq >= required + 15) {
+        setAdvice('aggressive', 'レイズ推奨: 相手ベットの2.5〜3倍＝' + raiseStr,
+          [street + '・勝率' + eqStr + '% ＞ 必要勝率' + reqStr + '%。大きなマージンがあります。',
+           oddsLine,
+           'コール（' + yen(bet) + '）も当然利益的ですが、この強さならレイズでポットを育てる価値があります。目安は相手ベットの2.5〜3倍＝' + raiseStr + '。',
+           ipNote]);
+      } else if (eq >= required) {
+        setAdvice('call', 'コール推奨（' + yen(bet) + '）',
+          [street + '・勝率' + eqStr + '% ≧ 必要勝率' + reqStr + '%。期待値はプラスでコールは正当化されます。',
+           oddsLine,
+           'ただしマージンは大きくないため、レイズよりコールが無難です。',
+           ipNote]);
+      } else if (eq >= required - 3) {
+        setAdvice('neutral', 'ギリギリ（基本フォールド）',
+          [street + '・勝率' + eqStr + '% ＜ 必要勝率' + reqStr + '%とわずかに不足。',
+           oddsLine,
+           'インプライドオッズ（勝ったときに追加で回収できる見込み）が大きい場合のみコールを検討。基本はフォールドです。',
+           ipNote]);
+      } else {
+        setAdvice('fold', 'フォールド推奨',
+          [street + '・勝率' + eqStr + '% ＜ 必要勝率' + reqStr + '%。コールの期待値は明確にマイナスです。',
+           oddsLine,
+           '見送って次の有利な状況を待ちましょう。',
+           ipNote]);
+      }
+    }
+  }
+
+  /* ---------- イベント ---------- */
+  $('oppCount').addEventListener('change', onStateChanged);
+  $('clearBtn').addEventListener('click', function () {
+    for (var i = 0; i < 7; i++) slotCards[i] = null;
+    $('potSize').value = '';
+    $('betAmount').value = '';
+    $('facingAction').value = 'none';
+    $('limperCount').value = '1';
+    syncSituationUI();
+    render();
+    onStateChanged();
+  });
+  $('position').addEventListener('change', updateAdvice);
+  $('facingAction').addEventListener('change', function () {
+    syncSituationUI();
+    updateAdvice();
+  });
+  $('potSize').addEventListener('input', updateAdvice);
+  $('betAmount').addEventListener('input', updateAdvice);
+  $('bbSize').addEventListener('input', updateAdvice);
+  $('limperCount').addEventListener('input', updateAdvice);
+
+  /* ---------- 初期化 ---------- */
+  syncSituationUI();
+  render();
+  var testRes = runEvaluatorTests();
+  var badge = $('testStatus');
+  badge.textContent = testRes.summary + (testRes.passed === testRes.total ? ' ✓' : ' ✗ (consoleを確認)');
+  badge.style.color = testRes.passed === testRes.total ? 'var(--win)' : 'var(--lose)';
+})();
+</script>
+</body>
+</html>

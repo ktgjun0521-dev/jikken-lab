@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>アルコールカウンター 〜二日酔いダメージ予報〜</title>
+<style>
+  :root{
+    --bg:#0b0b16;
+    --panel:#151527;
+    --panel2:#1c1c33;
+    --neon-pink:#ff4d8d;
+    --neon-cyan:#2ee6ff;
+    --neon-yellow:#ffd54d;
+    --neon-orange:#ff8a3d;
+    --neon-red:#ff3d5a;
+    --neon-green:#4dffa6;
+    --text:#f2f0ff;
+    --dim:#9a97b8;
+    --border:#2c2c4d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{font-size:16px;}
+  body{
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(255,77,141,.15), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, rgba(46,230,255,.08), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",Meiryo,sans-serif;
+    min-height:100vh;
+    padding-bottom:20px;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:12px 12px 0;}
+
+  /* ヘッダー */
+  .back-link{
+    display:inline-block;color:var(--neon-cyan);text-decoration:none;
+    font-size:.9rem;padding:8px 4px;margin-bottom:2px;
+  }
+  .back-link:active{opacity:.6;}
+  h1{
+    font-size:1.5rem;text-align:center;letter-spacing:.08em;line-height:1.3;
+    color:#fff;
+    text-shadow:0 0 8px var(--neon-pink),0 0 20px var(--neon-pink),0 0 40px rgba(255,77,141,.6);
+    margin:4px 0 2px;
+  }
+  .subtitle{
+    text-align:center;font-size:.85rem;color:var(--neon-cyan);
+    text-shadow:0 0 10px rgba(46,230,255,.8);letter-spacing:.15em;margin-bottom:14px;
+  }
+
+  .card{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:14px;margin-bottom:14px;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+  }
+  .card h2{
+    font-size:.95rem;color:var(--neon-yellow);letter-spacing:.1em;margin-bottom:10px;
+    text-shadow:0 0 8px rgba(255,213,77,.5);
+  }
+
+  /* プロフィール */
+  .profile-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .profile-row label{font-size:.85rem;color:var(--dim);}
+  .profile-row input[type=number]{
+    width:76px;font-size:1.1rem;padding:8px;border-radius:10px;
+    border:1px solid var(--border);background:var(--panel2);color:var(--text);text-align:center;
+  }
+  .gender-btns{display:flex;gap:6px;}
+  .gender-btns button{
+    font-size:.95rem;padding:8px 14px;border-radius:10px;border:1px solid var(--border);
+    background:var(--panel2);color:var(--dim);cursor:pointer;
+  }
+  .gender-btns button.active{
+    border-color:var(--neon-cyan);color:var(--neon-cyan);
+    box-shadow:0 0 10px rgba(46,230,255,.4) inset,0 0 8px rgba(46,230,255,.3);
+  }
+
+  /* メーター */
+  .meter-area{display:flex;gap:16px;align-items:stretch;}
+  .gauge-outer{
+    width:64px;height:240px;flex:none;border-radius:32px;
+    background:var(--panel2);border:2px solid var(--border);
+    position:relative;overflow:hidden;
+  }
+  .gauge-fill{
+    position:absolute;bottom:0;left:0;right:0;height:0%;
+    background:linear-gradient(to top,var(--neon-green),var(--neon-yellow),var(--neon-orange),var(--neon-red));
+    background-size:100% 240px;background-position:bottom;
+    transition:height .6s cubic-bezier(.34,1.56,.64,1);
+    border-radius:0 0 30px 30px;
+  }
+  .gauge-ticks{position:absolute;inset:0;}
+  .gauge-ticks span{
+    position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.15);
+  }
+  .meter-info{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0;}
+  .face{
+    font-size:4rem;text-align:center;line-height:1;
+    filter:drop-shadow(0 0 12px rgba(255,255,255,.25));
+    transition:transform .3s;
+  }
+  .stage-name{
+    text-align:center;font-size:1.25rem;font-weight:bold;letter-spacing:.1em;
+  }
+  .meter-stats{
+    font-size:.85rem;color:var(--dim);text-align:center;line-height:1.7;
+  }
+  .meter-stats b{color:var(--text);font-size:1.05rem;}
+  .bac-val{color:var(--neon-cyan);text-shadow:0 0 8px rgba(46,230,255,.5);}
+
+  /* 段階の色 */
+  .stage-0 .stage-name{color:var(--neon-green);text-shadow:0 0 10px rgba(77,255,166,.6);}
+  .stage-1 .stage-name{color:var(--neon-cyan);text-shadow:0 0 10px rgba(46,230,255,.6);}
+  .stage-2 .stage-name{color:var(--neon-yellow);text-shadow:0 0 10px rgba(255,213,77,.6);}
+  .stage-3 .stage-name{color:var(--neon-orange);text-shadow:0 0 10px rgba(255,138,61,.7);}
+  .stage-4 .stage-name{color:var(--neon-red);text-shadow:0 0 12px rgba(255,61,90,.8);}
+
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    15%{transform:translateX(-7px) rotate(-.6deg);}
+    30%{transform:translateX(6px) rotate(.5deg);}
+    45%{transform:translateX(-5px);}
+    60%{transform:translateX(4px);}
+    75%{transform:translateX(-2px);}
+  }
+  body.shaking{animation:shake .55s ease;}
+  @keyframes facePop{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.35) rotate(-8deg);}
+    100%{transform:scale(1);}
+  }
+  .face.pop{animation:facePop .45s ease;}
+
+  /* 予報 */
+  .forecast-main{display:flex;align-items:center;gap:14px;}
+  .forecast-icon{font-size:3.2rem;flex:none;filter:drop-shadow(0 0 10px rgba(255,255,255,.2));}
+  .forecast-text{flex:1;min-width:0;}
+  .forecast-label{font-size:1.05rem;font-weight:bold;line-height:1.4;}
+  .forecast-sub{font-size:.82rem;color:var(--dim);margin-top:4px;line-height:1.6;}
+  .forecast-sub b{color:var(--neon-cyan);}
+
+  /* ドリンクグリッド */
+  .drink-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .drink-btn{
+    position:relative;border:1px solid var(--border);border-radius:14px;
+    background:linear-gradient(160deg,var(--panel2),#181830);
+    color:var(--text);padding:12px 8px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    font-family:inherit;
+    transition:transform .08s,box-shadow .15s;
+    min-height:92px;
+  }
+  .drink-btn:active{
+    transform:scale(.94);
+    box-shadow:0 0 14px rgba(255,77,141,.5),0 0 4px rgba(255,77,141,.8) inset;
+    border-color:var(--neon-pink);
+  }
+  .drink-btn .emoji{font-size:2rem;line-height:1;}
+  .drink-btn .name{font-size:.9rem;font-weight:bold;}
+  .drink-btn .detail{font-size:.7rem;color:var(--dim);}
+  .drink-btn .g{font-size:.7rem;color:var(--neon-pink);}
+
+  /* 軽減アイテム */
+  .item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .item-btn{
+    border:1px dashed var(--neon-green);border-radius:14px;
+    background:rgba(77,255,166,.06);color:var(--text);
+    padding:10px 6px;cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    transition:transform .08s;min-height:80px;
+  }
+  .item-btn:active{transform:scale(.94);box-shadow:0 0 14px rgba(77,255,166,.5);}
+  .item-btn .emoji{font-size:1.7rem;line-height:1;}
+  .item-btn .name{font-size:.8rem;font-weight:bold;color:var(--neon-green);}
+  .item-btn .detail{font-size:.65rem;color:var(--dim);}
+  .item-note{font-size:.7rem;color:var(--dim);margin-top:8px;line-height:1.5;}
+
+  /* +演出 */
+  .float-plus{
+    position:fixed;pointer-events:none;z-index:99;
+    font-size:1.4rem;font-weight:bold;color:var(--neon-pink);
+    text-shadow:0 0 10px var(--neon-pink);
+    animation:floatUp 1s ease-out forwards;
+  }
+  .float-plus.good{color:var(--neon-green);text-shadow:0 0 10px var(--neon-green);}
+  @keyframes floatUp{
+    0%{opacity:1;transform:translateY(0) scale(1);}
+    100%{opacity:0;transform:translateY(-70px) scale(1.4);}
+  }
+
+  /* 合計 */
+  .totals{display:flex;gap:8px;}
+  .total-box{
+    flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:12px;
+    padding:10px 4px;text-align:center;
+  }
+  .total-box .val{font-size:1.3rem;font-weight:bold;color:var(--neon-yellow);text-shadow:0 0 8px rgba(255,213,77,.5);}
+  .total-box .lbl{font-size:.68rem;color:var(--dim);margin-top:2px;}
+
+  /* タイムライン */
+  .timeline{list-style:none;}
+  .timeline li{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 4px;border-bottom:1px solid var(--border);font-size:.9rem;
+  }
+  .timeline li:last-child{border-bottom:none;}
+  .tl-time{color:var(--neon-cyan);font-variant-numeric:tabular-nums;flex:none;font-size:.82rem;}
+  .tl-emoji{flex:none;font-size:1.2rem;}
+  .tl-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tl-g{flex:none;color:var(--dim);font-size:.78rem;}
+  .tl-del{
+    flex:none;border:1px solid var(--border);background:none;color:var(--neon-red);
+    border-radius:8px;padding:5px 10px;font-size:.78rem;cursor:pointer;font-family:inherit;
+  }
+  .tl-del:active{background:rgba(255,61,90,.15);}
+  .empty-msg{color:var(--dim);font-size:.85rem;text-align:center;padding:14px 0;}
+
+  .reset-btn{
+    display:block;width:100%;margin-top:12px;padding:14px;
+    font-size:1rem;font-weight:bold;font-family:inherit;
+    color:var(--neon-red);background:rgba(255,61,90,.08);
+    border:1px solid var(--neon-red);border-radius:14px;cursor:pointer;
+    letter-spacing:.15em;
+    text-shadow:0 0 8px rgba(255,61,90,.6);
+  }
+  .reset-btn:active{background:rgba(255,61,90,.25);}
+
+  footer{
+    max-width:560px;margin:8px auto 0;padding:14px 16px 6px;
+    font-size:.72rem;color:var(--dim);line-height:1.7;text-align:center;
+    border-top:1px solid var(--border);
+  }
+  @media (min-width:480px){
+    .drink-grid{grid-template-columns:repeat(3,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="index.html">← 実験ラボに戻る</a>
+  <h1>🍻 アルコールカウンター</h1>
+  <p class="subtitle">〜 二日酔いダメージ予報 〜</p>
+
+  <!-- プロフィール -->
+  <section class="card">
+    <h2>👤 あなたの設定</h2>
+    <div class="profile-row">
+      <label>体重
+        <input type="number" id="weight" min="30" max="200" step="1" value="60"> kg
+      </label>
+      <div class="gender-btns">
+        <button id="btn-male" type="button">男性</button>
+        <button id="btn-female" type="button">女性</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ダメージメーター -->
+  <section class="card" id="meter-card">
+    <h2>💥 ダメージメーター</h2>
+    <div class="meter-area">
+      <div class="gauge-outer">
+        <div class="gauge-ticks" id="gauge-ticks"></div>
+        <div class="gauge-fill" id="gauge-fill"></div>
+      </div>
+      <div class="meter-info" id="meter-info">
+        <div class="face" id="face">😀</div>
+        <div class="stage-name" id="stage-name">しらふ</div>
+        <div class="meter-stats">
+          体内ダメージ: <b id="dmg-g">0.0</b> g<br>
+          現在の推定血中濃度: <b class="bac-val" id="bac">0.000</b> %
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 二日酔い予報 -->
+  <section class="card">
+    <h2>🔮 二日酔い予報（このまま帰った場合）</h2>
+    <div class="forecast-main">
+      <div class="forecast-icon" id="fc-icon">☀️</div>
+      <div class="forecast-text">
+        <div class="forecast-label" id="fc-label">快晴。明日は無傷です</div>
+        <div class="forecast-sub" id="fc-sub">明朝の残存アルコール: 0g</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ドリンク登録 -->
+  <section class="card">
+    <h2>🍺 飲んだらタップ!</h2>
+    <div class="drink-grid" id="drink-grid"></div>
+  </section>
+
+  <!-- 軽減アイテム -->
+  <section class="card">
+    <h2>🛡️ 軽減アイテム</h2>
+    <div class="item-grid" id="item-grid"></div>
+    <p class="item-note">※効果は気休め程度です。水分補給と食事は本当に大事ですが、飲みすぎをチャラにはできません。</p>
+  </section>
+
+  <!-- 合計 -->
+  <section class="card">
+    <h2>📊 今夜の合計</h2>
+    <div class="totals">
+      <div class="total-box"><div class="val" id="total-cups">0</div><div class="lbl">杯数</div></div>
+      <div class="total-box"><div class="val" id="total-g">0.0</div><div class="lbl">純アルコール(g)</div></div>
+      <div class="total-box"><div class="val" id="total-beer">0.0</div><div class="lbl">ビール換算(本)</div></div>
+    </div>
+  </section>
+
+  <!-- タイムライン -->
+  <section class="card">
+    <h2>🕐 今夜のタイムライン</h2>
+    <ul class="timeline" id="timeline"></ul>
+    <button class="reset-btn" id="reset-btn" type="button">🏮 宴会リセット（新しい会を開始）</button>
+  </section>
+</div>
+
+<footer>
+  ※本ツールは娯楽用の簡易計算です。医学的アドバイスではありません。<br>
+  飲酒運転は絶対NG。20歳未満の飲酒は法律で禁止されています。適量を楽しく!
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ====== マスタデータ ====== */
+  var DRINKS = [
+    {key:"beer_l",   emoji:"🍺", name:"ビール中ジョッキ", ml:500, abv:5},
+    {key:"beer_s",   emoji:"🍺", name:"ビール小",         ml:350, abv:5},
+    {key:"highball", emoji:"🥃", name:"ハイボール",       ml:350, abv:7},
+    {key:"lemon",    emoji:"🍋", name:"レモンサワー",     ml:350, abv:5},
+    {key:"sake",     emoji:"🍶", name:"日本酒1合",        ml:180, abv:15},
+    {key:"wine",     emoji:"🍷", name:"ワイングラス",     ml:125, abv:12},
+    {key:"shochu",   emoji:"🪨", name:"焼酎ロック",       ml:90,  abv:25},
+    {key:"whisky",   emoji:"🥃", name:"ウイスキーシングル", ml:30, abv:40},
+    {key:"cocktail", emoji:"🍸", name:"カクテル",         ml:200, abv:8},
+    {key:"strong",   emoji:"⚡", name:"ストロング系",     ml:350, abv:9}
+  ];
+  var ITEMS = [
+    {key:"water", emoji:"🚰", name:"水/お茶",     detail:"ダメージ少し回復"},
+    {key:"ukon",  emoji:"🟡", name:"ウコン",      detail:"以降のダメージ-10%"},
+    {key:"food",  emoji:"🍢", name:"食事しながら", detail:"以降のダメージ-15%"}
+  ];
+  var STAGES = [
+    {min:0,  face:"😀",     name:"しらふ",     color:0},
+    {min:10, face:"🙂",     name:"ほろ酔い",   color:1},
+    {min:25, face:"😵‍💫", name:"いい感じ",   color:2},
+    {min:40, face:"🥴",     name:"危険水域",   color:3},
+    {min:60, face:"👻",     name:"明日は無理", color:4}
+  ];
+  var FORECASTS = [
+    {max:0.5, icon:"☀️", label:"快晴。明日は無傷です"},
+    {max:10,  icon:"🌤️", label:"やや頭重い朝になりそう"},
+    {max:25,  icon:"☁️", label:"午前中は使い物にならない予報"},
+    {max:45,  icon:"🌧️", label:"一日ソファから動けない見込み"},
+    {max:1/0, icon:"⛈️", label:"記憶を確認する朝になります…"}
+  ];
+  var GAUGE_MAX = 80;         // ゲージが振り切れるg
+  var WATER_RECOVER = 2;      // 水1杯で回復するダメージg
+  var UKON_FACTOR = 0.90;
+  var FOOD_FACTOR = 0.85;
+  var FACTOR_FLOOR = 0.70;    // 軽減の下限(気休め)
+  var BEER_G = 20;            // ビール中ジョッキ1本の純アルコールg
+
+  var STORE_KEY = "alcoholCounter.v1";
+
+  /* ====== 状態 ====== */
+  var state = load();
+  var lastStageIdx = -1;
+
+  function defaultState(){
+    return {weight:60, gender:"male", events:[]};
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(raw){
+        var s = JSON.parse(raw);
+        if(s && Array.isArray(s.events)) return s;
+      }
+    }catch(e){}
+    return defaultState();
+  }
+  function save(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  /* ====== 計算 ====== */
+  function pureG(ml, abv){ return ml * (abv/100) * 0.8; }
+  function metabRate(){ return Math.max(30, +state.weight || 60) * 0.1; } // g/時
+
+  // イベントを時系列に処理して {raw, dmg} の現在値を返す
+  function simulate(atTime){
+    var rate = metabRate();
+    var raw = 0, dmg = 0, factor = 1.0;
+    var prev = null;
+    var evs = state.events.slice().sort(function(a,b){ return a.time - b.time; });
+    for(var i=0;i<evs.length;i++){
+      var ev = evs[i];
+      if(ev.time > atTime) break;
+      if(prev !== null){
+        var dec = rate * (ev.time - prev) / 3600000;
+        raw = Math.max(0, raw - dec);
+        dmg = Math.max(0, dmg - dec);
+      }
+      prev = ev.time;
+      if(ev.kind === "drink"){
+        var g = pureG(ev.ml, ev.abv);
+        raw += g;
+        dmg += g * factor;
+      }else if(ev.key === "water"){
+        dmg = Math.max(0, dmg - WATER_RECOVER);
+      }else if(ev.key === "ukon"){
+        factor = Math.max(FACTOR_FLOOR, factor * UKON_FACTOR);
+      }else if(ev.key === "food"){
+        factor = Math.max(FACTOR_FLOOR, factor * FOOD_FACTOR);
+      }
+    }
+    if(prev !== null){
+      var dec2 = rate * (atTime - prev) / 3600000;
+      raw = Math.max(0, raw - dec2);
+      dmg = Math.max(0, dmg - dec2);
+    }
+    return {raw:raw, dmg:dmg};
+  }
+
+  function bacOf(rawG){
+    var w = Math.max(30, +state.weight || 60);
+    var r = state.gender === "female" ? 0.55 : 0.68;
+    return rawG / (w * r) * 0.1; // %
+  }
+
+  function stageOf(dmg){
+    var idx = 0;
+    for(var i=0;i<STAGES.length;i++){ if(dmg >= STAGES[i].min) idx = i; }
+    return idx;
+  }
+
+  function nextMorning(now){
+    var d = new Date(now);
+    var m = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 7, 0, 0);
+    if(d.getHours() >= 7) m.setDate(m.getDate() + 1);
+    return m.getTime();
+  }
+
+  function fmtTime(ts){
+    var d = new Date(ts);
+    return ("0"+d.getHours()).slice(-2) + ":" + ("0"+d.getMinutes()).slice(-2);
+  }
+  function dayLabel(ts, now){
+    var a = new Date(ts), b = new Date(now);
+    var da = new Date(a.getFullYear(),a.getMonth(),a.getDate()).getTime();
+    var db = new Date(b.getFullYear(),b.getMonth(),b.getDate()).getTime();
+    var diff = Math.round((da - db) / 86400000);
+    if(diff === 0) return "今日";
+    if(diff === 1) return "明日";
+    if(diff === 2) return "明後日";
+    return (a.getMonth()+1) + "/" + a.getDate();
+  }
+
+  /* ====== 描画 ====== */
+  var $ = function(id){ return document.getElementById(id); };
+
+  function render(){
+    var now = Date.now();
+    var cur = simulate(now);
+    var rate = metabRate();
+
+    // ゲージ
+    var pct = Math.min(100, cur.dmg / GAUGE_MAX * 100);
+    $("gauge-fill").style.height = pct + "%";
+
+    // 段階・顔
+    var idx = stageOf(cur.dmg);
+    var st = STAGES[idx];
+    $("face").textContent = st.face;
+    $("stage-name").textContent = st.name;
+    var info = $("meter-info");
+    info.className = "meter-info stage-" + st.color;
+    if(lastStageIdx >= 0 && idx > lastStageIdx){
+      document.body.classList.remove("shaking");
+      void document.body.offsetWidth;
+      document.body.classList.add("shaking");
+      var f = $("face");
+      f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
+    }
+    lastStageIdx = idx;
+
+    $("dmg-g").textContent = cur.dmg.toFixed(1);
+    $("bac").textContent = bacOf(cur.raw).toFixed(3);
+
+    // 予報
+    var morning = nextMorning(now);
+    var hoursToMorning = Math.max(0, (morning - now) / 3600000);
+    var morningDmg = Math.max(0, cur.dmg - rate * hoursToMorning);
+    var fc = FORECASTS[FORECASTS.length-1];
+    for(var i=0;i<FORECASTS.length;i++){
+      if(morningDmg < FORECASTS[i].max){ fc = FORECASTS[i]; break; }
+    }
+    $("fc-icon").textContent = fc.icon;
+    $("fc-label").textContent = fc.label;
+    var subHtml = "明朝7時の残存ダメージ: <b>" + morningDmg.toFixed(1) + "g</b>";
+    if(cur.raw > 0.1){
+      var doneTs = now + cur.raw / rate * 3600000;
+      subHtml += "<br>完全分解は<b>" + dayLabel(doneTs, now) + "の" + fmtTime(doneTs) + "ごろ</b>";
+    }else{
+      subHtml += "<br>アルコールはほぼ分解済みです";
+    }
+    $("fc-sub").innerHTML = subHtml;
+
+    // 合計
+    var cups = 0, totalG = 0;
+    state.events.forEach(function(ev){
+      if(ev.kind === "drink"){ cups++; totalG += pureG(ev.ml, ev.abv); }
+    });
+    $("total-cups").textContent = cups;
+    $("total-g").textContent = totalG.toFixed(1);
+    $("total-beer").textContent = (totalG / BEER_G).toFixed(1);
+
+    renderTimeline();
+    renderProfile();
+  }
+
+  function renderTimeline(){
+    var ul = $("timeline");
+    ul.innerHTML = "";
+    if(state.events.length === 0){
+      var li = document.createElement("li");
+      li.className = "empty-msg";
+      li.textContent = "まだ記録がありません。乾杯したらタップ! 🍻";
+      ul.appendChild(li);
+      return;
+    }
+    var evs = state.events.slice().sort(function(a,b){ return b.time - a.time; });
+    evs.forEach(function(ev){
+      var li = document.createElement("li");
+      var g = ev.kind === "drink" ? "+" + pureG(ev.ml, ev.abv).toFixed(1) + "g" : "";
+      li.innerHTML =
+        '<span class="tl-time">' + fmtTime(ev.time) + '</span>' +
+        '<span class="tl-emoji">' + ev.emoji + '</span>' +
+        '<span class="tl-name">' + ev.name + '</span>' +
+        '<span class="tl-g">' + g + '</span>';
+      var del = document.createElement("button");
+      del.className = "tl-del";
+      del.type = "button";
+      del.textContent = "取消";
+      del.addEventListener("click", function(){
+        state.events = state.events.filter(function(e){ return e.id !== ev.id; });
+        save(); render();
+      });
+      li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function renderProfile(){
+    $("btn-male").classList.toggle("active", state.gender === "male");
+    $("btn-female").classList.toggle("active", state.gender === "female");
+  }
+
+  /* ====== +演出 ====== */
+  function floatPlus(x, y, text, good){
+    var el = document.createElement("div");
+    el.className = "float-plus" + (good ? " good" : "");
+    el.textContent = text;
+    el.style.left = (x - 20) + "px";
+    el.style.top = (y - 30) + "px";
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 1000);
+  }
+
+  /* ====== ボタン生成 ====== */
+  function buildButtons(){
+    var dg = $("drink-grid");
+    DRINKS.forEach(function(d){
+      var g = pureG(d.ml, d.abv);
+      var b = document.createElement("button");
+      b.className = "drink-btn";
+      b.type = "button";
+      b.innerHTML =
+        '<span class="emoji">' + d.emoji + '</span>' +
+        '<span class="name">' + d.name + '</span>' +
+        '<span class="detail">' + d.ml + 'ml / ' + d.abv + '%</span>' +
+        '<span class="g">純アル ' + g.toFixed(1) + 'g</span>';
+      b.addEventListener("click", function(e){
+        state.events.push({
+          id: Date.now() + "_" + Math.random().toString(36).slice(2,7),
+          kind:"drink", key:d.key, emoji:d.emoji, name:d.name,
+          ml:d.ml, abv:d.abv, time:Date.now()
+        });
+        save(); render();
+        var r = b.getBoundingClientRect();
+        floatPlus(r.left + r.width/2, r.top, "+" + g.toFixed(1) + "g", false);
+        if(navigator.vibrate) navigator.vibrate(30);
+      });
+      dg.appendChild(b);
+    });
+
+    var ig = $("item-grid");
+    ITEMS.forEach(function(it){
+      var b = document.createElement("button");
+      b.className = "item-btn";
+      b.type = "button";
+      b.innerHTML =
+        '<span class="emoji">' + it.emoji + '</span>' +
+        '<span class="name">' + it.name + '</span>' +
+        '<span class="detail">' + it.detail + '</span>';
+      b.addEventListener("click", function(){
+        state.events.push({
+          id: Date.now() + "_" + Math.random().toString(36).slice(2,7),
+          kind:"item", key:it.key, emoji:it.emoji, name:it.name, time:Date.now()
+        });
+        save(); render();
+        var r = b.getBoundingClientRect();
+        floatPlus(r.left + r.width/2, r.top, it.key === "water" ? "-" + WATER_RECOVER + "g" : "軽減!", true);
+        if(navigator.vibrate) navigator.vibrate(20);
+      });
+      ig.appendChild(b);
+    });
+  }
+
+  /* ====== ゲージ目盛 ====== */
+  function buildTicks(){
+    var holder = $("gauge-ticks");
+    [10,25,40,60].forEach(function(g){
+      var s = document.createElement("span");
+      s.style.bottom = Math.min(100, g / GAUGE_MAX * 100) + "%";
+      holder.appendChild(s);
+    });
+  }
+
+  /* ====== イベント ====== */
+  $("weight").value = state.weight;
+  $("weight").addEventListener("change", function(){
+    var v = parseFloat(this.value);
+    if(!isFinite(v) || v < 30) v = 30;
+    if(v > 200) v = 200;
+    this.value = v;
+    state.weight = v;
+    save(); render();
+  });
+  $("btn-male").addEventListener("click", function(){ state.gender = "male"; save(); render(); });
+  $("btn-female").addEventListener("click", function(){ state.gender = "female"; save(); render(); });
+
+  $("reset-btn").addEventListener("click", function(){
+    if(state.events.length === 0 || confirm("今夜の記録をリセットして新しい宴会を始めますか?")){
+      state.events = [];
+      lastStageIdx = -1;
+      save(); render();
+    }
+  });
+
+  /* ====== 起動 ====== */
+  buildButtons();
+  buildTicks();
+  render();
+  lastStageIdx = stageOf(simulate(Date.now()).dmg); // 起動直後の揺れ防止
+  setInterval(render, 30000); // 30秒ごとに分解を反映
+})();
+</script>
+</body>
+</html>

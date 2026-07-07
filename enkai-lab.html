@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宴会お助けラボ 🏮</title>
+<style>
+  :root{
+    --bg:#12080f;
+    --bg2:#1d0f1a;
+    --card:#241226;
+    --card2:#2d1830;
+    --neon-pink:#ff4fa3;
+    --neon-yellow:#ffd93b;
+    --neon-orange:#ff8c42;
+    --neon-cyan:#4fd8ff;
+    --text:#fff3e0;
+    --muted:#c9a3b8;
+    --border:#4a2547;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{font-size:16px;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(255,79,163,.18), transparent 50%),
+      radial-gradient(ellipse at 80% -10%, rgba(255,140,66,.15), transparent 50%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 14px;}
+  a.back{
+    display:inline-block;margin:14px 0 4px;color:var(--neon-cyan);
+    text-decoration:none;font-size:.9rem;opacity:.9;
+  }
+  a.back:hover{text-decoration:underline;}
+
+  /* ===== 提灯 ===== */
+  .lanterns{display:flex;justify-content:center;gap:14px;margin-top:6px;user-select:none;}
+  .lantern{
+    font-size:2rem;
+    animation:sway 3s ease-in-out infinite;
+    transform-origin:top center;
+    filter:drop-shadow(0 0 8px rgba(255,140,66,.8));
+  }
+  .lantern:nth-child(2){animation-delay:.4s;}
+  .lantern:nth-child(3){animation-delay:.8s;}
+  .lantern:nth-child(4){animation-delay:1.2s;}
+  .lantern:nth-child(5){animation-delay:1.6s;}
+  @keyframes sway{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg);}}
+
+  h1.title{
+    text-align:center;
+    font-size:clamp(1.7rem,7vw,2.4rem);
+    margin:10px 0 2px;
+    letter-spacing:.05em;
+    color:var(--neon-yellow);
+    text-shadow:
+      0 0 6px rgba(255,217,59,.9),
+      0 0 18px rgba(255,140,66,.7),
+      0 0 40px rgba(255,79,163,.5);
+    animation:flicker 4s infinite;
+  }
+  @keyframes flicker{
+    0%,93%,100%{opacity:1;}
+    94%{opacity:.75;}
+    96%{opacity:1;}
+    98%{opacity:.85;}
+  }
+  .subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:18px;}
+
+  /* ===== タブ ===== */
+  .tabs{display:flex;gap:10px;margin-bottom:16px;}
+  .tab-btn{
+    flex:1;padding:16px 8px;font-size:1.05rem;font-weight:bold;
+    background:var(--card);color:var(--muted);
+    border:2px solid var(--border);border-radius:14px;cursor:pointer;
+    transition:all .2s;font-family:inherit;
+  }
+  .tab-btn.active{
+    color:#1a0a14;
+    background:linear-gradient(135deg,var(--neon-yellow),var(--neon-orange));
+    border-color:var(--neon-yellow);
+    box-shadow:0 0 16px rgba(255,180,60,.5);
+  }
+  .tab-btn:active{transform:scale(.97);}
+  .panel{display:none;}
+  .panel.active{display:block;animation:fadein .25s;}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* ===== カード / フォーム ===== */
+  .card{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:16px;padding:18px 16px;margin-bottom:16px;
+  }
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;font-size:.85rem;color:var(--neon-cyan);
+    margin-bottom:6px;font-weight:bold;letter-spacing:.05em;
+  }
+  select,input[type=text]{
+    width:100%;padding:14px 12px;font-size:1.05rem;
+    background:var(--bg2);color:var(--text);
+    border:2px solid var(--border);border-radius:12px;
+    font-family:inherit;appearance:none;
+  }
+  select:focus,input[type=text]:focus{outline:none;border-color:var(--neon-pink);}
+  .seg{display:flex;flex-wrap:wrap;gap:8px;}
+  .seg button{
+    flex:1 1 auto;min-width:90px;padding:13px 8px;font-size:.95rem;
+    background:var(--bg2);color:var(--muted);
+    border:2px solid var(--border);border-radius:12px;cursor:pointer;
+    font-family:inherit;transition:all .15s;
+  }
+  .seg button.sel{
+    color:#1a0a14;background:var(--neon-pink);border-color:var(--neon-pink);
+    box-shadow:0 0 12px rgba(255,79,163,.5);font-weight:bold;
+  }
+  .seg button:active{transform:scale(.96);}
+
+  /* ===== 大ボタン ===== */
+  .big-btn{
+    display:block;width:100%;padding:20px;font-size:1.3rem;font-weight:bold;
+    color:#1a0a14;border:none;border-radius:16px;cursor:pointer;
+    background:linear-gradient(135deg,var(--neon-yellow) 0%,var(--neon-orange) 60%,var(--neon-pink) 130%);
+    box-shadow:0 0 20px rgba(255,180,60,.45),0 4px 0 #a35a1f;
+    font-family:inherit;letter-spacing:.06em;margin:6px 0 14px;
+    transition:transform .08s;
+  }
+  .big-btn:active{transform:translateY(3px);box-shadow:0 0 20px rgba(255,180,60,.45),0 1px 0 #a35a1f;}
+  .sub-btns{display:flex;gap:10px;margin-top:12px;}
+  .sub-btn{
+    flex:1;padding:14px 8px;font-size:1rem;font-weight:bold;
+    background:var(--card2);color:var(--neon-cyan);
+    border:2px solid var(--neon-cyan);border-radius:12px;cursor:pointer;
+    font-family:inherit;transition:all .15s;
+  }
+  .sub-btn.pink{color:var(--neon-pink);border-color:var(--neon-pink);}
+  .sub-btn:active{transform:scale(.96);}
+
+  /* ===== 出力 ===== */
+  .output{
+    background:var(--bg2);border:2px dashed var(--border);border-radius:14px;
+    padding:18px 16px;min-height:90px;white-space:pre-wrap;
+    line-height:1.9;font-size:1.02rem;
+  }
+  .output.empty{color:var(--muted);text-align:center;display:flex;align-items:center;justify-content:center;}
+  .output.pop{animation:pop .35s;}
+  @keyframes pop{0%{transform:scale(.96);opacity:.4;}60%{transform:scale(1.015);}100%{transform:scale(1);opacity:1;}}
+
+  .gag-text{font-size:1.25rem;font-weight:bold;color:var(--neon-yellow);line-height:1.7;margin-bottom:12px;}
+  .gag-meta{font-size:.92rem;line-height:1.8;}
+  .gag-meta .tag{color:var(--neon-cyan);font-weight:bold;}
+  .risk{color:var(--neon-pink);letter-spacing:.15em;font-size:1.05rem;}
+  .risk .off{color:#5a3355;}
+
+  .recovery-box{
+    margin-top:12px;background:var(--card2);border:1px solid var(--border);
+    border-radius:12px;padding:14px;font-size:1.05rem;line-height:1.8;
+    display:none;
+  }
+  .recovery-box.show{display:block;animation:pop .3s;}
+  .recovery-box .rc-label{font-size:.8rem;color:var(--neon-cyan);font-weight:bold;display:block;margin-bottom:4px;}
+
+  /* ===== スライダー ===== */
+  .slider-row{display:flex;align-items:center;gap:10px;}
+  .slider-row span{font-size:.8rem;color:var(--muted);white-space:nowrap;}
+  input[type=range]{
+    flex:1;height:34px;appearance:none;background:transparent;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:10px;border-radius:5px;
+    background:linear-gradient(90deg,var(--neon-cyan),var(--neon-yellow),var(--neon-pink));
+  }
+  input[type=range]::-webkit-slider-thumb{
+    appearance:none;width:30px;height:30px;border-radius:50%;
+    background:var(--text);border:3px solid var(--neon-pink);
+    margin-top:-10px;box-shadow:0 0 10px rgba(255,79,163,.7);
+  }
+  input[type=range]::-moz-range-track{
+    height:10px;border-radius:5px;
+    background:linear-gradient(90deg,var(--neon-cyan),var(--neon-yellow),var(--neon-pink));
+  }
+  input[type=range]::-moz-range-thumb{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--text);border:3px solid var(--neon-pink);
+  }
+  .ikioi-label{text-align:center;font-size:.95rem;color:var(--neon-yellow);font-weight:bold;margin-top:4px;min-height:1.4em;}
+
+  /* ===== 絵文字演出 ===== */
+  .fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:99;}
+  .fx span{
+    position:absolute;font-size:2rem;
+    animation:jump 1.1s ease-out forwards;
+  }
+  @keyframes jump{
+    0%{transform:translateY(0) scale(.5) rotate(0deg);opacity:0;}
+    15%{opacity:1;}
+    60%{transform:translateY(-38vh) scale(1.3) rotate(20deg);opacity:1;}
+    100%{transform:translateY(-15vh) scale(1) rotate(-15deg);opacity:0;}
+  }
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+    background:var(--neon-yellow);color:#1a0a14;font-weight:bold;
+    padding:12px 22px;border-radius:999px;font-size:.95rem;
+    box-shadow:0 0 18px rgba(255,217,59,.6);opacity:0;transition:opacity .3s;
+    pointer-events:none;z-index:100;
+  }
+  .toast.show{opacity:1;}
+  .checkline{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .checkline input{width:22px;height:22px;accent-color:var(--neon-pink);}
+  .checkline label{font-size:.92rem;color:var(--muted);}
+  footer{text-align:center;color:#7a4d6b;font-size:.75rem;margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← 実験ラボに戻る</a>
+
+  <div class="lanterns">
+    <span class="lantern">🏮</span><span class="lantern">🏮</span><span class="lantern">🏮</span><span class="lantern">🏮</span><span class="lantern">🏮</span>
+  </div>
+  <h1 class="title">宴会お助けラボ</h1>
+  <p class="subtitle">〜 飲み会の窮地、ぜんぶここで解決 〜</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabKanpai" onclick="switchTab('kanpai')">🍻 乾杯の音頭</button>
+    <button class="tab-btn" id="tabGag" onclick="switchTab('gag')">🎤 一発ギャグ</button>
+  </div>
+
+  <!-- ================= 乾杯の音頭メーカー ================= -->
+  <div class="panel active" id="panelKanpai">
+    <div class="card">
+      <div class="field">
+        <label>🎪 シーン</label>
+        <select id="scene">
+          <option value="bounenkai">忘年会</option>
+          <option value="shinnenkai">新年会</option>
+          <option value="kangeikai">歓迎会</option>
+          <option value="soubetsukai">送別会</option>
+          <option value="wedding2">結婚式二次会</option>
+          <option value="uchiage">打ち上げ</option>
+          <option value="toriaezu">とりあえず飲み</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>🙋 あなたの立場</label>
+        <div class="seg" id="roleSeg">
+          <button data-v="kanji" class="sel">幹事</button>
+          <button data-v="joushi">上司</button>
+          <button data-v="wakate">若手</button>
+          <button data-v="yuujin">友人代表</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>⏱ 長さ</label>
+        <div class="seg" id="lenSeg">
+          <button data-v="short">一言でサクッと</button>
+          <button data-v="normal" class="sel">普通</button>
+          <button data-v="long">ちょっと語る</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>👑 主役の名前（任意）</label>
+        <input type="text" id="heroName" placeholder="例: 田中さん / 佐藤ご夫妻">
+      </div>
+      <button class="big-btn" onclick="genSpeech()">🍻 音頭を生成！</button>
+      <div class="output empty" id="speechOut">ここにスピーチが表示されます</div>
+      <div class="sub-btns">
+        <button class="sub-btn" onclick="copyText('speechOut','speech')">📋 コピー</button>
+        <button class="sub-btn pink" onclick="genSpeech()">🎰 もう一回ガチャ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 一発ギャグ対応AI ================= -->
+  <div class="panel" id="panelGag">
+    <div class="card">
+      <div class="field">
+        <label>🚨 シチュエーション</label>
+        <div class="seg" id="sitSeg">
+          <button data-v="sudden" class="sel">急に振られた</button>
+          <button data-v="recovery">スベった後のリカバリー</button>
+          <button data-v="intro">自己紹介に添える</button>
+          <button data-v="kids">子どもウケ狙い</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>🔥 勢い</label>
+        <div class="slider-row">
+          <span>控えめ</span>
+          <input type="range" id="ikioi" min="1" max="5" value="3" oninput="updateIkioi()">
+          <span>全力</span>
+        </div>
+        <div class="ikioi-label" id="ikioiLabel">🔥🔥🔥 ほどほど参戦</div>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="autoMode">
+        <label for="autoMode">🤖 ダジャレ自動生成モード（機械が今作ったネタが出ます）</label>
+      </div>
+      <button class="big-btn" onclick="genGag()">🎤 ギャグをくれ！</button>
+      <div class="output empty" id="gagOut">ここにネタが表示されます</div>
+      <div class="sub-btns">
+        <button class="sub-btn" onclick="copyText('gagOut','gag')">📋 コピー</button>
+        <button class="sub-btn pink" onclick="genGag()">🎲 別のネタ！</button>
+      </div>
+      <button class="big-btn" style="margin-top:16px;background:linear-gradient(135deg,var(--neon-cyan),#7a6bff);box-shadow:0 0 20px rgba(79,216,255,.4),0 4px 0 #1f5aa3;" onclick="genRecovery()">🧯 スベった！リカバリーフレーズ！</button>
+      <div class="recovery-box" id="recoveryBox"><span class="rc-label">🧯 これで切り抜けろ</span><span id="recoveryText"></span></div>
+    </div>
+  </div>
+
+  <footer>宴会お助けラボ — 飲みすぎ注意。ネタのスベりに関する保証は一切ありません。</footer>
+</div>
+
+<div class="fx" id="fx"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   共通ユーティリティ
+============================================================ */
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function pick2(arr){ // 重複しない2つ
+  if(arr.length<2) return [arr[0],arr[0]];
+  var i=Math.floor(Math.random()*arr.length), j=i;
+  while(j===i) j=Math.floor(Math.random()*arr.length);
+  return [arr[i],arr[j]];
+}
+function segValue(id){
+  var b=document.querySelector('#'+id+' button.sel');
+  return b?b.dataset.v:null;
+}
+document.querySelectorAll('.seg').forEach(function(seg){
+  seg.addEventListener('click',function(e){
+    var btn=e.target.closest('button'); if(!btn) return;
+    seg.querySelectorAll('button').forEach(function(b){b.classList.remove('sel');});
+    btn.classList.add('sel');
+  });
+});
+function switchTab(t){
+  document.getElementById('tabKanpai').classList.toggle('active',t==='kanpai');
+  document.getElementById('tabGag').classList.toggle('active',t==='gag');
+  document.getElementById('panelKanpai').classList.toggle('active',t==='kanpai');
+  document.getElementById('panelGag').classList.toggle('active',t==='gag');
+}
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){t.classList.remove('show');},1600);
+}
+function burst(emojis){
+  var fx=document.getElementById('fx');
+  for(var i=0;i<10;i++){
+    (function(i){
+      setTimeout(function(){
+        var s=document.createElement('span');
+        s.textContent=pick(emojis);
+        s.style.left=(5+Math.random()*85)+'%';
+        s.style.top=(60+Math.random()*30)+'%';
+        s.style.fontSize=(1.4+Math.random()*1.4)+'rem';
+        fx.appendChild(s);
+        setTimeout(function(){s.remove();},1200);
+      }, i*60);
+    })(i);
+  }
+}
+function copyText(outId, kind){
+  var el=document.getElementById(outId);
+  var txt = kind==='gag' ? (el.dataset.copy||'') : el.textContent;
+  if(!txt || el.classList.contains('empty')){ toast('まず生成してね！'); return; }
+  function ok(){ toast('コピーしました！🍻'); }
+  function fallback(){
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ toast('コピーできませんでした…'); }
+    ta.remove();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok, fallback);
+  }else{ fallback(); }
+}
+
+/* ============================================================
+   【1】乾杯の音頭メーカー
+============================================================ */
+// --- 立場ごとの前置き（自己ポジション表明）---
+var ROLE_OPENERS = {
+  kanji: [
+    "幹事を務めております私から、僭越ながら乾杯の音頭を取らせていただきます。",
+    "本日の仕切り役、幹事の私が乾杯の音頭を務めさせていただきます。お店選びの評価は後ほどこっそり聞かせてください。",
+    "幹事特権ということで、乾杯の音頭を頂戴いたします。",
+    "皆様、お手元にグラスは行き渡っておりますでしょうか。幹事の私からご挨拶申し上げます。",
+    "出欠確認とリマインドに命を懸けた幹事より、乾杯のご挨拶を申し上げます。"
+  ],
+  joushi: [
+    "ご指名にあずかりましたので、僭越ながら乾杯の音頭を取らせていただきます。",
+    "年長者ということで一言だけ。長くならないように、部下の視線を感じながら話します。",
+    "日頃みんなの頑張りを一番近くで見ている者として、一言ご挨拶させていただきます。",
+    "こういう時だけ出番が回ってくる立場ですが、喜んで音頭を取らせていただきます。",
+    "堅い話は抜きにしたいところですが、立場上、少しだけ言わせてください。"
+  ],
+  wakate: [
+    "このような大役、若輩者の私には荷が重いのですが…グラスを持つ手が震えているのは緊張のせいです。",
+    "まさか私にご指名が来るとは思わず、さっきから頭が真っ白です。精一杯やらせていただきます！",
+    "諸先輩方を差し置いて大変恐縮ですが、若手代表として元気だけはありますので、声の大きさでご容赦ください！",
+    "入って日の浅い私がこの大役…これも修行と思って、全力でいかせていただきます！",
+    "先輩方の胸をお借りするつもりで、乾杯の音頭を取らせていただきます。お手柔らかにお願いします！"
+  ],
+  yuujin: [
+    "友人代表ということで、僭越ながら乾杯の音頭を取らせていただきます。",
+    "付き合いの長さだけは誰にも負けない友人代表として、一言ご挨拶いたします。",
+    "昔の話を一番たくさん知っている人間として、今日はマイクを預かりました。ネタは墓場まで持っていくのでご安心を。",
+    "友人代表の私から、乾杯前に少しだけお時間をいただきます。",
+    "こいつとの付き合いももう長いもので…友人代表として喋らせていただきます。"
+  ]
+};
+// --- 立場ごとの語りパート（「ちょっと語る」用）---
+var ROLE_FLAVORS = {
+  kanji: [
+    "幹事をやっていて何が嬉しいって、こうして全員の顔が揃った瞬間です。今日は返信が遅かった人のことも許します。",
+    "この会の準備をしながら、皆さんの喜ぶ顔を想像していました。料理の追加注文は遠慮なく私まで！",
+    "ちなみに本日のお店、私の全力リサーチの結晶です。美味しかったら来年も幹事やります。",
+    "幹事からのお願いはひとつだけ。終電だけは、各自しっかり覚えて帰ってください。",
+    "集金がスムーズだと幹事は泣いて喜びます。今日はよろしくお願いします。"
+  ],
+  joushi: [
+    "皆さん一人ひとりの頑張りが、今のチームを支えています。本当にいつもありがとう。",
+    "普段は言えませんが、皆さんと働けることを誇りに思っています。今日くらいは言わせてください。",
+    "私が若い頃は…という話を始めると長いので、今日は封印します。その代わり、たくさん飲みましょう。",
+    "苦しい時期もみんなで乗り越えてきました。今日はその労をねぎらう日です。",
+    "仕事の話は明日から。今日は無礼講…と言いつつ、明日ちゃんと出社はしてくださいね。"
+  ],
+  wakate: [
+    "私はまだまだ半人前ですが、先輩方の背中を見て、日々こっそり技を盗んでおります。",
+    "正直、毎日必死です。でも皆さんに支えられて、なんとか楽しくやれています。ありがとうございます！",
+    "至らない点だらけの私ですが、宴会の盛り上げ役としては即戦力だと自負しております！",
+    "今日は先輩方の武勇伝、たっぷり聞かせていただく所存です。メモの準備はできています。",
+    "失敗も多い私ですが、飲み会の出席率だけは社内トップを維持しております！"
+  ],
+  yuujin: [
+    "長い付き合いの中で、こいつの格好悪いところも全部見てきました。でも、今日ほど格好良く見える日はありません。",
+    "昔から変わらないのは、周りに人が集まってくるところ。今日この会場を見て、改めてそう思います。",
+    "ここだけの話をすると長くなるので、続きは三次会で。気になる方は私の隣の席へどうぞ。",
+    "友人としてひとつ言えるのは、こいつの人選びのセンスは昔から抜群だということです。友人が私ですから。",
+    "思い出話は無限にありますが、今日は乾杯が主役。話は飲みながら小出しにしていきます。"
+  ]
+};
+// --- シーン別データ ---
+// intro: 場面の口上 / body: 本文 / body2: 語る用の追加本文 / close: 締めの導入
+// {name} は主役名に置換
+var SCENES = {
+  bounenkai: {
+    label:"忘年会", hero:"皆さん",
+    intro:[
+      "今年も残すところあとわずか。こうして皆さんと一年を締めくくれることを嬉しく思います。",
+      "振り返れば今年も、山あり谷あり、締め切りありの一年でした。",
+      "気づけばもう年の瀬。カレンダーの残りの薄さに驚いております。",
+      "今年一年、それぞれの持ち場で本当にお疲れさまでした。",
+      "この一年、いろいろなことがありましたが、今夜はそれを全部肴にしてしまいましょう。"
+    ],
+    body:[
+      "今年の疲れは今年のうちに、このグラスで洗い流してしまいましょう。嫌なことは泡と一緒に消えます。",
+      "良かったことは自慢話に、失敗したことは笑い話に。それが忘年会の正しい使い方です。",
+      "今夜の合言葉は「今年のことは今年のうちに忘れる」。ただし、飲みすぎて今夜のことまで忘れないように。",
+      "一年間頑張った自分と、隣で頑張った仲間に、今日は思う存分ねぎらいの言葉をかけてあげてください。",
+      "反省会は五分で終わり、あとはひたすら楽しむ。それが当会の伝統でございます。"
+    ],
+    body2:[
+      "来年の話をすると鬼が笑うと言いますが、鬼も一緒に笑ってくれるなら、それはそれで賑やかでいい。来年も笑いの多い年にしましょう。",
+      "今年できなかったことは、来年の楽しみが増えたということです。前向きにいきましょう。",
+      "この一年を漢字一文字で表すなら、私は「宴」を推したい。そんな締めくくりの夜です。"
+    ],
+    close:[
+      "それでは、今年一年の労をねぎらいまして。",
+      "来年がさらに良い年になることを祈念いたしまして。",
+      "皆さんの一年分の頑張りに、最大限の敬意を込めまして。",
+      "今年の疲れと悩みを、この一杯で成仏させるべく。",
+      "終わりよければすべてよし、ということで。"
+    ]
+  },
+  shinnenkai: {
+    label:"新年会", hero:"皆さん",
+    intro:[
+      "新年あけましておめでとうございます。本年もどうぞよろしくお願いいたします。",
+      "新しい年が始まりました。おせちの残りも尽きた頃かと思いますので、今日は飲みましょう。",
+      "皆さん、良いお正月を過ごされましたでしょうか。私はしっかり食べて、しっかり増えました。",
+      "年始のバタバタもひと段落。ようやく皆さんと新年の祝杯をあげられます。",
+      "初詣で何をお願いしたかはさておき、まずは顔を合わせられたことがめでたい。"
+    ],
+    body:[
+      "今年の目標を胸に秘めている方も、まだ白紙の方もご安心ください。目標は宴の後からでも立てられます。",
+      "一年の計は元旦にありと言いますが、一年の勢いはこの新年会にあります。",
+      "今年も良いことばかりではないかもしれませんが、この仲間がいれば大抵のことは乗り切れます。",
+      "新年早々こうして集まれるチームは、間違いなく今年もいいチームです。",
+      "去年の自分を超えるのが今年のテーマ。まずは去年の乾杯の声量を超えていきましょう。"
+    ],
+    body2:[
+      "今年の抱負を言える方は、後ほどぜひ一言ずつ。言った者勝ち、叶えた者はもっと勝ちです。",
+      "新しい年は、新しい挑戦のチャンスが三百六十五回あるということ。焦らずいきましょう。",
+      "おみくじの結果が悪かった方、大丈夫です。運はここから自力で盛り返せます。"
+    ],
+    close:[
+      "皆様のご健康とご多幸、そして本年の大躍進を祈念いたしまして。",
+      "今年一年が笑いの絶えない年になりますように。",
+      "新しい年の、最高のスタートを切るべく。",
+      "本年も変わらぬお付き合いをお願い申し上げまして。",
+      "今年の運をすべて呼び込む勢いで。"
+    ]
+  },
+  kangeikai: {
+    label:"歓迎会", hero:"新しい仲間",
+    intro:[
+      "本日は{name}を迎えての歓迎会です。ようこそ、我らがチームへ！",
+      "今日の主役はもちろん{name}。皆さん、盛大にお迎えしましょう。",
+      "新しい仲間が増えるというのは、何度あっても嬉しいものです。",
+      "{name}をお迎えして、チームがまたひとつ賑やかになりました。",
+      "この日を楽しみにしておりました。{name}、ようこそ！"
+    ],
+    body:[
+      "{name}、分からないことがあれば何でも聞いてください。ここにいる全員、教えたがりです。",
+      "早く職場に慣れていただきたいですが、まずはこの飲み会のノリに慣れていただければ十分です。",
+      "{name}の新しい風で、私たちもまた新鮮な気持ちで頑張れます。どうぞ遠慮なく、どんどん巻き込んでください。",
+      "われわれ一同、頼れる仲間になる準備は万端です。今日はぜひ素の顔を見せてください。",
+      "歓迎の気持ちはこの後の注文スピードで示します。{name}、好きなものをどんどん頼んでください。"
+    ],
+    body2:[
+      "新しい環境は緊張の連続だと思いますが、この会場の空気が我々の平常運転です。安心してください。",
+      "チームの合言葉は「困ったらまず相談」。今日から{name}にも全面適用されます。",
+      "数ヶ月後、{name}がこの会の幹事をやらされていても、それは愛情の証です。"
+    ],
+    close:[
+      "{name}の新たな門出と、チームのさらなる発展を祈念いたしまして。",
+      "{name}を迎えた新体制の、輝かしい未来に。",
+      "{name}、これから末永くよろしくお願いします！という気持ちを込めまして。",
+      "新しい仲間との出会いに感謝いたしまして。",
+      "{name}の今後の大活躍を確信いたしまして。"
+    ]
+  },
+  soubetsukai: {
+    label:"送別会", hero:"本日の主役",
+    intro:[
+      "本日は{name}の送別会です。寂しさ半分、応援の気持ちが百二十パーセントです。合計が合わないのはご愛敬。",
+      "{name}と一緒に過ごした日々を思うと、感謝の言葉しかありません。",
+      "今日は{name}の新しい旅立ちを、みんなで送り出す日です。",
+      "この日が来ないでほしいと思っていましたが、来てしまったからには盛大にやりましょう。",
+      "{name}の門出の日。湿っぽくするのは似合わないので、今日は明るくいきます。"
+    ],
+    body:[
+      "{name}がいたから乗り越えられた場面が、数えきれないほどありました。本当にありがとうございました。",
+      "新天地でも{name}なら大丈夫。それだけの背中を、私たちはずっと見てきました。",
+      "寂しくなりますが、別れではなく「行ってらっしゃい」です。またいつでも顔を出してください。",
+      "{name}の残してくれたものは、しっかり受け継ぎます。安心して羽ばたいてください。",
+      "これからは飲み仲間として末永くよろしくお願いします。連絡先は消さないでくださいね。"
+    ],
+    body2:[
+      "{name}の口癖も、仕事のこだわりも、ちゃんと覚えています。いなくなっても、たぶん全員モノマネできます。",
+      "新しい場所で困ったことがあったら、いつでも連絡してください。愚痴の受付は二十四時間営業です。",
+      "人は離れても、一緒に笑った時間は消えません。今日はその時間をもう少しだけ延長しましょう。"
+    ],
+    close:[
+      "{name}の前途が輝かしいものになることを祈念いたしまして。",
+      "{name}への感謝と、新天地でのご活躍を祈りまして。",
+      "{name}、今まで本当にありがとうございました！の気持ちを込めまして。",
+      "旅立つ{name}に、最大級のエールを送るべく。",
+      "{name}との思い出と、これからの未来に。"
+    ]
+  },
+  wedding2: {
+    label:"結婚式二次会", hero:"お二人",
+    intro:[
+      "{name}、ご結婚おめでとうございます！本日はこの幸せのお裾分けをいただきに参りました。",
+      "先ほどの披露宴の感動も冷めやらぬまま、ここからは無礼講の二次会です。",
+      "{name}の晴れ姿、本当に素敵です。眩しくて直視できないのでサングラスを持ってくればよかった。",
+      "本日は{name}の人生最良の日。その記念すべき日に立ち会えて光栄です。",
+      "会場の幸せ濃度が高すぎて、酔う前から酔いそうです。"
+    ],
+    body:[
+      "お二人の笑顔を見ていると、こちらまで幸せになります。末永く、笑いの絶えない家庭を築いてください。",
+      "夫婦円満の秘訣は「先に謝ったほうが勝ち」だそうです。お二人はどちらも勝ちにいくタイプなので安心です。",
+      "これからは二人三脚。転びそうになったら、ここにいる全員が支えます。",
+      "喧嘩をしても、今日のこの日を思い出せば大抵のことは水に流せるはずです。今日は思い出貯金の日です。",
+      "お二人の出会いから今日までを知る者として、この結末に心から拍手を送ります。"
+    ],
+    body2:[
+      "結婚生活の先輩方いわく、大事なのは「ありがとう」を毎日言うことだそうです。今日は会場全員で言う練習をしましょう。",
+      "新居に遊びに行く予約は、本日受付開始と伺っております。私はもう並んでいます。",
+      "十年後も二十年後も、今日と同じ顔ぶれでお二人をからかえたら幸せです。"
+    ],
+    close:[
+      "{name}の末永いお幸せを祈念いたしまして。",
+      "お二人の新しい人生の船出を、盛大に祝しまして。",
+      "{name}の未来が愛と笑いで満ちあふれますように。",
+      "世界一お似合いのお二人に、最大の祝福を込めまして。",
+      "{name}、ご結婚、本当におめでとうございます！"
+    ]
+  },
+  uchiage: {
+    label:"打ち上げ", hero:"皆さん",
+    intro:[
+      "皆さん、本当に、本っ当に、お疲れさまでした！",
+      "ついにこの日が来ました。今夜は堂々と羽を伸ばせる夜です。",
+      "思い返せば長い道のりでした。でも、この打ち上げのために頑張ってきたと言っても過言ではありません。",
+      "やり切った顔が会場に並んでいます。最高の眺めです。",
+      "戦いは終わりました。今夜は勝利の美酒です。"
+    ],
+    body:[
+      "大変な場面もありましたが、この仲間だから乗り越えられました。今日は互いの健闘を全力で称え合いましょう。",
+      "頑張った分だけ、今日のビールはうまい。これは科学的に証明されている…はずです。",
+      "反省点は明日以降の自分に任せて、今夜の我々は「よくやった」だけを言い合う係です。",
+      "それぞれの持ち場で流した汗を、今夜は全部炭酸に変えて打ち上げましょう。",
+      "今日という日のために頑張れた。次もまた、この景色のために頑張れます。"
+    ],
+    body2:[
+      "あの修羅場も、今となってはもう笑い話です。今夜は笑い話の在庫一掃セールといきましょう。",
+      "チームの底力を見た数週間でした。この経験は間違いなく次につながります。",
+      "頑張りすぎた人ほど、今日は早くグラスを空けてください。回復魔法はおかわりです。"
+    ],
+    close:[
+      "この達成感と、最高のチームに。",
+      "皆さんの健闘を称えまして。",
+      "やり遂げた我々に、盛大な拍手と祝杯を。",
+      "次なる戦いも、このメンバーで勝ち抜くことを誓いまして。",
+      "全員の「お疲れさま」を一つのグラスに込めまして。"
+    ]
+  },
+  toriaezu: {
+    label:"とりあえず飲み", hero:"皆さん",
+    intro:[
+      "え〜、本日は特に理由もなく集まっていただきました。それが一番贅沢だと思っています。",
+      "「とりあえず飲むか」の一言でこれだけ集まる。いい仲間を持ちました。",
+      "今日の趣旨は「特になし」。つまり、何をしてもいい夜ということです。",
+      "理由のある飲み会もいいですが、理由のない飲み会は、もっといい。",
+      "集合の号令から全員着席までの早さ、見事でした。飲む気しかない。最高です。"
+    ],
+    body:[
+      "今夜の議題はゼロ、決議事項もゼロ。よって満場一致で「楽しむ」が可決されました。",
+      "肩書きも役職も、店の下駄箱に預けてきました。今夜は全員ただの飲み仲間です。",
+      "特別な日じゃない日を特別にできるのは、集まったメンバーの力です。つまり今日は特別な日です。",
+      "明日のことは明日の自分がなんとかします。今夜の自分は飲む係です。",
+      "とりあえずで集まって、気づけば終電。それが我々の様式美です。"
+    ],
+    body2:[
+      "こういう何でもない夜の話ほど、あとで一番思い出すものです。今日も一本、いい思い出を仕込みましょう。",
+      "「また飲もうね」を実行できる人間は偉い。今日ここにいる全員、偉い。",
+      "次回の開催理由も「とりあえず」で決まりです。幹事は今夜のじゃんけんで決めましょう。"
+    ],
+    close:[
+      "この気の置けない仲間との夜に感謝いたしまして。",
+      "理由なき集いの、理屈抜きの楽しさに。",
+      "今夜が最高の「何でもない日」になることを祈って。",
+      "全員の「とりあえず」に敬意を表しまして。",
+      "次回もまたすぐ集まれることを誓いまして。"
+    ]
+  }
+};
+var KANPAI_LINE = "それでは皆様、ご唱和ください。乾杯！";
+
+function genSpeech(){
+  var scene = SCENES[document.getElementById('scene').value];
+  var role = segValue('roleSeg');
+  var len = segValue('lenSeg');
+  var name = document.getElementById('heroName').value.trim() || scene.hero;
+  function N(s){ return s.split('{name}').join(name); }
+
+  var parts=[];
+  var opener = pick(ROLE_OPENERS[role]);
+  var closeLead = N(pick(scene.close));
+
+  if(len==='short'){
+    parts.push(opener);
+    parts.push(closeLead + KANPAI_LINE);
+  }else if(len==='normal'){
+    parts.push(opener);
+    parts.push(N(pick(scene.intro)));
+    parts.push(N(pick(scene.body)));
+    parts.push(closeLead + KANPAI_LINE);
+  }else{
+    var bodies = pick2(scene.body);
+    parts.push(opener);
+    parts.push(N(pick(scene.intro)));
+    parts.push(N(bodies[0]));
+    parts.push(pick(ROLE_FLAVORS[role]));
+    parts.push(N(pick(scene.body2)));
+    parts.push(closeLead + KANPAI_LINE);
+  }
+
+  var out=document.getElementById('speechOut');
+  out.classList.remove('empty');
+  out.textContent = parts.join('\n\n');
+  out.classList.remove('pop'); void out.offsetWidth; out.classList.add('pop');
+  burst(['🍻','🍺','🥂','✨','🏮']);
+}
+
+/* ============================================================
+   【2】一発ギャグ対応AI
+============================================================ */
+// cats: sudden(急に振られた) / recovery(スベり後) / intro(自己紹介) / kids(子どもウケ)
+// risk: スベり度リスク 1〜5
+var GAGS = [
+  // --- 古典ダジャレ系 ---
+  {t:"布団が…吹っ飛んだ！！", tip:"古典の王道。腕を大きく横に振り抜く。恥じらいは敵。", risk:2, cats:["sudden","kids"]},
+  {t:"アルミ缶の上に、あるミカン！", tip:"実物のミカンか缶があれば強い。指差し必須。", risk:2, cats:["sudden","kids"]},
+  {t:"トイレに行っといれ〜！", tip:"送り出すように手を振る。子どもには鉄板。", risk:2, cats:["kids"]},
+  {t:"電話しても、誰も出んわ〜。", tip:"耳に手を当てて受話器ポーズ。しょんぼり顔で落差を。", risk:3, cats:["sudden"]},
+  {t:"ネコが寝込んだ…お大事に。", tip:"最後の「お大事に」を真顔で。優しさで包む。", risk:1, cats:["kids","sudden"]},
+  {t:"このイクラ、いくら？", tip:"回転寿司ネタと絡めると自然。値段を聞く真剣さがコツ。", risk:2, cats:["sudden","kids"]},
+  {t:"このカレー、辛れ〜！！", tip:"食事の席専用。実際に食べながらだと成功率2倍。", risk:2, cats:["sudden","kids"]},
+  {t:"パンダの好物は、やっぱりパンだ。", tip:"「諸説あります」と付け足すと知的に見える。", risk:2, cats:["kids"]},
+  {t:"校長先生、今日も絶好調！", tip:"敬礼つきで元気よく。目上の人がいる場では相手の役職に変えても可。", risk:3, cats:["sudden","intro"]},
+  {t:"サンタさんの正体は…残念、パパでした。サンタだけに、サンキュー！", tip:"season外でも意外とイケる。最後は投げキッス。", risk:4, cats:["kids"]},
+  {t:"スイカは安いか？…いや、高いか。", tip:"腕組みして真剣に悩む。市場価格への言及が渋い。", risk:3, cats:["sudden"]},
+  {t:"コーンスープを飲むと、こーんなに幸せ。", tip:"両手を広げて幸せの大きさを表現。笑顔100%で。", risk:2, cats:["kids","sudden"]},
+  {t:"ラクダに乗ると、楽だ〜。", tip:"揺れる動きをつける。乗ってる感が命。", risk:2, cats:["kids"]},
+  {t:"イルカは、いるか？いた！", tip:"周囲をキョロキョロ探してから発見の喜びを爆発させる。", risk:2, cats:["kids"]},
+  {t:"ミノムシも、身の虫。", tip:"哲学者の顔で。深いことを言った風の余韻が大事。", risk:4, cats:["sudden"]},
+  {t:"時計を買いに、とけい〜（遠くへ）行ってきます。", tip:"歩き出す動きとセットで。そのまま席を立つと上級者。", risk:4, cats:["sudden"]},
+  {t:"ワインを飲んで、ワイン（わーい）ん！", tip:"グラスを掲げて叫ぶ。宴会との親和性が最強。", risk:3, cats:["sudden"]},
+  {t:"お寿司が好きって、うそじゃないよ。ネタだけに。", tip:"寿司屋・寿司が出た瞬間に差し込む。スピード勝負。", risk:3, cats:["sudden","intro"]},
+  {t:"ゴボウは、御坊（お坊さん）でした。合掌。", tip:"最後に本当に合掌する。静かな笑いを狙う渋い一手。", risk:4, cats:["sudden"]},
+  {t:"カバの逆立ち…バカ！", tip:"言った後に「あ、カバに謝らないと」と続けると優しい世界に。", risk:3, cats:["kids"]},
+  // --- 自作・宴会仕様 ---
+  {t:"ビールのおかわり、瓶（びん）と来た！ピンと来た！", tip:"瓶ビールを掲げながら。注文と同時に放つ実用型。", risk:3, cats:["sudden"]},
+  {t:"枝豆は、実は「えだ、まめに食べてね」という豆からのメッセージ。", tip:"豆知識風に語り始めるのがコツ。真顔で。", risk:4, cats:["sudden"]},
+  {t:"唐揚げにレモン、かけていいか揚げ？", tip:"レモンを持って全員に確認して回る。実務も兼ねる万能ネタ。", risk:3, cats:["sudden"]},
+  {t:"乾杯の「かん」は、缶ビールの「缶」でもいいですか？", tip:"乾杯直前に挟む時事ネタ風。幹事の顔色を見ながら。", risk:3, cats:["sudden"]},
+  {t:"私、酔うと寝ます。よって、寝ます。", tip:"論理的な顔で三段論法っぽく。眠そうな目ができれば完璧。", risk:3, cats:["intro","sudden"]},
+  {t:"座右の銘は「押してダメなら、飲んでみろ」です。", tip:"自己紹介の締めに。グラスを掲げて説得力を出す。", risk:3, cats:["intro"]},
+  {t:"趣味は貯金です。主に、笑いの貯金です。残高は…聞かないでください。", tip:"最後は目をそらす。残高ゼロの哀愁を出せたら勝ち。", risk:2, cats:["intro"]},
+  {t:"○○（名字）です。名字は硬いですが、性格は麺で言うとやわめです。", tip:"自分の名字を入れて使う。ラーメン好きの多い席で威力増。", risk:2, cats:["intro"]},
+  {t:"特技は瞬間移動です。気づいたら朝、家にいます。", tip:"真剣な顔で「今日もたぶん使います」と続ける。", risk:2, cats:["intro"]},
+  {t:"前世はたぶん枝豆です。宴会に呼ばれ続ける運命なので。", tip:"しみじみと語る。枝豆をつまみながらだと説得力抜群。", risk:3, cats:["intro"]},
+  {t:"私の血液型は、ビール型です。", tip:"健康診断の話題が出た瞬間に差し込むと自然。", risk:3, cats:["intro","sudden"]},
+  {t:"夢は大きく、態度は小さく、声はもっと大きく！はい！", tip:"最後の「はい！」で敬礼。体育会系の勢いで押し切る。", risk:3, cats:["intro"]},
+  {t:"（グラスを見つめて）……この泡に、俺の今週が詰まってる。", tip:"急に詩人になる。3秒の沈黙を作ってから言うのがコツ。", risk:4, cats:["sudden"]},
+  {t:"レモンサワー頼んだ人、正直に手を挙げて。……私です。自首しました。", tip:"手を挙げるまでの間が命。誰も挙げなくても気にしない。", risk:4, cats:["sudden"]},
+  {t:"すみません、今日の私、生ビールと同じで「生」に一度きりです。", tip:"注文のタイミングで。店員さんを巻き込まないのがマナー。", risk:4, cats:["sudden"]},
+  {t:"実は私、お酒に強いんです。持つのが。（ジョッキを掲げる）", tip:"力こぶを作って掲げる。飲めない人の自衛ネタとしても優秀。", risk:2, cats:["intro","sudden"]},
+  {t:"カラオケの十八番は「選曲中」です。", tip:"デンモク（リモコン）を持ったまま言うと臨場感が出る。", risk:2, cats:["intro","sudden"]},
+  {t:"ジュースで乾杯、TポイントならぬH（本気）ポイント貯めてます。", tip:"ソフトドリンク組の味方ネタ。堂々と胸を張るのがコツ。", risk:4, cats:["sudden"]},
+  {t:"焼き鳥の串、集めると強くなれる気がして捨てられません。剣士なので。", tip:"串を1本構えてキメ顔。店のルールには従うこと。", risk:3, cats:["sudden"]},
+  {t:"お化けは出んでも、電話は出んわ。あ、これさっきのと繋がった！", tip:"伏線回収風に自分で驚く。セット運用で笑いの複利を狙う。", risk:5, cats:["sudden"]},
+  {t:"ゾウさんの引っ越しは、象さんだけに、輸送（ゆそう）が大変だゾウ。", tip:"語尾のゾウを恥ずかしがったら負け。鼻のジェスチャー推奨。", risk:4, cats:["kids"]},
+  {t:"カッパのお皿は、割れてもお皿。乾杯（かんぱい）ならぬ、カッパい！", tip:"頭に手を乗せてお皿を表現。グラスを掲げて締める。", risk:5, cats:["kids","sudden"]},
+  {t:"にんじんが人生を語る。「にんじん、いろいろあるよね」", tip:"にんじんの声（少し高め）を作るのがポイント。", risk:4, cats:["kids"]},
+  {t:"おにぎりの具は、鮭。なぜなら、話が咲け（さけ）るから。", tip:"うんちく口調で始めて着地でズラす。米好きに刺さる。", risk:4, cats:["sudden","kids"]},
+  {t:"ペンギンって、ペンでも銀でもないのにペンギンって、すぎない？", tip:"哲学風に問いかける。返事は待たずに次の話題へ。", risk:5, cats:["sudden","kids"]},
+  {t:"「もう帰るの？」「うん、カエルだけに。」（帰らない）", tip:"帰るフリからの着席。行動とセットの体で覚えるネタ。", risk:3, cats:["sudden"]},
+  // --- リカバリー芸（スベった後に重ねる用）---
+  {t:"（真顔で）今のギャグは、国から支給されたものです。私は悪くない。", tip:"責任転嫁の顔を作る。堂々としているほど笑いに変わる。", risk:3, cats:["recovery"]},
+  {t:"はい、今の笑い、後日郵送で受け付けます。切手は不要です。", tip:"事務的な口調で。ポケットからメモを出す動きを添えると強い。", risk:3, cats:["recovery"]},
+  {t:"今のは前フリです。本ネタは来年の忘年会で。", tip:"長期予告でその場を切り抜ける。手帳に書くフリをする。", risk:2, cats:["recovery"]},
+  {t:"おかしいな…家では大爆笑だったのに。（家族は無観客）", tip:"遠い目で言う。無観客のくだりは小声で。", risk:2, cats:["recovery"]},
+  {t:"今の静けさ、録音して睡眠用BGMにします。", tip:"スマホを掲げて録音のフリ。静寂を財産に変える錬金術。", risk:3, cats:["recovery"]},
+  {t:"皆さん、今のは笑うところでした。次は合図出しますね。せーの、で。", tip:"講師のような口調で。実際に練習させ始めると大きい笑いに。", risk:3, cats:["recovery"]},
+  {t:"すみません、ギャグの賞味期限が切れてました。返品してきます。", tip:"レシートを探すフリをする。小道具ゼロでできる良ネタ。", risk:2, cats:["recovery"]}
+];
+
+var RECOVERY = [
+  "今のは時空の歪みのせいです。",
+  "会場の湿度が笑いに適していませんでした。",
+  "おかしいな、リハーサルでは会場が揺れたのに。",
+  "今の、心のシャッターチャンスでしたよ。撮りました？",
+  "静けさも、ごちそうです。ごちそうさまでした。",
+  "皆さんの笑いのハードル、富士山級ですね。登山届を出してきます。",
+  "あ、今、地球の自転が一瞬止まりましたね。",
+  "大丈夫です。一番傷ついているのは私です。",
+  "今の風、感じました？スベった時だけ吹く風です。涼しい。",
+  "私の笑いは後からじわじわ来るタイプです。効き目は明日の朝。",
+  "本日のツッコミ担当、欠席のようです。代打を募集します。",
+  "今のは練習です。本番は…ありません。",
+  "笑いのWi-Fi、ちょっと電波が悪かったみたいです。再接続します。",
+  "ご安心ください、これは芸ではなく現象です。"
+];
+
+// --- ダジャレ自動生成モード ---
+var DAJARE_PRE = ["発表します。","皆さんご存知でした？","ここでニュースです。","聞いてください。","昨日気づいたんですが、","緊急速報です。","私の研究によると、"];
+var DAJARE_CORE = [
+  ["トナカイ","そんなの、俺に聞くなよ。答えは「と、なかい（仲居）さん」が知ってます"],
+  ["コタツ","入った人から出られない。まさに「小（こ）」さな「罠（たつ）」"],
+  ["ドーナツ","真ん中が無いのに満たされる。どうなつ（どうなってる）んでしょう"],
+  ["メロン","メロンは食べるとメロメロん、なります"],
+  ["チーズ","チーズの地図は、チーズ（地図）です"],
+  ["カレンダー","カレンダーは、彼（かれ）んだーと思ったら、私のでした"],
+  ["ハンコ","ハンコを押すのに、はんこう（反抗）してはいけません"],
+  ["ミカン","未完のミカン、実がありません"],
+  ["サボテン","サボテンは、サボってんのに育ちます"],
+  ["タコヤキ","タコが焼けたか、多角（タコ・角度）的に確認します"],
+  ["フトン","フトンは、吹っ飛ぶ日のために干します"],
+  ["キリン","キリンの話は、キリがありません。首も話も長いので"],
+  ["レタス","レタスを食べて、お手紙（レター）出す元気をもらいます"],
+  ["ワサビ","ワサビが効いてて、話（わ）がサビしくなりません"],
+  ["ストロー","ストローで吸うと、疲れがすっと、ロー（低）くなります"]
+];
+var DAJARE_POST = ["…はい。","以上、現場からでした。","ここテストに出ます。","異論は認めます。","拍手はご自由に。","なんちゃって。","（ドヤ顔）"];
+
+function stars(n){
+  var s='';
+  for(var i=1;i<=5;i++) s += i<=n ? '★' : '<span class="off">★</span>';
+  return s;
+}
+var IKIOI_LABELS = {
+  1:"🍃 控えめ・小声でぼそっと",
+  2:"🙂 ぼちぼち・様子見",
+  3:"🔥🔥🔥 ほどほど参戦",
+  4:"💪 かなり本気モード",
+  5:"🚀 全力！恥は明日の思い出！"
+};
+function updateIkioi(){
+  var v = document.getElementById('ikioi').value;
+  document.getElementById('ikioiLabel').textContent = IKIOI_LABELS[v];
+}
+
+var lastGag = null;
+function genGag(){
+  var out=document.getElementById('gagOut');
+  var ikioi = parseInt(document.getElementById('ikioi').value,10);
+
+  if(document.getElementById('autoMode').checked){
+    var core = pick(DAJARE_CORE);
+    var text = pick(DAJARE_PRE) + core[0] + "。" + core[1] + "。" + pick(DAJARE_POST);
+    render(text, "機械が今つくりました。責任の所在も機械です。堂々と読み上げてください。", Math.min(5, ikioi+1), "🤖 自動生成ダジャレ");
+    return;
+  }
+
+  var sit = segValue('sitSeg');
+  var pool = GAGS.filter(function(g){ return g.cats.indexOf(sit)>=0; });
+  // 勢いに近いリスクのネタを優先（±1以内を優先プール）
+  var near = pool.filter(function(g){ return Math.abs(g.risk-ikioi)<=1; });
+  var usePool = near.length>=2 ? near : pool;
+  var g = pick(usePool);
+  if(usePool.length>1){ var guard=0; while(g===lastGag && guard++<10) g=pick(usePool); }
+  lastGag=g;
+  render(g.t, g.tip, g.risk, null);
+
+  function render(text, tip, risk, badge){
+    out.classList.remove('empty');
+    out.innerHTML =
+      (badge?'<div style="font-size:.8rem;color:var(--neon-cyan);margin-bottom:6px;">'+badge+'</div>':'') +
+      '<div class="gag-text">'+esc(text)+'</div>' +
+      '<div class="gag-meta">' +
+        '<span class="tag">💡 実行時のコツ:</span> '+esc(tip)+'<br>' +
+        '<span class="tag">⚠️ スベり度リスク:</span> <span class="risk">'+stars(risk)+'</span>' +
+      '</div>';
+    out.dataset.copy = text + "\n💡コツ: " + tip + "\n⚠️スベり度: " + "★".repeat(risk) + "☆".repeat(5-risk);
+    out.classList.remove('pop'); void out.offsetWidth; out.classList.add('pop');
+    burst(['🎤','😂','✨','💥','🏮']);
+  }
+}
+function esc(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+var lastRec = null;
+function genRecovery(){
+  var r = pick(RECOVERY);
+  var guard=0; while(r===lastRec && guard++<10) r=pick(RECOVERY);
+  lastRec=r;
+  var box=document.getElementById('recoveryBox');
+  document.getElementById('recoveryText').textContent = "「" + r + "」";
+  box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+  burst(['🧯','💦','🌀','😇']);
+}
+updateIkioi();
+</script>
+</body>
+</html>

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>セットプレー相関ラボ</title>
+<style>
+  :root {
+    --bg: #0d1512;
+    --panel: #14211b;
+    --panel2: #1a2b23;
+    --border: #264434;
+    --pitch: #35c46b;
+    --pitch-dim: #2a9d55;
+    --text: #e4efe8;
+    --muted: #8fa89b;
+    --gk: #f4c542;
+    --df: #4da3ff;
+    --mf: #b678f2;
+    --fw: #ff6b6b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(53,196,107,0.08), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+  a.back {
+    color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    display: inline-block; margin-bottom: 12px; transition: color .2s;
+  }
+  a.back:hover { color: var(--pitch); }
+  header { margin-bottom: 22px; }
+  h1 {
+    font-size: 1.7rem; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h1::before {
+    content: ""; display: inline-block; width: 14px; height: 28px;
+    background: linear-gradient(180deg, var(--pitch), var(--pitch-dim));
+    border-radius: 3px;
+  }
+  .sub { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px; margin-bottom: 18px;
+  }
+  .panel h2 {
+    font-size: 1.05rem; margin-bottom: 12px; color: var(--pitch);
+    letter-spacing: 0.05em;
+  }
+  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
+  .poscheck { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; font-size: 0.95rem; }
+  .poscheck input { accent-color: var(--pitch); width: 16px; height: 16px; cursor: pointer; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .stats-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0 4px; }
+  .stat {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px; min-width: 120px;
+  }
+  .stat .label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; }
+  .stat .value { font-size: 1.15rem; font-weight: 700; color: var(--pitch); font-variant-numeric: tabular-nums; }
+  .stat .value.small { font-size: 0.95rem; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 8px; background: #0f1a15; }
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: #0b120e; border: 1px solid var(--pitch-dim);
+    border-radius: 8px; padding: 10px 12px; font-size: 0.82rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5); max-width: 240px; line-height: 1.5;
+  }
+  #tooltip .tname { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
+  #tooltip .tpos { font-weight: 700; }
+  .csv-zone {
+    border: 2px dashed var(--border); border-radius: 10px;
+    padding: 18px; text-align: center; color: var(--muted);
+    transition: border-color .2s, background .2s; cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .csv-zone.drag { border-color: var(--pitch); background: rgba(53,196,107,0.06); }
+  .csv-zone strong { color: var(--text); }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: center; }
+  button, a.btn {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 14px; font-size: 0.85rem; cursor: pointer;
+    text-decoration: none; display: inline-block; font-family: inherit;
+    transition: border-color .2s, color .2s;
+  }
+  button:hover, a.btn:hover { border-color: var(--pitch); color: var(--pitch); }
+  code {
+    background: #0b120e; border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 6px; font-size: 0.82rem; color: #a8d8bc;
+    font-family: Consolas, "Courier New", monospace; word-break: break-all;
+  }
+  .note {
+    margin-top: 18px; padding: 12px 16px; border-left: 3px solid var(--gk);
+    background: rgba(244,197,66,0.06); border-radius: 0 8px 8px 0;
+    color: var(--muted); font-size: 0.88rem;
+  }
+  .note b { color: var(--gk); }
+  #csvMsg { font-size: 0.85rem; margin-top: 8px; min-height: 1.2em; }
+  #csvMsg.ok { color: var(--pitch); }
+  #csvMsg.err { color: var(--fw); }
+  .src-badge { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+  .formatdesc { font-size: 0.85rem; color: var(--muted); margin-top: 10px; }
+
+  /* ---------- 遊び心ゾーン ---------- */
+  h1 { cursor: pointer; user-select: none; }
+  #michelin { font-size: 1.05rem; color: var(--gk); letter-spacing: 3px; cursor: help; }
+  .scatterpanel { position: relative; }
+  #rBubble {
+    position: absolute; top: 62px; right: 24px; z-index: 6; display: none;
+    max-width: 290px; background: #1c1503; border: 1px solid var(--gk);
+    color: #ffe9a8; border-radius: 10px; padding: 10px 14px;
+    font-size: 0.83rem; line-height: 1.6; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    animation: bubbleIn .25s ease;
+  }
+  @keyframes bubbleIn { from { transform: translateY(-6px); opacity: 0; } }
+  .colstack { display: flex; flex-direction: column; }
+  #featBody .featname { font-weight: 700; font-size: 1.05rem; }
+  #featBody .featmeta { font-size: 0.85rem; color: var(--muted); }
+  #featBody .featline {
+    margin-top: 8px; padding: 8px 10px; font-size: 0.83rem; color: #cfe4d7;
+    background: rgba(53,196,107,0.07); border-left: 3px solid var(--pitch);
+    border-radius: 0 6px 6px 0;
+  }
+  #modalBack {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    align-items: center; justify-content: center; padding: 16px;
+    background: rgba(4,9,6,0.72);
+  }
+  #modalBack.open { display: flex; }
+  .scout {
+    position: relative; width: 100%; max-width: 430px;
+    background: var(--panel); border: 1px solid var(--pitch-dim);
+    border-radius: 14px; padding: 22px 24px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.6);
+    animation: scoutPop .22s ease;
+  }
+  .scout.legendmode { border-color: #ffd700; box-shadow: 0 0 40px rgba(255,215,0,0.25), 0 24px 70px rgba(0,0,0,0.6); }
+  @keyframes scoutPop { from { transform: scale(0.92) translateY(8px); opacity: 0; } }
+  .scout .scout-sub { font-size: 0.68rem; letter-spacing: 0.25em; color: var(--muted); }
+  .scout h3 { font-size: 1.3rem; margin: 2px 0 4px; }
+  .scout-meta { font-size: 0.9rem; margin-bottom: 12px; }
+  .feattag {
+    font-size: 0.72rem; background: rgba(53,196,107,0.15); border: 1px solid var(--pitch-dim);
+    color: var(--pitch); border-radius: 20px; padding: 2px 9px; margin-left: 6px;
+  }
+  .feattag.gold { background: rgba(255,215,0,0.12); border-color: #ffd700; color: #ffd700; }
+  .scout-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .scout-stats div { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; }
+  .scout-stats span { display: block; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; }
+  .scout-stats b { font-size: 1.05rem; color: var(--pitch); font-variant-numeric: tabular-nums; }
+  .scout-comment {
+    font-size: 0.88rem; line-height: 1.8; color: #d9e8df;
+    border-left: 3px solid var(--gk); background: rgba(244,197,66,0.06);
+    padding: 10px 14px; border-radius: 0 8px 8px 0;
+  }
+  .scout .close {
+    position: absolute; top: 10px; right: 12px; width: 30px; height: 30px;
+    border-radius: 50%; padding: 0; font-size: 1rem; line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; 実験ラボに戻る</a>
+  <header>
+    <h1 id="labTitle">セットプレー相関ラボ <span id="michelin" title="相関ミシュラン：|r|の強さを星で格付け">☆☆☆</span></h1>
+    <div class="sub">身長とコーナーキック（CK）からのヘディング得点率の相関を探索する分析ダッシュボード</div>
+  </header>
+
+  <div class="panel scatterpanel">
+    <div id="rBubble"></div>
+    <h2>散布図：身長 × CK得点率（得点/90分）</h2>
+    <div class="controls" id="posFilters">
+      <label class="poscheck"><input type="checkbox" data-pos="GK" checked><span class="dot" style="background:var(--gk)"></span>GK</label>
+      <label class="poscheck"><input type="checkbox" data-pos="DF" checked><span class="dot" style="background:var(--df)"></span>DF</label>
+      <label class="poscheck"><input type="checkbox" data-pos="MF" checked><span class="dot" style="background:var(--mf)"></span>MF</label>
+      <label class="poscheck"><input type="checkbox" data-pos="FW" checked><span class="dot" style="background:var(--fw)"></span>FW</label>
+      <span class="src-badge" id="srcBadge">データ: サンプル生成（250名）</span>
+    </div>
+    <canvas id="scatter"></canvas>
+    <div class="stats-row">
+      <div class="stat"><div class="label">選手数 n</div><div class="value" id="stN">-</div></div>
+      <div class="stat"><div class="label">相関係数 r</div><div class="value" id="stR">-</div></div>
+      <div class="stat"><div class="label">決定係数 R&sup2;</div><div class="value" id="stR2">-</div></div>
+      <div class="stat" style="flex:1;min-width:220px"><div class="label">回帰式</div><div class="value small" id="stEq">-</div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>身長帯別 平均CK得点率</h2>
+      <canvas id="bars"></canvas>
+    </div>
+    <div class="colstack">
+    <div class="panel" id="featPanel">
+      <h2>&#11088; 今日の注目選手</h2>
+      <div id="featBody"></div>
+      <div class="btnrow">
+        <button id="featReport">スカウトレポート</button>
+        <button id="featReroll">&#8635; 別の選手</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>CSVインポート</h2>
+      <div class="csv-zone" id="dropZone">
+        ここにCSVをドラッグ＆ドロップ<br>または<strong>クリックしてファイル選択</strong>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,text/csv" style="display:none">
+      <div id="csvMsg"></div>
+      <div class="formatdesc">
+        形式: <code>name,position,height,matches,ck_goals</code><br>
+        position は GK / DF / MF / FW、height は cm、
+        matches は出場試合数、ck_goals は CKからの得点数。
+        1行目がヘッダーの場合は自動でスキップします。
+      </div>
+      <div class="btnrow">
+        <a class="btn" id="sampleDl" download="sample_players.csv">サンプルCSVをダウンロード</a>
+        <button id="resetBtn">サンプルデータに戻す</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>注意:</b> 相関は因果ではありません——背が高いからCKで点が取れるとは限らず、
+    「点が取れそうな長身選手ほどニアポストに送り込まれる」だけかもしれません。
+    矢印の向きは、散布図ではなくピッチの上で確かめましょう。
+  </div>
+</div>
+
+<div id="modalBack">
+  <div class="scout" id="scoutCard">
+    <button class="close" id="modalClose" title="閉じる">&#10005;</button>
+    <div id="scoutBody"></div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+"use strict";
+/* ================================================================
+   セットプレー相関ラボ — 単一ファイル統計分析ツール
+   ================================================================ */
+
+// ---------- シード付き疑似乱数 (mulberry32) ----------
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ===GEN-START===
+// ---------- データ生成（決定的：リロードしても同一） ----------
+function makeGaussian(rand) {
+  // Box-Muller 変換（スペアをキャッシュ）
+  let spare = null;
+  return function () {
+    if (spare !== null) { const v = spare; spare = null; return v; }
+    let u = 0, v = 0;
+    do { u = rand(); } while (u === 0);
+    v = rand();
+    const mag = Math.sqrt(-2.0 * Math.log(u));
+    spare = mag * Math.sin(2.0 * Math.PI * v);
+    return mag * Math.cos(2.0 * Math.PI * v);
+  };
+}
+
+function poisson(rand, lambda) {
+  // Knuth 法（小さい lambda 用）
+  if (lambda <= 0) return 0;
+  const L = Math.exp(-lambda);
+  let k = 0, p = 1;
+  do { k++; p *= rand(); } while (p > L);
+  return k - 1;
+}
+
+const SURNAMES = ["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤",
+  "吉田","山田","佐々木","山口","松本","井上","木村","林","斎藤","清水",
+  "森","池田","橋本","阿部","石川","前田","藤田","後藤","岡田","長谷川",
+  "村上","近藤","石井","遠藤","坂本","青木","西村","福田","太田","三浦"];
+const GIVENNAMES = ["翔太","大輝","拓海","健太","翼","蓮","悠斗","陸","颯太","湊",
+  "駿","海斗","隼人","亮太","啓太","慎之介","和真","優斗","竜也","直樹",
+  "淳","賢人","光","勇気","真司","雄大","康平","泰地","一輝","涼",
+  "圭佑","岳","伸二","義成","麻也","航","佑都","武蔵","純也","律"];
+
+// ポジション設定: 身長分布 μ/σ、CK得点率へのポジション効果、人数
+const POS_CONF = {
+  GK: { mean: 188, sd: 5, eff: -0.086, count: 25 },
+  DF: { mean: 184, sd: 6, eff:  0.030, count: 85 },
+  MF: { mean: 177, sd: 6, eff:  0.004, count: 80 },
+  FW: { mean: 180, sd: 6, eff:  0.024, count: 60 }
+};
+
+function generatePlayers(seed) {
+  const rand = mulberry32(seed);
+  const gauss = makeGaussian(rand);
+  const players = [];
+  const usedNames = new Set();
+
+  for (const pos of ["GK", "DF", "MF", "FW"]) {
+    const conf = POS_CONF[pos];
+    for (let i = 0; i < conf.count; i++) {
+      // 名前（姓+名の組合せ、重複回避）
+      let name;
+      do {
+        name = SURNAMES[Math.floor(rand() * SURNAMES.length)] + " " +
+               GIVENNAMES[Math.floor(rand() * GIVENNAMES.length)];
+      } while (usedNames.has(name));
+      usedNames.add(name);
+
+      // 身長: ポジションごとの正規分布（cm、四捨五入）
+      const height = Math.round(conf.mean + conf.sd * gauss());
+      // 出場試合数: 8〜38 試合
+      const matches = 8 + Math.floor(rand() * 31);
+
+      // 真の得点率（/90分）: 身長効果 + ポジション効果 + ノイズ、0 で切断
+      const trueRate = Math.max(0,
+        0.0055 * (height - 172) + conf.eff + 0.014 * gauss());
+      // 実得点はポアソン乱数（1試合≒90分と仮定）
+      const ckGoals = poisson(rand, trueRate * matches);
+
+      players.push({
+        name: name,
+        position: pos,
+        height: height,
+        matches: matches,
+        ckGoals: ckGoals,
+        rate90: ckGoals / matches   // CK得点率 = 得点/90分
+      });
+    }
+  }
+  return players;
+}
+// ===GEN-END===
+
+// ---------- 統計計算（自前実装） ----------
+function mean(xs) {
+  let s = 0;
+  for (const x of xs) s += x;
+  return s / xs.length;
+}
+function variance(xs, m) {
+  if (m === undefined) m = mean(xs);
+  let s = 0;
+  for (const x of xs) s += (x - m) * (x - m);
+  return s / xs.length;
+}
+function covariance(xs, ys, mx, my) {
+  if (mx === undefined) mx = mean(xs);
+  if (my === undefined) my = mean(ys);
+  let s = 0;
+  for (let i = 0; i < xs.length; i++) s += (xs[i] - mx) * (ys[i] - my);
+  return s / xs.length;
+}
+// 最小二乗回帰 + ピアソン相関
+function linearRegression(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return null;
+  const mx = mean(xs), my = mean(ys);
+  const cov = covariance(xs, ys, mx, my);
+  const vx = variance(xs, mx), vy = variance(ys, my);
+  if (vx === 0 || vy === 0) return null;
+  const slope = cov / vx;
+  const intercept = my - slope * mx;
+  const r = cov / Math.sqrt(vx * vy);
+  return { slope, intercept, r, r2: r * r, n };
+}
+
+// ---------- 状態 ----------
+const SEED = 20260707;
+const POS_COLOR = { GK: "#f4c542", DF: "#4da3ff", MF: "#b678f2", FW: "#ff6b6b" };
+const POS_ORDER = ["GK", "DF", "MF", "FW"];
+let allPlayers = generatePlayers(SEED);
+let activePos = new Set(POS_ORDER);
+let hitPoints = []; // 散布図ヒットテスト用 {x, y, player}
+
+// --- 遊び心用の状態 ---
+const LEGEND_PLAYER = {
+  name: "伝説の何でも屋", position: "FW", height: 210,
+  matches: 24, ckGoals: 11, rate90: 11 / 24, legend: true
+};
+let legendVisible = false;   // タイトルを3回クリックすると出現する隠し選手
+let featuredP = null;        // 今日の注目選手
+
+function filtered() {
+  const base = allPlayers.filter(p => activePos.has(p.position));
+  if (legendVisible && activePos.has(LEGEND_PLAYER.position)) base.push(LEGEND_PLAYER);
+  return base;
+}
+
+// ---------- Canvas ユーティリティ ----------
+function setupCanvas(canvas, cssHeight) {
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.parentElement.clientWidth - 0;
+  canvas.style.height = cssHeight + "px";
+  canvas.width = Math.round(cssWidth * dpr);
+  canvas.height = Math.round(cssHeight * dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: cssWidth, h: cssHeight };
+}
+
+// ---------- 散布図 ----------
+let scScene = null; // 直近の setupCanvas 結果（パルス再描画用）
+
+function drawScatter() {
+  const canvas = document.getElementById("scatter");
+  scScene = setupCanvas(canvas, Math.max(300, Math.min(430, w0() * 0.42)));
+  renderScatter(true);
+}
+
+function renderScatter(updateDom) {
+  if (!scScene) return;
+  const { ctx, w, h } = scScene;
+  const data = filtered();
+  hitPoints = [];
+
+  const pad = { l: 56, r: 18, t: 16, b: 44 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+
+  // 軸レンジ
+  let xmin = 162, xmax = 202, ymin = 0, ymax = 0.16;
+  if (data.length) {
+    const hs = data.map(p => p.height), rs = data.map(p => p.rate90);
+    xmin = Math.min(xmin, Math.min(...hs) - 2);
+    xmax = Math.max(xmax, Math.max(...hs) + 2);
+    ymax = Math.max(0.1, Math.max(...rs) * 1.12);
+  }
+  const X = v => pad.l + (v - xmin) / (xmax - xmin) * pw;
+  const Y = v => pad.t + ph - (v - ymin) / (ymax - ymin) * ph;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // グリッド + 目盛
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#8fa89b";
+  ctx.strokeStyle = "rgba(38,68,52,0.7)";
+  ctx.lineWidth = 1;
+  const xstep = (xmax - xmin) > 45 ? 10 : 5;
+  for (let gx = Math.ceil(xmin / xstep) * xstep; gx <= xmax; gx += xstep) {
+    ctx.beginPath(); ctx.moveTo(X(gx), pad.t); ctx.lineTo(X(gx), pad.t + ph); ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.fillText(gx + "", X(gx), h - pad.b + 16);
+  }
+  const ysteps = 5;
+  for (let i = 0; i <= ysteps; i++) {
+    const v = ymin + (ymax - ymin) * i / ysteps;
+    ctx.beginPath(); ctx.moveTo(pad.l, Y(v)); ctx.lineTo(pad.l + pw, Y(v)); ctx.stroke();
+    ctx.textAlign = "right";
+    ctx.fillText(v.toFixed(3), pad.l - 6, Y(v) + 4);
+  }
+  // 軸ラベル
+  ctx.fillStyle = "#a8c4b4";
+  ctx.textAlign = "center";
+  ctx.fillText("身長 (cm)", pad.l + pw / 2, h - 8);
+  ctx.save();
+  ctx.translate(13, pad.t + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("CK得点率（得点/90分）", 0, 0);
+  ctx.restore();
+
+  // 回帰直線
+  const reg = data.length >= 2
+    ? linearRegression(data.map(p => p.height), data.map(p => p.rate90))
+    : null;
+  if (reg) {
+    ctx.strokeStyle = "#35c46b";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    const y1 = reg.slope * xmin + reg.intercept;
+    const y2 = reg.slope * xmax + reg.intercept;
+    ctx.moveTo(X(xmin), Math.min(Math.max(Y(y1), pad.t), pad.t + ph));
+    ctx.lineTo(X(xmax), Math.min(Math.max(Y(y2), pad.t), pad.t + ph));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // 点
+  const now = performance.now();
+  for (const p of data) {
+    const px = X(p.height), py = Y(p.rate90);
+    if (p.legend) {
+      // 伝説の何でも屋: 金色に発光する外れ値
+      const rr = 6.5 + Math.sin(now / 260) * 1.5;
+      ctx.save();
+      ctx.shadowColor = "#ffd700";
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(px, py, rr, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffd700";
+      ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fillStyle = POS_COLOR[p.position] + "cc";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(13,21,18,0.8)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    if (p === featuredP) {
+      // 今日の注目選手: パルス発光リング
+      const t = (now % 1600) / 1600;
+      ctx.beginPath();
+      ctx.arc(px, py, 6 + t * 16, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,215,0," + (0.85 * (1 - t)).toFixed(3) + ")";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,215,0,0.9)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    hitPoints.push({ x: px, y: py, player: p });
+  }
+
+  if (!updateDom) return;
+
+  // 統計表示更新
+  document.getElementById("stN").textContent = data.length;
+  const mich = document.getElementById("michelin");
+  if (reg) {
+    document.getElementById("stR").textContent = reg.r.toFixed(3);
+    document.getElementById("stR2").textContent = reg.r2.toFixed(3);
+    document.getElementById("stEq").textContent =
+      "y = " + reg.slope.toFixed(5) + "x " +
+      (reg.intercept >= 0 ? "+ " : "- ") + Math.abs(reg.intercept).toFixed(3);
+    // 相関ミシュラン
+    const ar = Math.abs(reg.r);
+    const stars = ar >= 0.6 ? 3 : ar >= 0.4 ? 2 : ar >= 0.2 ? 1 : 0;
+    mich.textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+    const guide = [
+      "星なし：相関の気配はある、かもしれない",
+      "一つ星：近くを通ったら寄る価値のある相関",
+      "二つ星：わざわざ見に行く価値のある相関",
+      "三つ星：予約の取れない相関"
+    ][stars];
+    mich.title = "相関ミシュラン｜|r| = " + ar.toFixed(3) + "（" + guide + "）";
+  } else {
+    document.getElementById("stR").textContent = "-";
+    document.getElementById("stR2").textContent = "-";
+    document.getElementById("stEq").textContent = "-";
+    mich.textContent = "☆☆☆";
+    mich.title = "相関ミシュラン｜データ不足につき審査保留";
+  }
+}
+
+function w0() {
+  return document.getElementById("scatter").parentElement.clientWidth;
+}
+
+// ---------- 身長帯別棒グラフ ----------
+const BANDS = [
+  { label: "<170",    test: h => h < 170 },
+  { label: "170-175", test: h => h >= 170 && h < 175 },
+  { label: "175-180", test: h => h >= 175 && h < 180 },
+  { label: "180-185", test: h => h >= 180 && h < 185 },
+  { label: "185-190", test: h => h >= 185 && h < 190 },
+  { label: "190+",    test: h => h >= 190 }
+];
+
+function drawBars() {
+  const canvas = document.getElementById("bars");
+  const { ctx, w, h } = setupCanvas(canvas, 260);
+  const data = filtered();
+
+  const stats = BANDS.map(b => {
+    const grp = data.filter(p => b.test(p.height));
+    return { label: b.label, n: grp.length, avg: grp.length ? mean(grp.map(p => p.rate90)) : 0 };
+  });
+  const maxAvg = Math.max(0.02, ...stats.map(s => s.avg)) * 1.2;
+
+  const pad = { l: 48, r: 10, t: 14, b: 34 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  ctx.clearRect(0, 0, w, h);
+
+  // Y グリッド
+  ctx.font = "10px sans-serif";
+  ctx.strokeStyle = "rgba(38,68,52,0.7)";
+  ctx.fillStyle = "#8fa89b";
+  for (let i = 0; i <= 4; i++) {
+    const v = maxAvg * i / 4;
+    const y = pad.t + ph - v / maxAvg * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke();
+    ctx.textAlign = "right";
+    ctx.fillText(v.toFixed(3), pad.l - 5, y + 3);
+  }
+
+  const bw = pw / stats.length;
+  stats.forEach((s, i) => {
+    const bh = s.avg / maxAvg * ph;
+    const x = pad.l + i * bw + bw * 0.16;
+    const y = pad.t + ph - bh;
+    const grad = ctx.createLinearGradient(0, y, 0, pad.t + ph);
+    grad.addColorStop(0, "#35c46b");
+    grad.addColorStop(1, "#1d5c38");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    const bwid = bw * 0.68, r = Math.min(5, bh / 2);
+    // 角丸長方形（上のみ）
+    ctx.moveTo(x, pad.t + ph);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.lineTo(x + bwid - r, y);
+    ctx.arcTo(x + bwid, y, x + bwid, y + r, r);
+    ctx.lineTo(x + bwid, pad.t + ph);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#a8c4b4";
+    ctx.textAlign = "center";
+    if (s.avg > 0) ctx.fillText(s.avg.toFixed(3), x + bwid / 2, y - 4);
+    ctx.fillStyle = "#8fa89b";
+    ctx.fillText(s.label, x + bwid / 2, pad.t + ph + 14);
+    ctx.fillText("n=" + s.n, x + bwid / 2, pad.t + ph + 26);
+  });
+}
+
+// ---------- ツールチップ ----------
+const tooltip = document.getElementById("tooltip");
+const scatterCanvas = document.getElementById("scatter");
+scatterCanvas.addEventListener("mousemove", e => {
+  const rect = scatterCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  let best = null, bestD = 100; // 10px 以内
+  for (const hp of hitPoints) {
+    const d = (hp.x - mx) * (hp.x - mx) + (hp.y - my) * (hp.y - my);
+    if (d < bestD) { bestD = d; best = hp; }
+  }
+  if (best) {
+    const p = best.player;
+    tooltip.innerHTML =
+      '<div class="tname">' + escapeHtml(p.name) + '</div>' +
+      '<span class="tpos" style="color:' + POS_COLOR[p.position] + '">' + p.position + '</span>' +
+      ' ／ 身長 ' + p.height + 'cm<br>' +
+      '出場 ' + p.matches + '試合 ／ CK得点 ' + p.ckGoals + '<br>' +
+      'CK得点率: ' + p.rate90.toFixed(3) + ' /90分';
+    tooltip.style.display = "block";
+    const tx = Math.min(e.clientX + 14, window.innerWidth - 250);
+    tooltip.style.left = tx + "px";
+    tooltip.style.top = (e.clientY + 14) + "px";
+    scatterCanvas.style.cursor = "pointer";
+  } else {
+    tooltip.style.display = "none";
+    scatterCanvas.style.cursor = "default";
+  }
+});
+scatterCanvas.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---------- ポジションフィルタ ----------
+document.querySelectorAll('#posFilters input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener("change", () => {
+    activePos = new Set(
+      Array.from(document.querySelectorAll('#posFilters input:checked'))
+        .map(el => el.dataset.pos));
+    redraw();
+  });
+});
+
+// ---------- CSV インポート ----------
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+const csvMsg = document.getElementById("csvMsg");
+
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length) readCsvFile(fileInput.files[0]);
+  fileInput.value = "";
+});
+["dragover", "dragenter"].forEach(ev =>
+  dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add("drag"); }));
+["dragleave", "drop"].forEach(ev =>
+  dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove("drag"); }));
+dropZone.addEventListener("drop", e => {
+  if (e.dataTransfer.files.length) readCsvFile(e.dataTransfer.files[0]);
+});
+
+function readCsvFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const players = parseCsv(reader.result);
+      if (players.length < 2) throw new Error("有効な行が2行未満です");
+      allPlayers = players;
+      pickFeatured();
+      document.getElementById("srcBadge").textContent =
+        "データ: " + file.name + "（" + players.length + "名）";
+      setMsg("読み込み成功: " + players.length + " 名を分析中", true);
+      redraw();
+    } catch (err) {
+      setMsg("読み込み失敗: " + err.message, false);
+    }
+  };
+  reader.onerror = () => setMsg("ファイルを読み取れませんでした", false);
+  reader.readAsText(file);
+}
+
+function parseCsv(text) {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n")
+    .map(l => l.trim()).filter(l => l.length > 0);
+  const players = [];
+  const validPos = { GK: 1, DF: 1, MF: 1, FW: 1 };
+  lines.forEach((line, idx) => {
+    const cols = line.split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+    if (cols.length < 5) throw new Error((idx + 1) + "行目: 列が5未満です");
+    const height = parseFloat(cols[2]);
+    // 1行目で height が数値でなければヘッダーとみなしスキップ
+    if (idx === 0 && isNaN(height)) return;
+    const pos = cols[1].toUpperCase();
+    const matches = parseFloat(cols[3]);
+    const goals = parseFloat(cols[4]);
+    if (!validPos[pos]) throw new Error((idx + 1) + "行目: position は GK/DF/MF/FW のいずれか（" + cols[1] + "）");
+    if (isNaN(height) || height < 100 || height > 230)
+      throw new Error((idx + 1) + "行目: height が不正です（" + cols[2] + "）");
+    if (isNaN(matches) || matches <= 0)
+      throw new Error((idx + 1) + "行目: matches が不正です（" + cols[3] + "）");
+    if (isNaN(goals) || goals < 0)
+      throw new Error((idx + 1) + "行目: ck_goals が不正です（" + cols[4] + "）");
+    players.push({
+      name: cols[0] || ("選手" + (idx + 1)),
+      position: pos, height: height, matches: matches,
+      ckGoals: goals, rate90: goals / matches
+    });
+  });
+  return players;
+}
+
+function setMsg(msg, ok) {
+  csvMsg.textContent = msg;
+  csvMsg.className = ok ? "ok" : "err";
+}
+
+// サンプルCSV (data URI)
+(function buildSampleCsv() {
+  let csv = "name,position,height,matches,ck_goals\n";
+  const sample = generatePlayers(SEED).slice(0, 30);
+  for (const p of sample) {
+    csv += p.name + "," + p.position + "," + p.height + "," + p.matches + "," + p.ckGoals + "\n";
+  }
+  document.getElementById("sampleDl").href =
+    "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+})();
+
+// リセット
+document.getElementById("resetBtn").addEventListener("click", () => {
+  allPlayers = generatePlayers(SEED);
+  pickFeatured();
+  document.getElementById("srcBadge").textContent = "データ: サンプル生成（250名）";
+  setMsg("サンプルデータ（250名）に戻しました", true);
+  redraw();
+});
+
+/* ================================================================
+   遊び心ゾーン:
+   スカウトレポート / 今日の注目選手 / 伝説の何でも屋 / 相関ミシュラン
+   ================================================================ */
+
+// ---------- スカウト寸評ジェネレータ（身長×得点率×ポジションで条件分岐） ----------
+function scoutComment(p) {
+  if (p.legend) {
+    return "身長210cm、CK得点率" + p.rate90.toFixed(3) + "。もはや選手というより現象である。" +
+      "彼をデータに含めた瞬間、回帰直線は敬礼しながら傾きを変える。" +
+      "「外れ値を除外すべきか」——その問いに正解はないが、散布図を見ずに語る資格もない。";
+  }
+  const s = [];
+  if (p.height >= 195) s.push(p.height + "cmの体躯はもはや建築物。セットプレーの際は空域の使用許可を取りたいレベル。");
+  else if (p.height >= 188) s.push(p.height + "cmの高さはセットプレーで凶器。ただし足元は保証しない。");
+  else if (p.height >= 180) s.push("恵まれた上背に打点の高さも備え、ニアでもファーでも計算が立つ。");
+  else if (p.height >= 172) s.push("サイズは平均的。その分、マークをはがすずる賢さで勝負するタイプ。");
+  else s.push(p.height + "cmと小柄だが、ゴール前で「消える動き」は密集戦の隠し味になる。");
+  if (p.rate90 >= 0.09) s.push("CK得点率" + p.rate90.toFixed(3) + "はリーグ屈指。セットプレーの設計図は彼を中心に描くべきだ。");
+  else if (p.rate90 >= 0.05) s.push("ここぞの場面で仕事をする、いぶし銀のフィニッシャー。");
+  else if (p.rate90 > 0) s.push("得点数こそ控えめだが、囮としての貢献は数字に表れない（本人談）。");
+  else s.push("CK得点はまだゼロ。統計的に言えば「伸びしろが正規分布の右側にまるごと残っている」。");
+  if (p.position === "GK") s.push(p.ckGoals > 0
+    ? "GKなのにCKで得点済み。パワープレー要員として履歴書に書ける逸材。"
+    : "本業はゴールを守ること。攻め上がりはロマン枠として大切に温存したい。");
+  else if (p.position === "DF") s.push("守備の合間のご褒美がセットプレー。上がったからには手ぶらで帰らない主義。");
+  else if (p.position === "MF") s.push("蹴る側も合わせる側もこなす中盤の便利屋。ただし本人はキッカー志望らしい。");
+  else if (p.position === "FW") s.push("ゴール前の嗅覚が商売道具。ボールの落下点だけは誰よりも早く察知する。");
+  if (p.matches < 12) s.push("※出場" + p.matches + "試合とサンプルは少なめ。評価は割引きが必要です（データ班より）。");
+  return s.join("");
+}
+
+// ---------- スカウトレポートモーダル ----------
+const modalBack = document.getElementById("modalBack");
+function openScout(p) {
+  document.getElementById("scoutCard").classList.toggle("legendmode", !!p.legend);
+  const tag = p.legend
+    ? '<span class="feattag gold">&#128081; 隠し選手</span>'
+    : (p === featuredP ? '<span class="feattag">&#11088; 今日の注目選手</span>' : "");
+  document.getElementById("scoutBody").innerHTML =
+    '<div class="scout-sub">SCOUTING REPORT</div>' +
+    '<h3>' + escapeHtml(p.name) + '</h3>' +
+    '<div class="scout-meta"><span style="color:' + (POS_COLOR[p.position] || "#fff") +
+      ';font-weight:700">' + p.position + '</span>' + tag + '</div>' +
+    '<div class="scout-stats">' +
+      '<div><span>身長</span><b>' + p.height + ' cm</b></div>' +
+      '<div><span>出場</span><b>' + p.matches + ' 試合</b></div>' +
+      '<div><span>CK得点</span><b>' + p.ckGoals + '</b></div>' +
+      '<div><span>得点率 /90分</span><b>' + p.rate90.toFixed(3) + '</b></div>' +
+    '</div>' +
+    '<div class="scout-comment">' + escapeHtml(scoutComment(p)) + '</div>';
+  modalBack.classList.add("open");
+}
+function closeScout() { modalBack.classList.remove("open"); }
+document.getElementById("modalClose").addEventListener("click", closeScout);
+modalBack.addEventListener("click", e => { if (e.target === modalBack) closeScout(); });
+window.addEventListener("keydown", e => { if (e.key === "Escape") closeScout(); });
+
+// 散布図の点クリック → スカウトレポート
+scatterCanvas.addEventListener("click", e => {
+  const rect = scatterCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  let best = null, bestD = 144; // 12px 以内
+  for (const hp of hitPoints) {
+    const d = (hp.x - mx) * (hp.x - mx) + (hp.y - my) * (hp.y - my);
+    if (d < bestD) { bestD = d; best = hp; }
+  }
+  if (best) openScout(best.player);
+});
+
+// ---------- 今日の注目選手 ----------
+function firstSentence(s) { return s.split("。")[0] + "。"; }
+function pickFeatured() {
+  if (!allPlayers.length) { featuredP = null; renderFeaturedCard(); return; }
+  let next = allPlayers[Math.floor(Math.random() * allPlayers.length)];
+  if (allPlayers.length > 1) {
+    while (next === featuredP) next = allPlayers[Math.floor(Math.random() * allPlayers.length)];
+  }
+  featuredP = next;
+  renderFeaturedCard();
+}
+function renderFeaturedCard() {
+  const el = document.getElementById("featBody");
+  if (!featuredP) {
+    el.innerHTML = '<span style="color:var(--muted)">データがありません</span>';
+    return;
+  }
+  const p = featuredP;
+  el.innerHTML =
+    '<div class="featname">' + escapeHtml(p.name) + '</div>' +
+    '<div class="featmeta"><span style="color:' + (POS_COLOR[p.position] || "#fff") +
+      ';font-weight:700">' + p.position + '</span> ／ ' + p.height + 'cm ／ 出場' + p.matches + '試合</div>' +
+    '<div class="featmeta">CK得点率 <b style="color:var(--pitch)">' + p.rate90.toFixed(3) + '</b> /90分</div>' +
+    '<div class="featline">' + escapeHtml(firstSentence(scoutComment(p))) + '</div>';
+}
+document.getElementById("featReport").addEventListener("click", () => {
+  if (featuredP) openScout(featuredP);
+});
+document.getElementById("featReroll").addEventListener("click", () => {
+  pickFeatured();
+});
+
+// ---------- 伝説の何でも屋（タイトルを3回クリックで出現） ----------
+let rBubbleTimer = null;
+function currentR() {
+  const d = filtered();
+  const reg = d.length >= 2
+    ? linearRegression(d.map(p => p.height), d.map(p => p.rate90))
+    : null;
+  return reg ? reg.r : null;
+}
+function showRBubble(before, after) {
+  const b = document.getElementById("rBubble");
+  const f = v => v === null ? "-" : v.toFixed(3);
+  if (legendVisible) {
+    b.innerHTML = "&#127775; <b>伝説の何でも屋（210cm）が出現！</b><br>" +
+      "r: " + f(before) + " → <b style='color:#ffd700'>" + f(after) + "</b><br>" +
+      "外れ値がたった1人いるだけで相関係数はここまで動きます。回帰分析の前に散布図を見るべき理由がこれです。";
+  } else {
+    b.innerHTML = "伝説は霧の中へ…<br>r: " + f(before) + " → " + f(after) + "（平常運転に戻りました）";
+  }
+  b.style.display = "block";
+  clearTimeout(rBubbleTimer);
+  rBubbleTimer = setTimeout(() => { b.style.display = "none"; }, 8000);
+}
+let titleClicks = 0, titleTimer = null;
+document.getElementById("labTitle").addEventListener("click", () => {
+  titleClicks++;
+  clearTimeout(titleTimer);
+  titleTimer = setTimeout(() => { titleClicks = 0; }, 650);
+  if (titleClicks >= 3) {
+    titleClicks = 0;
+    const before = currentR();
+    legendVisible = !legendVisible;
+    redraw();
+    showRBubble(before, currentR());
+  }
+});
+
+// ---------- パルス発光の描画ループ ----------
+(function pulseLoop() {
+  requestAnimationFrame(pulseLoop);
+  if (!document.hidden && (featuredP || legendVisible)) renderScatter(false);
+})();
+
+// ---------- 描画 ----------
+function redraw() { drawScatter(); drawBars(); }
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(redraw, 120);
+});
+pickFeatured();
+redraw();
+</script>
+</body>
+</html>

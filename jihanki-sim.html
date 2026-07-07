@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自販機アタリ研究所</title>
+<style>
+  :root{
+    --bg1:#0a0e1a; --bg2:#141b30;
+    --machine-red:#c62f3e; --machine-red-d:#8e1f2b;
+    --panel:#1a2238; --panel-line:#2c3a5e;
+    --neon:#ffd23f; --neon-dim:#8a7020;
+    --led:#ff5252; --led-bg:#1a0505;
+    --text:#e8ecf5; --sub:#9aa6c2;
+    --win:#ffd23f; --accent:#4fc3f7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:radial-gradient(ellipse at 50% -10%, #1c2542 0%, var(--bg1) 60%);
+    min-height:100%; color:var(--text);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;}
+  body{padding:16px 12px 40px; overflow-x:hidden;}
+
+  a.back{color:var(--sub); text-decoration:none; font-size:.85rem; display:inline-block; margin-bottom:8px;}
+  a.back:hover{color:var(--accent);}
+
+  header{text-align:center; margin-bottom:18px;}
+  h1{font-size:clamp(1.5rem,4vw,2.3rem); letter-spacing:.15em;
+     color:var(--neon); text-shadow:0 0 12px rgba(255,210,63,.55),0 0 40px rgba(255,210,63,.25);}
+  header p{color:var(--sub); font-size:.85rem; margin-top:6px;}
+
+  .layout{display:grid; grid-template-columns:minmax(280px,380px) minmax(300px,1fr);
+    gap:24px; max-width:1080px; margin:0 auto; align-items:start;}
+  @media(max-width:760px){ .layout{grid-template-columns:1fr;} }
+
+  /* ===== 自販機 ===== */
+  .street{position:relative; padding:20px 10px 0; display:flex; justify-content:center;}
+  .machine{
+    position:relative; width:100%; max-width:340px;
+    background:linear-gradient(175deg,#e04a58 0%,var(--machine-red) 30%,var(--machine-red-d) 100%);
+    border-radius:14px; padding:14px 14px 18px;
+    border:3px solid #5c141d;
+    box-shadow:0 0 60px rgba(255,120,90,.28), 0 0 140px rgba(255,180,80,.12),
+      inset 0 2px 0 rgba(255,255,255,.25), 0 22px 30px -12px rgba(0,0,0,.8);
+  }
+  .machine::after{ /* 地面の光だまり */
+    content:""; position:absolute; left:8%; right:8%; bottom:-26px; height:22px;
+    background:radial-gradient(ellipse at center, rgba(255,190,120,.22), transparent 70%);
+    filter:blur(3px); pointer-events:none;
+  }
+  .brand{
+    text-align:center; font-weight:bold; letter-spacing:.35em; font-size:.8rem;
+    color:#fff; text-shadow:0 0 8px rgba(255,255,255,.8);
+    background:linear-gradient(180deg,#3a0a12,#5c141d);
+    border-radius:8px; padding:6px 0; margin-bottom:10px;
+    border:1px solid rgba(255,255,255,.15);
+    animation:signFlicker 7s infinite;
+  }
+  @keyframes signFlicker{
+    0%,93%,100%{opacity:1;} 94%{opacity:.55;} 95%{opacity:1;} 96.5%{opacity:.7;} 97%{opacity:1;}
+  }
+
+  .shelf{
+    background:linear-gradient(180deg,#0d1120,#141a2c);
+    border-radius:8px; padding:10px 8px; border:2px solid #3a0d15;
+    box-shadow:inset 0 0 18px rgba(120,180,255,.15);
+  }
+  .drink-row{display:flex; justify-content:space-around; gap:6px; padding:4px 2px 0;}
+  .drink{width:34px; height:56px; border-radius:6px 6px 4px 4px; position:relative; flex-shrink:0;
+    box-shadow:inset -5px 0 8px rgba(0,0,0,.45), inset 3px 2px 5px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.5);}
+  .drink::before{content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+    width:14px; height:8px; border-radius:3px 3px 0 0; background:#c9ced8;}
+  .drink::after{content:attr(data-label); position:absolute; inset:auto 0 8px 0; text-align:center;
+    font-size:.55rem; color:rgba(255,255,255,.9); font-weight:bold; text-shadow:0 1px 2px rgba(0,0,0,.6);}
+  .price-tags{display:flex; justify-content:space-around; gap:6px; margin-top:8px;}
+  .price-tag{font-size:.6rem; color:#ffd; background:#22150a; border:1px solid #6b4a1e;
+    border-radius:3px; padding:1px 5px;}
+
+  /* ルーレット表示部 */
+  .roulette-box{
+    margin:12px 0 10px; background:linear-gradient(180deg,#2a0808,var(--led-bg));
+    border:2px solid #000; border-radius:8px; padding:10px 8px 8px;
+    box-shadow:inset 0 0 14px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.15);
+  }
+  .roulette-label{font-size:.6rem; color:#e8a0a0; letter-spacing:.25em; text-align:center; margin-bottom:6px;}
+  .digits{display:flex; justify-content:center; gap:8px;}
+  .digit{
+    width:52px; height:68px; display:flex; align-items:center; justify-content:center;
+    font-family:"Courier New",monospace; font-size:2.6rem; font-weight:bold;
+    color:var(--led); background:#120303; border-radius:6px;
+    border:1px solid #3d0d0d;
+    text-shadow:0 0 10px rgba(255,82,82,.9), 0 0 22px rgba(255,82,82,.45);
+    box-shadow:inset 0 4px 10px rgba(0,0,0,.85);
+    transition:color .15s;
+  }
+  @media(max-width:380px){ .digit{width:44px;height:58px;font-size:2.1rem;} }
+  .digit.spin{animation:digitBlur .08s linear infinite;}
+  @keyframes digitBlur{0%{opacity:1;}50%{opacity:.55;}100%{opacity:1;}}
+  .digit.win{color:var(--win); text-shadow:0 0 14px rgba(255,210,63,1),0 0 34px rgba(255,210,63,.7);
+    animation:winBlink .28s steps(1) infinite;}
+  @keyframes winBlink{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+  .machine.win-flash{animation:machineFlash .3s ease 8;}
+  @keyframes machineFlash{
+    0%,100%{box-shadow:0 0 60px rgba(255,120,90,.28),0 22px 30px -12px rgba(0,0,0,.8);}
+    50%{box-shadow:0 0 90px rgba(255,220,80,.85),0 0 180px rgba(255,220,80,.4),0 22px 30px -12px rgba(0,0,0,.8);}
+  }
+
+  .msg-line{min-height:1.5em; text-align:center; font-size:.85rem; color:#ffbfbf; margin-bottom:10px;}
+  .msg-line.win{color:var(--win); font-weight:bold; font-size:1rem;
+    text-shadow:0 0 10px rgba(255,210,63,.8); animation:winBlink .4s steps(1) 6;}
+
+  .buy-btn{
+    display:block; width:100%; padding:13px 0; font-size:1.05rem; font-weight:bold;
+    color:#3a1005; background:linear-gradient(180deg,#ffe27a,var(--neon) 45%,#e0a828);
+    border:none; border-radius:9px; cursor:pointer; letter-spacing:.08em;
+    box-shadow:0 4px 0 #8a6410, 0 6px 14px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.7);
+    transition:transform .06s, box-shadow .06s, filter .2s;
+  }
+  .buy-btn:active{transform:translateY(3px); box-shadow:0 1px 0 #8a6410, 0 3px 8px rgba(0,0,0,.5);}
+  .buy-btn:disabled{filter:grayscale(.6) brightness(.75); cursor:wait;}
+
+  /* 取り出し口 */
+  .outlet{
+    margin-top:12px; height:64px; background:linear-gradient(180deg,#0a0a0f,#16161f);
+    border-radius:8px; border:2px solid #3a0d15;
+    box-shadow:inset 0 6px 14px rgba(0,0,0,.95);
+    position:relative; overflow:hidden;
+  }
+  .outlet::before{content:"とりだしぐち"; position:absolute; top:4px; left:50%; transform:translateX(-50%);
+    font-size:.55rem; color:#7a8299; letter-spacing:.3em;}
+  .out-bottles{position:absolute; bottom:5px; left:0; right:0; display:flex; justify-content:center; gap:10px;}
+  .out-bottle{width:26px; height:42px; border-radius:5px 5px 3px 3px;
+    background:linear-gradient(90deg,#e0653a,#ff8c42 45%,#c24e22);
+    box-shadow:inset -4px 0 6px rgba(0,0,0,.4), 0 0 8px rgba(255,140,66,.4);
+    position:relative; animation:dropIn .5s cubic-bezier(.3,1.6,.6,1);}
+  .out-bottle::before{content:""; position:absolute; top:-5px; left:50%; transform:translateX(-50%);
+    width:11px; height:6px; border-radius:2px 2px 0 0; background:#c9ced8;}
+  .out-bottle.bonus{background:linear-gradient(90deg,#c9a227,#ffe066 45%,#a8821a);
+    box-shadow:0 0 14px rgba(255,224,102,.8);}
+  @keyframes dropIn{0%{transform:translateY(-70px); opacity:0;} 60%{opacity:1;} 100%{transform:translateY(0);}}
+
+  .machine-foot{display:flex; justify-content:space-between; margin-top:10px; padding:0 6px;}
+  .foot-slit{width:40%; height:8px; background:#2a070d; border-radius:4px; box-shadow:inset 0 2px 4px #000;}
+
+  /* ===== 右カラム ===== */
+  .card{
+    background:linear-gradient(180deg,var(--panel),#121a2e);
+    border:1px solid var(--panel-line); border-radius:12px;
+    padding:16px 16px 18px; margin-bottom:18px;
+    box-shadow:0 8px 24px -10px rgba(0,0,0,.6);
+  }
+  .card h2{font-size:.95rem; color:var(--accent); letter-spacing:.12em; margin-bottom:12px;
+    display:flex; align-items:center; gap:8px;}
+  .card h2::before{content:""; width:8px; height:8px; background:var(--accent); border-radius:2px;
+    box-shadow:0 0 8px var(--accent);}
+
+  .settings-grid{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+  .prob-btn{
+    padding:7px 14px; border-radius:20px; border:1px solid var(--panel-line);
+    background:#101728; color:var(--sub); cursor:pointer; font-size:.85rem;
+    transition:all .15s;
+  }
+  .prob-btn:hover{border-color:var(--accent); color:var(--text);}
+  .prob-btn.active{background:var(--accent); color:#06263a; font-weight:bold;
+    box-shadow:0 0 12px rgba(79,195,247,.5); border-color:var(--accent);}
+  .custom-wrap{display:flex; align-items:center; gap:4px; font-size:.85rem; color:var(--sub);}
+  .custom-wrap input, .price-wrap input{
+    width:76px; padding:6px 8px; background:#0c1220; border:1px solid var(--panel-line);
+    border-radius:6px; color:var(--text); font-size:.9rem; text-align:right;
+  }
+  .custom-wrap input:focus, .price-wrap input:focus{outline:none; border-color:var(--accent);}
+  .price-wrap{display:flex; align-items:center; gap:6px; margin-top:12px; font-size:.85rem; color:var(--sub);}
+  .setting-note{font-size:.72rem; color:#6b7694; margin-top:10px; line-height:1.6;}
+
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px;}
+  .stat{background:#0c1220; border:1px solid var(--panel-line); border-radius:8px; padding:10px 12px;}
+  .stat .k{font-size:.7rem; color:var(--sub); margin-bottom:4px;}
+  .stat .v{font-size:1.25rem; font-weight:bold; font-family:"Courier New",monospace; color:var(--text);}
+  .stat .v small{font-size:.7rem; color:var(--sub); font-family:inherit; margin-left:2px;}
+  .stat.hl .v{color:var(--win); text-shadow:0 0 8px rgba(255,210,63,.4);}
+  .reset-btn{margin-top:12px; padding:6px 14px; font-size:.78rem; background:transparent;
+    border:1px solid #4a3038; color:#c98a94; border-radius:6px; cursor:pointer;}
+  .reset-btn:hover{background:#2a1218;}
+
+  .bulk-btns{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+  .bulk-btn{
+    flex:1; min-width:90px; padding:10px 0; font-size:.9rem; font-weight:bold; cursor:pointer;
+    background:linear-gradient(180deg,#2b3b63,#1b2745); color:var(--text);
+    border:1px solid #3d5286; border-radius:8px; transition:all .15s;
+  }
+  .bulk-btn:hover{background:linear-gradient(180deg,#37497a,#223055); box-shadow:0 0 12px rgba(79,195,247,.3);}
+  canvas{width:100%; height:auto; display:block; background:#0a101f; border-radius:8px; border:1px solid var(--panel-line);}
+  .chart-caption{font-size:.72rem; color:var(--sub); margin-top:6px; text-align:center;}
+
+  .theory{margin-top:14px; font-size:.85rem; line-height:1.9; color:var(--text);}
+  .theory b{color:var(--accent);}
+  .theory .num{color:var(--win); font-weight:bold; font-family:"Courier New",monospace;}
+
+  .fortune{
+    margin-top:14px; padding:12px 14px; border-radius:8px; font-size:.9rem; line-height:1.7;
+    background:#141c33; border:1px dashed #3d5286;
+  }
+  .fortune .title{font-weight:bold; color:var(--win); margin-bottom:2px;}
+
+  .trivia ul{list-style:none;}
+  .trivia li{position:relative; padding:8px 0 8px 26px; font-size:.85rem; line-height:1.75;
+    color:#c7d0e4; border-bottom:1px dotted #24304e;}
+  .trivia li:last-child{border-bottom:none;}
+  .trivia li::before{content:"💡"; position:absolute; left:0; top:8px; font-size:.85rem;}
+  .trivia li b{color:var(--win);}
+
+  footer{max-width:1080px; margin:26px auto 0; text-align:center; font-size:.72rem; color:#5a6480; line-height:1.8;}
+
+  .mute-btn{
+    position:fixed; top:12px; right:12px; z-index:10;
+    width:42px; height:42px; border-radius:50%; border:1px solid var(--panel-line);
+    background:rgba(16,23,40,.9); color:var(--text); font-size:1.1rem; cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,.5);
+  }
+  .mute-btn:hover{border-color:var(--accent);}
+
+  /* 紙吹雪 */
+  .confetti{position:fixed; top:-12px; z-index:50; pointer-events:none; border-radius:2px;
+    animation:confFall linear forwards;}
+  @keyframes confFall{
+    to{transform:translateY(105vh) rotate(720deg); opacity:.2;}
+  }
+</style>
+</head>
+<body>
+
+<button class="mute-btn" id="muteBtn" title="サウンド ON/OFF" aria-label="サウンド切り替え">🔊</button>
+
+<a class="back" href="index.html">← 実験ラボに戻る</a>
+
+<header>
+  <h1>自販機アタリ研究所</h1>
+  <p>7777 は本当に揃うのか？ ── ルーレット自販機の当たり確率を体感するシミュレーター</p>
+</header>
+
+<div class="layout">
+
+  <!-- 左: 自販機 -->
+  <div class="street">
+    <div class="machine" id="machine">
+      <div class="brand">☆ LUCKY DRINK ☆</div>
+
+      <div class="shelf">
+        <div class="drink-row">
+          <div class="drink" style="background:linear-gradient(90deg,#c0392b,#ff6b5e 45%,#992d22);" data-label="COLA"></div>
+          <div class="drink" style="background:linear-gradient(90deg,#1f7a4d,#3ddc84 45%,#166138);" data-label="お茶"></div>
+          <div class="drink" style="background:linear-gradient(90deg,#b8860b,#ffd23f 45%,#8a6410);" data-label="CAFE"></div>
+          <div class="drink" style="background:linear-gradient(90deg,#1d6fa5,#4fc3f7 45%,#155a86);" data-label="SODA"></div>
+          <div class="drink" style="background:linear-gradient(90deg,#8e44ad,#c66bd6 45%,#6d3286);" data-label="ぶどう"></div>
+        </div>
+        <div class="price-tags">
+          <span class="price-tag" id="tag1">130円</span>
+          <span class="price-tag" id="tag2">130円</span>
+          <span class="price-tag" id="tag3">130円</span>
+          <span class="price-tag" id="tag4">130円</span>
+          <span class="price-tag" id="tag5">130円</span>
+        </div>
+      </div>
+
+      <div class="roulette-box">
+        <div class="roulette-label">LUCKY ROULETTE</div>
+        <div class="digits">
+          <div class="digit" id="d0">-</div>
+          <div class="digit" id="d1">-</div>
+          <div class="digit" id="d2">-</div>
+          <div class="digit" id="d3">-</div>
+        </div>
+      </div>
+
+      <div class="msg-line" id="msgLine">コインを入れてスタート！</div>
+
+      <button class="buy-btn" id="buyBtn">ジュースを買う（130円）</button>
+
+      <div class="outlet">
+        <div class="out-bottles" id="outBottles"></div>
+      </div>
+      <div class="machine-foot"><div class="foot-slit"></div><div class="foot-slit"></div></div>
+    </div>
+  </div>
+
+  <!-- 右: パネル群 -->
+  <div>
+    <section class="card">
+      <h2>設定パネル</h2>
+      <div style="font-size:.8rem; color:var(--sub); margin-bottom:8px;">
+        当たり確率（メーカー非公開のため「よく言われる目安」から選択）
+      </div>
+      <div class="settings-grid">
+        <button class="prob-btn" data-p="0.04">1/25</button>
+        <button class="prob-btn active" data-p="0.02">1/50</button>
+        <button class="prob-btn" data-p="0.01">1/100</button>
+        <span class="custom-wrap">自由入力 1/
+          <input type="number" id="customP" min="2" max="100000" step="1" placeholder="200">
+        </span>
+      </div>
+      <div class="price-wrap">
+        1本の価格：
+        <input type="number" id="priceInput" min="10" max="10000" step="10" value="130">
+        円
+      </div>
+      <div class="setting-note">
+        ※ 当たり確率を変更すると、理論値と比較できるように統計はリセットされます。
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>統計トラッカー</h2>
+      <div class="stats-grid">
+        <div class="stat"><div class="k">購入本数</div><div class="v" id="stBought">0<small>本</small></div></div>
+        <div class="stat"><div class="k">使った金額</div><div class="v" id="stSpent">0<small>円</small></div></div>
+        <div class="stat hl"><div class="k">当たり回数</div><div class="v" id="stWins">0<small>回</small></div></div>
+        <div class="stat hl"><div class="k">もらった本数合計</div><div class="v" id="stTotal">0<small>本</small></div></div>
+        <div class="stat"><div class="k">実質単価（金額÷総本数）</div><div class="v" id="stUnit">-<small>円</small></div></div>
+        <div class="stat"><div class="k">現在の連続ハズレ数</div><div class="v" id="stStreak">0<small>本</small></div></div>
+      </div>
+      <button class="reset-btn" id="resetBtn">統計をリセット</button>
+    </section>
+
+    <section class="card">
+      <h2>一気にシミュレート</h2>
+      <div class="bulk-btns">
+        <button class="bulk-btn" data-n="10">10本</button>
+        <button class="bulk-btn" data-n="100">100本</button>
+        <button class="bulk-btn" data-n="10000">10,000本</button>
+      </div>
+      <canvas id="histCanvas" width="640" height="300"></canvas>
+      <div class="chart-caption">「アタリが出るまでに何本かかったか」の分布（棒＝あなたの実績 / 線＝理論値：幾何分布）</div>
+      <div class="theory" id="theoryBox"></div>
+      <div class="fortune" id="fortuneBox" hidden>
+        <div class="title" id="fortuneTitle"></div>
+        <div id="fortuneBody"></div>
+      </div>
+    </section>
+
+    <section class="card trivia">
+      <h2>豆知識コーナー</h2>
+      <ul>
+        <li><b>当たり確率は設置者が設定できる</b>ことが多く、メーカーや機種によって仕組みも確率も異なります。「必ず1/○○」という公式な数字はありません。</li>
+        <li>確率1/50でも、<b>50本買えば必ず当たるわけではありません</b>。50本すべてハズレる確率は (49/50)⁵⁰ ≒ <b>36%</b>。3人に1人は50本買っても当たらない計算です。</li>
+        <li>逆に「もう10連敗だから次こそ当たる」も誤解。ルーレットに記憶はなく、<b>毎回の確率は独立</b>です（ギャンブラーの誤謬）。</li>
+        <li>当たりが出ると実質単価が下がります。1/50・130円なら、平均して51本もらえて50本分の支払い → 実質約 <b>127.5円/本</b>。意外とささやかな割引です。</li>
+        <li>「アタリ付き自販機」は日本独自に発展した販促文化。深夜にルーレットが回る瞬間のドキドキこそが最大の付加価値かもしれません。</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<footer>
+  ※ 本ページの当たり確率はデモ用の目安です。実際の自販機の確率・仕様とは異なります。<br>
+  自販機アタリ研究所 — 確率を体で覚える実験シリーズ
+</footer>
+
+<script>
+"use strict";
+
+/* ================= 状態 ================= */
+const state = {
+  p: 1/50,
+  price: 130,
+  bought: 0,
+  spent: 0,
+  wins: 0,
+  streak: 0,        // 現在の連続ハズレ
+  firstWinAt: null, // 何本目で初アタリか
+  waits: [],        // 各アタリまでにかかった本数（幾何分布のサンプル）
+  spinning: false,
+  muted: false,
+};
+
+/* ================= DOM ================= */
+const $ = id => document.getElementById(id);
+const digits = [ $("d0"), $("d1"), $("d2"), $("d3") ];
+const buyBtn = $("buyBtn"), msgLine = $("msgLine"), machine = $("machine");
+const outBottles = $("outBottles");
+const canvas = $("histCanvas"), ctx = canvas.getContext("2d");
+
+/* ================= サウンド (Web Audio) ================= */
+let audioCtx = null;
+function beep(freq, dur, type, vol, when){
+  if (state.muted) return;
+  try{
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t = audioCtx.currentTime + (when || 0);
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || "square";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }catch(e){/* 音は演出なので失敗しても無視 */}
+}
+const sndCoin  = () => { beep(1180, .09, "square", .06); beep(1560, .12, "square", .05, .07); };
+const sndTick  = () => beep(880, .04, "square", .04);
+const sndStop  = () => beep(440, .1, "square", .06);
+const sndLose  = () => { beep(300, .18, "sawtooth", .05); beep(220, .3, "sawtooth", .05, .15); };
+const sndWin   = () => { // ファンファーレ風アルペジオ
+  const seq = [523, 659, 784, 1047, 784, 1047, 1319, 1568];
+  seq.forEach((f, i) => beep(f, .16, "square", .07, i * 0.11));
+};
+
+$("muteBtn").addEventListener("click", () => {
+  state.muted = !state.muted;
+  $("muteBtn").textContent = state.muted ? "🔇" : "🔊";
+});
+
+/* ================= 設定 ================= */
+function setProbability(p, fromCustom){
+  if (!(p > 0 && p < 1)) return;
+  if (Math.abs(p - state.p) < 1e-12) return;
+  state.p = p;
+  document.querySelectorAll(".prob-btn").forEach(b => {
+    b.classList.toggle("active", !fromCustom && Math.abs(parseFloat(b.dataset.p) - p) < 1e-9);
+  });
+  if (!fromCustom) $("customP").value = "";
+  resetStats();
+  msgLine.className = "msg-line";
+  msgLine.textContent = `当たり確率を 1/${Math.round(1/p)} に設定しました`;
+}
+document.querySelectorAll(".prob-btn").forEach(b => {
+  b.addEventListener("click", () => setProbability(parseFloat(b.dataset.p), false));
+});
+$("customP").addEventListener("change", () => {
+  const n = parseFloat($("customP").value);
+  if (n >= 2) setProbability(1/n, true);
+});
+$("priceInput").addEventListener("change", () => {
+  const v = Math.max(10, Math.round(parseFloat($("priceInput").value) || 130));
+  state.price = v;
+  $("priceInput").value = v;
+  buyBtn.textContent = `ジュースを買う（${v.toLocaleString()}円）`;
+  for (let i = 1; i <= 5; i++) $("tag" + i).textContent = v + "円";
+  renderStats();
+});
+
+/* ================= 統計 ================= */
+function recordPurchase(isWin){
+  state.bought++;
+  state.spent += state.price;
+  if (isWin){
+    state.waits.push(state.streak + 1);
+    if (state.firstWinAt === null) state.firstWinAt = state.bought;
+    state.wins++;
+    state.streak = 0;
+  } else {
+    state.streak++;
+  }
+}
+function renderStats(){
+  const total = state.bought + state.wins;
+  $("stBought").innerHTML = state.bought.toLocaleString() + "<small>本</small>";
+  $("stSpent").innerHTML  = state.spent.toLocaleString() + "<small>円</small>";
+  $("stWins").innerHTML   = state.wins.toLocaleString() + "<small>回</small>";
+  $("stTotal").innerHTML  = total.toLocaleString() + "<small>本</small>";
+  $("stUnit").innerHTML   = (total ? (state.spent / total).toFixed(1) : "-") + "<small>円</small>";
+  $("stStreak").innerHTML = state.streak.toLocaleString() + "<small>本</small>";
+  drawHistogram();
+  renderTheory();
+  renderFortune();
+}
+function resetStats(){
+  state.bought = 0; state.spent = 0; state.wins = 0;
+  state.streak = 0; state.firstWinAt = null; state.waits = [];
+  outBottles.innerHTML = "";
+  digits.forEach(d => { d.textContent = "-"; d.className = "digit"; });
+  renderStats();
+}
+$("resetBtn").addEventListener("click", () => {
+  resetStats();
+  msgLine.className = "msg-line";
+  msgLine.textContent = "統計をリセットしました";
+});
+
+/* ================= 1本買う（アニメーション） ================= */
+function buyOne(){
+  if (state.spinning) return;
+  state.spinning = true;
+  buyBtn.disabled = true;
+  outBottles.innerHTML = "";
+  msgLine.className = "msg-line";
+  msgLine.textContent = "ルーレット回転中…";
+  machine.classList.remove("win-flash");
+  sndCoin();
+
+  const isWin = Math.random() < state.p;
+  // 表示する目: 当たりなら7777、ハズレなら「7777以外」(たまにニアミス演出)
+  let final;
+  if (isWin){
+    final = [7,7,7,7];
+  } else {
+    if (Math.random() < 0.12){ // ニアミス: 777X
+      let last = Math.floor(Math.random() * 9); if (last >= 7) last++;
+      final = [7,7,7,last];
+    } else {
+      do { final = [0,0,0,0].map(() => Math.floor(Math.random() * 10)); }
+      while (final.every(n => n === 7));
+    }
+  }
+
+  digits.forEach(d => { d.className = "digit spin"; });
+  const timers = digits.map((d, i) =>
+    setInterval(() => {
+      d.textContent = Math.floor(Math.random() * 10);
+      if (i === 0) sndTick(); // ティック音は1系統だけ鳴らす
+    }, 70)
+  );
+
+  // 順に停止（左→右）
+  const stopDelays = [700, 1300, 1900, 2600];
+  digits.forEach((d, i) => {
+    setTimeout(() => {
+      clearInterval(timers[i]);
+      d.className = "digit";
+      d.textContent = final[i];
+      sndStop();
+      if (i === 3) setTimeout(() => finishSpin(isWin), 250);
+    }, stopDelays[i]);
+  });
+}
+
+function finishSpin(isWin){
+  recordPurchase(isWin);
+  if (isWin){
+    digits.forEach(d => d.classList.add("win"));
+    machine.classList.add("win-flash");
+    msgLine.className = "msg-line win";
+    msgLine.textContent = "🎊 アタリ！もう1本 🎉";
+    sndWin();
+    dispense(2);
+    burstConfetti();
+  } else {
+    msgLine.className = "msg-line";
+    const nearMiss = digits.slice(0,3).every(d => d.textContent === "7");
+    msgLine.textContent = nearMiss ? "うわ、惜しい…！ 次こそ" : "ハズレ… でもジュースはおいしい";
+    sndLose();
+    dispense(1);
+  }
+  renderStats();
+  state.spinning = false;
+  buyBtn.disabled = false;
+}
+
+function dispense(n){
+  outBottles.innerHTML = "";
+  for (let i = 0; i < n; i++){
+    const b = document.createElement("div");
+    b.className = "out-bottle" + (i > 0 ? " bonus" : "");
+    b.style.animationDelay = (i * 0.25) + "s";
+    outBottles.appendChild(b);
+  }
+}
+
+function burstConfetti(){
+  const colors = ["#ffd23f","#ff5252","#4fc3f7","#3ddc84","#c66bd6","#ff8c42"];
+  for (let i = 0; i < 60; i++){
+    const c = document.createElement("div");
+    c.className = "confetti";
+    const s = 6 + Math.random() * 7;
+    c.style.cssText =
+      `left:${Math.random()*100}vw; width:${s}px; height:${s*0.6}px;` +
+      `background:${colors[i % colors.length]};` +
+      `animation-duration:${2 + Math.random()*2.4}s;` +
+      `animation-delay:${Math.random()*0.6}s;`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5500);
+  }
+}
+
+buyBtn.addEventListener("click", buyOne);
+
+/* ================= 一括シミュレート ================= */
+document.querySelectorAll(".bulk-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    if (state.spinning) return;
+    const n = parseInt(b.dataset.n, 10);
+    let winsNow = 0;
+    for (let i = 0; i < n; i++){
+      const w = Math.random() < state.p;
+      recordPurchase(w);
+      if (w) winsNow++;
+    }
+    sndCoin();
+    msgLine.className = "msg-line";
+    msgLine.textContent = `${n.toLocaleString()}本 買った → アタリ ${winsNow.toLocaleString()}回！`;
+    // 最後の結果だけ表示部に反映
+    if (winsNow > 0 && state.streak === 0){
+      digits.forEach(d => { d.textContent = "7"; d.className = "digit win"; });
+    } else {
+      digits.forEach(d => { d.textContent = Math.floor(Math.random()*10); d.className = "digit"; });
+    }
+    dispense(winsNow > 0 ? 2 : 1);
+    renderStats();
+  });
+});
+
+/* ================= ヒストグラム描画 ================= */
+function drawHistogram(){
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#0a101f";
+  ctx.fillRect(0, 0, W, H);
+
+  const p = state.p;
+  const padL = 44, padR = 14, padT = 18, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  // ビン設定: 1本目〜 約3/p 本目までを最大30ビンに分割
+  const maxK = Math.max(10, Math.ceil(3 / p));
+  const nBins = Math.min(30, maxK);
+  const binSize = Math.ceil(maxK / nBins);
+
+  const bins = new Array(nBins).fill(0);
+  let counted = 0;
+  for (const w of state.waits){
+    const idx = Math.min(nBins - 1, Math.floor((w - 1) / binSize));
+    bins[idx]++; counted++;
+  }
+
+  // 理論値: 各ビンの確率 Σ p(1-p)^(k-1)
+  const theo = [];
+  for (let i = 0; i < nBins; i++){
+    const k1 = i * binSize + 1, k2 = (i + 1) * binSize;
+    // P(k1 <= X <= k2) = (1-p)^(k1-1) - (1-p)^k2
+    theo.push(Math.pow(1 - p, k1 - 1) - Math.pow(1 - p, k2));
+  }
+
+  const maxFrac = Math.max(
+    theo.reduce((m, v) => Math.max(m, v), 0),
+    counted ? bins.reduce((m, v) => Math.max(m, v), 0) / counted : 0
+  ) * 1.15 || 1;
+
+  // 軸
+  ctx.strokeStyle = "#2c3a5e"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+  ctx.stroke();
+
+  ctx.fillStyle = "#9aa6c2"; ctx.font = "10px sans-serif";
+  ctx.textAlign = "right";
+  for (let g = 0; g <= 4; g++){
+    const frac = maxFrac * g / 4;
+    const y = H - padB - plotH * g / 4;
+    ctx.fillText((frac * 100).toFixed(1) + "%", padL - 5, y + 3);
+    if (g > 0){
+      ctx.strokeStyle = "rgba(44,58,94,.5)";
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    }
+  }
+
+  // 棒（実績）
+  const bw = plotW / nBins;
+  if (counted){
+    for (let i = 0; i < nBins; i++){
+      const frac = bins[i] / counted;
+      const h = plotH * frac / maxFrac;
+      const x = padL + i * bw;
+      const grad = ctx.createLinearGradient(0, H - padB - h, 0, H - padB);
+      grad.addColorStop(0, "#ffd23f"); grad.addColorStop(1, "#b8860b");
+      ctx.fillStyle = grad;
+      ctx.fillRect(x + 1.5, H - padB - h, bw - 3, h);
+    }
+  } else {
+    ctx.fillStyle = "#5a6480"; ctx.textAlign = "center"; ctx.font = "13px sans-serif";
+    ctx.fillText("まだデータなし ── 買ってみよう！", padL + plotW / 2, padT + plotH / 2 - 8);
+  }
+
+  // 理論曲線
+  ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 2;
+  ctx.shadowColor = "rgba(79,195,247,.6)"; ctx.shadowBlur = 6;
+  ctx.beginPath();
+  for (let i = 0; i < nBins; i++){
+    const x = padL + i * bw + bw / 2;
+    const y = H - padB - plotH * theo[i] / maxFrac;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // x軸ラベル
+  ctx.fillStyle = "#9aa6c2"; ctx.textAlign = "center"; ctx.font = "10px sans-serif";
+  const step = Math.max(1, Math.round(nBins / 6));
+  for (let i = 0; i < nBins; i += step){
+    ctx.fillText(String(i * binSize + 1), padL + i * bw + bw / 2, H - padB + 14);
+  }
+  ctx.fillText("アタリまでの本数 →", padL + plotW / 2, H - 6);
+
+  // 初アタリマーカー
+  if (state.firstWinAt !== null && state.firstWinAt <= maxK){
+    const i = Math.min(nBins - 1, Math.floor((state.firstWinAt - 1) / binSize));
+    const x = padL + i * bw + bw / 2;
+    ctx.strokeStyle = "#ff5252"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#ff8a8a"; ctx.textAlign = "center";
+    ctx.fillText(`初アタリ ${state.firstWinAt}本目`, Math.min(Math.max(x, padL + 44), W - padR - 44), padT - 4 + 10);
+  }
+}
+
+/* ================= 理論値表示 ================= */
+function renderTheory(){
+  const p = state.p;
+  const inv = Math.round(1 / p);
+  const median = Math.ceil(Math.log(0.5) / Math.log(1 - p));
+  const missAtInv = Math.pow(1 - p, inv) * 100;
+  $("theoryBox").innerHTML =
+    `<b>理論値（確率 1/${inv}）:</b> ` +
+    `期待値では平均 <span class="num">${(1/p).toFixed(1)}本目</span> でアタリ。` +
+    `50%の人は <span class="num">${median}本目</span> までに当たります。` +
+    `一方で <span class="num">${inv}本</span> 買っても当たらない人が ` +
+    `<span class="num">${missAtInv.toFixed(1)}%</span> います。`;
+}
+
+/* ================= 運勢判定 ================= */
+function renderFortune(){
+  const box = $("fortuneBox");
+  if (state.bought === 0){ box.hidden = true; return; }
+  box.hidden = false;
+  const p = state.p;
+  const median = Math.ceil(Math.log(0.5) / Math.log(1 - p));
+  const mean = 1 / p;
+  let title, body;
+  if (state.firstWinAt === null){
+    const surviveProb = Math.pow(1 - p, state.bought) * 100;
+    if (state.bought < mean){
+      title = "🔮 判定はまだこれから";
+      body = `まだ ${state.bought}本。ここまで当たらない確率は ${surviveProb.toFixed(1)}% なので、ごく普通の展開です。`;
+    } else {
+      title = "🧊 まだ人生の運を温存中";
+      body = `平均 ${mean.toFixed(0)}本目を超えても初アタリなし（確率 ${surviveProb.toFixed(1)}% の展開）。運の貯金は増えている…はず。`;
+    }
+  } else {
+    const f = state.firstWinAt;
+    if (f <= Math.max(1, Math.round(median * 0.3))){
+      title = "🌟 豪運！宝くじ売り場へ急げ";
+      body = `初アタリは ${f}本目！ 理論の中央値（${median}本目）を大幅に上回るスピード。今日の運勢は絶好調です。`;
+    } else if (f <= median){
+      title = "😊 なかなかの強運";
+      body = `初アタリは ${f}本目。半数の人が当たる ${median}本目より早く、ツイてる側の人間です。`;
+    } else if (f <= mean * 1.5){
+      title = "🙂 ごく標準的な運勢";
+      body = `初アタリは ${f}本目。理論値（中央値 ${median}本目・平均 ${mean.toFixed(0)}本目）とほぼ一致。確率どおりの堅実な人生。`;
+    } else {
+      title = "🐢 まだ人生の運を温存中";
+      body = `初アタリは ${f}本目。平均の1.5倍待ちました。大事な場面のために運を貯めていたと考えましょう。`;
+    }
+  }
+  $("fortuneTitle").textContent = title;
+  $("fortuneBody").textContent = body;
+}
+
+/* ================= 初期化 ================= */
+renderStats();
+</script>
+</body>
+</html>

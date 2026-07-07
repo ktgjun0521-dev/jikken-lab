@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>くだらない雑学研究所</title>
+<style>
+  :root{
+    --c-main:#3a7d5c;
+    --c-accent:#e0a63c;
+    --c-dark:#255a41;
+    --c-ink:#2c3330;
+    --grid:#d3e3da;
+    --paper:#f4f9f5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+    color:var(--c-ink);
+    line-height:1.65;
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:24px 24px;
+    min-height:100vh;
+  }
+  .back-link{
+    display:inline-block;
+    margin:14px 0 0 16px;
+    font-size:.9rem;
+    color:#5a6b60;
+    text-decoration:none;
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,.7);
+    border:1px solid var(--grid);
+    transition:background .2s;
+  }
+  .back-link:hover{background:#fff;}
+  header{
+    text-align:center;
+    padding:18px 16px 6px;
+  }
+  header h1{
+    font-size:clamp(1.5rem,5vw,2.4rem);
+    letter-spacing:.04em;
+    color:var(--c-dark);
+  }
+  header p.sub{
+    font-size:.85rem;
+    color:#6b7a70;
+    margin-top:4px;
+  }
+  /* quiz mode */
+  .quiz-launch{
+    max-width:900px;
+    margin:16px auto 4px;
+    padding:0 16px;
+    display:flex;
+    justify-content:center;
+  }
+  .quiz-card{
+    width:100%;
+    max-width:640px;
+    background:#fff;
+    border:2px solid var(--c-accent);
+    border-radius:16px;
+    padding:16px 18px;
+    box-shadow:0 4px 14px rgba(0,0,0,.07);
+  }
+  .quiz-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .quiz-head h2{
+    font-size:1.1rem;
+    color:var(--c-dark);
+  }
+  .streak{
+    margin-left:auto;
+    font-size:.85rem;
+    font-weight:bold;
+    color:var(--c-accent);
+    background:#fff7e8;
+    border:1px solid #f0d9a8;
+    padding:4px 12px;
+    border-radius:999px;
+  }
+  .quiz-q{
+    font-size:1.05rem;
+    font-weight:bold;
+    margin:12px 0 12px;
+  }
+  .quiz-opts{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .opt{
+    text-align:left;
+    background:#f6faf7;
+    border:2px solid var(--grid);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:.95rem;
+    font-family:inherit;
+    color:var(--c-ink);
+    cursor:pointer;
+    transition:all .18s;
+  }
+  .opt:hover:not(:disabled){border-color:var(--c-main);transform:translateY(-1px);}
+  .opt:disabled{cursor:default;}
+  .opt.correct{background:#e3f5ea;border-color:#3a7d5c;font-weight:bold;}
+  .opt.wrong{background:#fbe6e4;border-color:#d5584d;}
+  .quiz-explain{
+    margin-top:12px;
+    padding:12px 14px;
+    background:#f0f6f2;
+    border-left:5px solid var(--c-main);
+    border-radius:8px;
+    font-size:.9rem;
+    display:none;
+  }
+  .quiz-explain.show{display:block;}
+  .quiz-btns{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    background:var(--c-main);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:9px 20px;
+    font-size:.9rem;
+    font-weight:bold;
+    font-family:inherit;
+    cursor:pointer;
+    transition:background .2s,transform .15s;
+  }
+  .btn:hover{background:var(--c-dark);transform:translateY(-1px);}
+  .btn.ghost{background:#fff;color:var(--c-dark);border:2px solid var(--c-main);}
+  .btn.ghost:hover{background:#eef6f1;}
+  /* filters */
+  .filters{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    padding:16px 12px 6px;
+  }
+  .filter{
+    border:2px solid var(--c-main);
+    background:#fff;
+    color:var(--c-dark);
+    font-size:.85rem;
+    font-weight:bold;
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    font-family:inherit;
+    transition:all .2s;
+  }
+  .filter:hover{transform:translateY(-2px);}
+  .filter.active{background:var(--c-main);color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);}
+  /* card grid */
+  .grid{
+    max-width:1000px;
+    margin:14px auto 10px;
+    padding:0 14px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:14px;
+  }
+  .flip{
+    perspective:1200px;
+    height:210px;
+    cursor:pointer;
+  }
+  .flip-inner{
+    position:relative;
+    width:100%;
+    height:100%;
+    transition:transform .55s cubic-bezier(.4,.2,.2,1);
+    transform-style:preserve-3d;
+  }
+  .flip.flipped .flip-inner{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    border-radius:14px;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    overflow:auto;
+  }
+  .face-front{
+    background:#fff;
+    border:2px solid var(--grid);
+  }
+  .face-back{
+    background:linear-gradient(160deg,#ffffff,#eef6f1);
+    border:2px solid var(--c-main);
+    transform:rotateY(180deg);
+  }
+  .cat-tag{
+    align-self:flex-start;
+    font-size:.7rem;
+    font-weight:bold;
+    color:#fff;
+    padding:3px 10px;
+    border-radius:999px;
+    margin-bottom:10px;
+  }
+  .q-mark{font-size:1.6rem;margin-bottom:6px;}
+  .card-q{
+    font-size:1.02rem;
+    font-weight:bold;
+    color:var(--c-dark);
+  }
+  .card-hint{
+    margin-top:auto;
+    font-size:.72rem;
+    color:#8a978d;
+    padding-top:8px;
+  }
+  .a-label{
+    font-size:.72rem;
+    font-weight:bold;
+    color:var(--c-main);
+    margin-bottom:5px;
+    letter-spacing:.08em;
+  }
+  .card-a{
+    font-size:.86rem;
+    line-height:1.6;
+  }
+  /* ---------- 遊び心ゾーン ---------- */
+  .title-chip{
+    font-size:.8rem;font-weight:bold;color:#fff;
+    background:var(--c-main);padding:4px 12px;border-radius:999px;
+  }
+  .progress-wrap{
+    max-width:1000px;margin:8px auto 0;padding:0 16px;
+    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+    font-size:.85rem;font-weight:bold;color:var(--c-dark);
+  }
+  .progress-chip{background:#fff;border:2px solid var(--grid);border-radius:999px;padding:5px 14px;}
+  .master-badge{
+    background:linear-gradient(135deg,#f7d774,#e0a63c);color:#5a3d00;
+    border:2px solid #c98f1e;border-radius:999px;padding:5px 14px;
+    box-shadow:0 3px 10px rgba(224,166,60,.4);
+    animation:badgePop .6s ease;
+  }
+  @keyframes badgePop{0%{transform:scale(0);}70%{transform:scale(1.15);}100%{transform:scale(1);}}
+  .flip{position:relative;}
+  .flip.read .face-front::after{
+    content:"✓ 読了";
+    position:absolute;top:12px;right:12px;
+    font-size:.65rem;font-weight:bold;color:var(--c-main);
+    border:1.5px solid var(--c-main);border-radius:999px;padding:1px 8px;
+    transform:rotate(8deg);opacity:.85;
+  }
+  .flip.daily::after{
+    content:"📌 本日の研究テーマ";
+    position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+    background:var(--c-accent);color:#fff;font-size:.68rem;font-weight:bold;
+    padding:2px 10px;border-radius:999px;z-index:3;white-space:nowrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .flip.daily .face-front,.flip.daily .face-back{
+    border-color:var(--c-accent);
+    box-shadow:0 0 0 3px rgba(224,166,60,.3),0 4px 14px rgba(0,0,0,.12);
+  }
+  .hakase-mutter{
+    margin-top:10px;padding:8px 10px;border-radius:8px;
+    background:#fdf6e3;border:1.5px dashed var(--c-accent);
+    font-size:.76rem;color:#7a5c1e;line-height:1.5;
+  }
+  .celebrate{
+    position:fixed;inset:0;z-index:500;background:rgba(20,40,30,.55);
+    display:flex;align-items:center;justify-content:center;padding:16px;
+    cursor:pointer;
+  }
+  .celebrate-box{
+    background:#fff;border:3px solid var(--c-accent);border-radius:20px;
+    padding:30px 36px;text-align:center;position:relative;overflow:hidden;
+    box-shadow:0 12px 50px rgba(0,0,0,.35);max-width:90vw;
+    animation:celebrateIn .5s cubic-bezier(.3,1.4,.5,1);
+  }
+  @keyframes celebrateIn{0%{transform:scale(.3);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  .celebrate-emoji{font-size:3rem;animation:trophyBounce 1s ease infinite;}
+  @keyframes trophyBounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+  .celebrate-title{font-size:1.15rem;font-weight:bold;color:var(--c-dark);margin-top:8px;}
+  .celebrate-sub{font-size:.85rem;color:#6b7a70;margin-top:6px;}
+  @keyframes confettiFall{
+    0%{transform:translateY(-20px) rotate(0);opacity:1;}
+    100%{transform:translateY(260px) rotate(520deg);opacity:0;}
+  }
+  .confetti{position:absolute;top:0;font-size:1.2rem;pointer-events:none;animation:confettiFall 1.6s ease-in forwards;}
+  footer{
+    text-align:center;
+    font-size:.75rem;
+    color:#8a978d;
+    padding:20px 12px 34px;
+  }
+  @media (max-width:520px){
+    .grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .flip{height:200px;}
+    .card-q{font-size:.9rem;}
+  }
+</style>
+</head>
+<body>
+<a class="back-link" href="index.html">← 実験ラボに戻る</a>
+<header>
+  <h1>🔬 くだらない雑学研究所 🧪</h1>
+  <p class="sub">「なぜ？」を真面目に解き明かす、はかせの研究ノート</p>
+</header>
+
+<!-- 今日の一問 クイズモード -->
+<div class="quiz-launch">
+  <div class="quiz-card">
+    <div class="quiz-head">
+      <h2>🧠 今日の一問クイズ</h2>
+      <span class="title-chip" id="titleChip"></span>
+      <span class="streak" id="streak">連続正解 0</span>
+    </div>
+    <div class="quiz-q" id="quizQ">「今日の一問」に挑戦して、雑学王を目指そう！</div>
+    <div class="quiz-opts" id="quizOpts"></div>
+    <div class="quiz-explain" id="quizExplain"></div>
+    <div class="quiz-btns">
+      <button class="btn" id="quizStart">出題する 🎲</button>
+      <button class="btn ghost" id="quizNext" style="display:none">次の問題 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- カテゴリフィルタ -->
+<nav class="filters" id="filters"></nav>
+
+<!-- 読了カウンター＆博識バッジ -->
+<div class="progress-wrap">
+  <span class="progress-chip" id="flipCount"></span>
+  <span class="master-badge" id="masterBadge" style="display:none">🏅 全問読破！博識の証</span>
+</div>
+
+<!-- フリップカードグリッド -->
+<main class="grid" id="grid"></main>
+
+<!-- 表彰演出オーバーレイ -->
+<div class="celebrate" id="celebrate" style="display:none">
+  <div class="celebrate-box" id="celebrateBox">
+    <div class="celebrate-emoji" id="celebrateEmoji">🏆</div>
+    <div class="celebrate-title" id="celebrateTitle"></div>
+    <div class="celebrate-sub" id="celebrateSub"></div>
+  </div>
+</div>
+
+<footer>
+  ※諸説ある話題は「〜という説が有力」と記しています。研究成果はご家庭や飲み会でご活用ください。<br>
+  くだらない雑学研究所（架空） / 素のHTML+CSS+JSで動いています 🔬
+</footer>
+
+<script>
+"use strict";
+
+/* ---------- カテゴリ定義 ---------- */
+const CATS = {
+  animal: {label:"🐾 動物",     color:"#c07b3c"},
+  space:  {label:"🌌 宇宙・自然", color:"#3d6fb0"},
+  body:   {label:"🫀 人体",      color:"#c05a6e"},
+  food:   {label:"🍙 食べ物",    color:"#7a9a3c"}
+};
+
+/* ---------- 雑学データ（15問以上・事実に忠実に） ---------- */
+const TRIVIA = [
+  {
+    cat:"animal",
+    q:"なぜゾウの鼻は長いのか？",
+    a:"祖先が大型化するにつれ体高が上がり、相対的に首が短く重い頭を支える形になったため、口を地面や水面に届かせるのが難しくなりました。その代わりに、鼻と上唇が一体化して伸び、水や食物を口へ運ぶ器用な器官へと進化したと考えられています。長い鼻はシュノーケルや道具としても使える万能アイテムです。"
+  },
+  {
+    cat:"animal",
+    q:"キリンの首はなぜ長いのか？",
+    a:"高い木の葉を食べるのに有利だったとする説に加え、オス同士が首を叩きつけて戦う「ネッキング」で長い首が有利に働き、性淘汰で伸びたという説も有力です。首の骨(頸椎)の数は人間と同じ7個で、一つ一つが非常に長くなっているのが特徴です。"
+  },
+  {
+    cat:"animal",
+    q:"シマウマの縞模様は何のため？",
+    a:"かつては保護色やカモフラージュ説が有力でしたが、近年の研究では吸血するアブなどの虫が縞模様に着地しづらくなり、刺されにくくなるという説が有力になっています。体温調節や個体識別に役立つという説もあり、複数の要因が絡んでいると考えられています。"
+  },
+  {
+    cat:"animal",
+    q:"カニはなぜ横歩きするのか？",
+    a:"カニの脚の関節は上下ではなく主に左右方向に曲がる構造で、脚が体の横に並んでいます。そのため前後よりも横方向へ動くほうが速く効率的なのです。ただしアサヒガニなど前後に歩ける種類もいて、すべてのカニが横歩き専門というわけではありません。"
+  },
+  {
+    cat:"animal",
+    q:"なぜ猫は高い所から落ちても着地できるのか？",
+    a:"猫には「立ち直り反射」があり、内耳の平衡感覚で上下を素早く判断し、体をひねって足から着地します。柔らかい背骨と軽い体、脚のクッション性も衝撃を和らげます。ただし万能ではなく、落下の高さによっては大怪我をすることもあります。"
+  },
+  {
+    cat:"animal",
+    q:"フラミンゴはなぜピンク色なのか？",
+    a:"エサである藻類や甲殻類に含まれるカロテノイド(アスタキサンチンなど)という色素を体内に取り込み、羽に沈着させるためです。生まれたてのヒナは灰白色で、成長して色素を摂ることで徐々にピンク色になります。色素を含まない食事だと色は薄れていきます。"
+  },
+  {
+    cat:"space",
+    q:"なぜ空は青いのか？",
+    a:"太陽光にはさまざまな色(波長)が含まれ、波長の短い青い光ほど空気中の分子に強く散乱されます(レイリー散乱)。空全体に散らばった青い光が目に届くため、空は青く見えます。夕方は光が大気を長く通るので青い光は散り尽くし、残った赤い光で夕焼けになります。"
+  },
+  {
+    cat:"space",
+    q:"なぜ夕焼けは赤いのか？",
+    a:"夕方は太陽が地平線近くにあり、光が通過する大気の距離が長くなります。その間に波長の短い青い光は散乱されて弱まり、散乱されにくい波長の長い赤い光が最後まで残って目に届くため、空が赤く染まって見えるのです。"
+  },
+  {
+    cat:"space",
+    q:"なぜ月はいつも同じ面を地球に向けているのか？",
+    a:"月の自転周期と公転周期がほぼ同じ(約27.3日)になっているためで、これを「潮汐ロック(自転同期)」と呼びます。長い年月をかけて地球の潮汐力が月の自転にブレーキをかけ、結果として常に同じ面を向けるようになったと考えられています。"
+  },
+  {
+    cat:"space",
+    q:"なぜ雷が光ってから音が遅れて聞こえるのか？",
+    a:"光の速さは秒速約30万kmとほぼ一瞬で届くのに対し、音の速さは秒速約340mと非常に遅いためです。光ってから音が鳴るまでの秒数に約340をかけると、雷までのおおよその距離(メートル)が分かります。"
+  },
+  {
+    cat:"space",
+    q:"なぜ海の水はしょっぱいのか？",
+    a:"雨が陸地の岩石を削り、その中の塩分(ナトリウムや塩素など)が川に溶けて海へ運ばれ続けてきたためです。海水は蒸発しても塩分は残るので、長い年月をかけて塩分が海に蓄積し、現在の塩辛さになったと考えられています。"
+  },
+  {
+    cat:"body",
+    q:"なぜ正座をすると足がしびれるのか？",
+    a:"正座で足を圧迫すると血流と神経への酸素供給が一時的に滞り、神経が正常に信号を伝えられなくなります。これがピリピリとしたしびれの正体です。足を崩して血流が戻る際、神経が回復して過敏になるため、あの独特なジンジン感が起こります。"
+  },
+  {
+    cat:"body",
+    q:"なぜ玉ねぎを切ると涙が出るのか？",
+    a:"玉ねぎを切ると細胞が壊れ、酵素の働きで硫化アリル由来の刺激性の物質(催涙成分)が発生します。これが空気中に漂って目の粘膜を刺激し、洗い流そうとして涙が出ます。冷やしてから切ると成分が揮発しにくく、涙が出づらくなります。"
+  },
+  {
+    cat:"body",
+    q:"なぜくしゃみが出るのか？",
+    a:"鼻の粘膜がほこりやウイルス、強い光などの刺激を受けると、それを外へ吹き飛ばそうとする防御反射としてくしゃみが起こります。くしゃみの速度は時速数十kmにもなり、鼻や口から異物を勢いよく排出する体の掃除機能なのです。"
+  },
+  {
+    cat:"body",
+    q:"なぜお腹が空くとお腹が鳴るのか？",
+    a:"胃の中が空になると、次の食事に備えて胃や腸が内容物を掃除するように強く収縮します。このとき中に残った空気や液体が動かされ、その音が「グー」という腹鳴として聞こえます。空腹を知らせる、消化管のお掃除タイムのサインです。"
+  },
+  {
+    cat:"body",
+    q:"なぜ寒いと鳥肌が立つのか？",
+    a:"皮膚の毛穴のまわりにある立毛筋が反射的に収縮し、毛が逆立って皮膚が盛り上がるためです。動物では毛を立てて空気の層をつくり保温する役割がありますが、体毛の少ない人間ではその名残りとしてブツブツだけが残る現象になっています。"
+  },
+  {
+    cat:"food",
+    q:"なぜ唐辛子は辛いのか？",
+    a:"唐辛子に含まれるカプサイシンという成分が、舌にある熱さや痛みを感じる受容体を刺激するためです。つまり「辛さ」は味覚ではなく痛覚・温度感覚に近いもの。種子を守り、哺乳類には食べられにくくして鳥に運ばせる進化の戦略とも言われています。"
+  },
+  {
+    cat:"food",
+    q:"なぜパンやお餅は焼くと膨らむのか？",
+    a:"生地の中の水分が加熱で水蒸気になり体積が急激に増えるほか、パンでは酵母(イースト)やベーキングパウダーが出す二酸化炭素の気泡が熱で膨張します。生地のグルテンやデンプンがそれを包み込んで固まることで、ふっくらした形が保たれます。"
+  },
+  {
+    cat:"food",
+    q:"なぜリンゴを切ると茶色くなるのか？",
+    a:"リンゴに含まれるポリフェノールが、切ることで空気中の酸素と酵素の働きにより酸化し、褐色の物質に変わるためです。塩水やレモン水につけると酸化が抑えられて変色を防げます。味が大きく落ちるわけではなく、見た目の変化が主です。"
+  },
+  {
+    cat:"food",
+    q:"なぜ炭酸飲料はシュワシュワするのか？",
+    a:"炭酸飲料には二酸化炭素が高い圧力で水に溶け込んでいます。フタを開けると圧力が下がり、溶けきれなくなった二酸化炭素が気泡となって一気に出てきます。これがはじける刺激が、あのシュワシュワとした爽快な感覚の正体です。"
+  }
+];
+
+/* ---------- カード生成 ---------- */
+const grid = document.getElementById("grid");
+const filtersEl = document.getElementById("filters");
+
+/* めくった（読了した）カードを localStorage に記憶 */
+const LS_READ = "triviaLab.readCards";
+let readSet = new Set();
+try {
+  const saved = JSON.parse(localStorage.getItem(LS_READ) || "[]");
+  readSet = new Set(saved.filter(n => Number.isInteger(n) && n >= 0 && n < TRIVIA.length));
+} catch(e) {}
+function saveRead(){
+  try { localStorage.setItem(LS_READ, JSON.stringify(Array.from(readSet))); } catch(e) {}
+}
+
+function buildCards(){
+  grid.innerHTML = "";
+  TRIVIA.forEach((t, idx) => {
+    const c = CATS[t.cat];
+    const flip = document.createElement("div");
+    flip.className = "flip";
+    flip.dataset.cat = t.cat;
+    flip.innerHTML =
+      '<div class="flip-inner">' +
+        '<div class="face face-front">' +
+          '<span class="cat-tag" style="background:' + c.color + '">' + c.label + '</span>' +
+          '<div class="q-mark">❓</div>' +
+          '<div class="card-q">' + t.q + '</div>' +
+          '<div class="card-hint">タップして答えを見る 🔍</div>' +
+        '</div>' +
+        '<div class="face face-back">' +
+          '<div class="a-label">■ けんきゅう結果</div>' +
+          '<div class="card-a">' + t.a + '</div>' +
+        '</div>' +
+      '</div>';
+    flip.addEventListener("click", () => {
+      flip.classList.toggle("flipped");
+      if (flip.classList.contains("flipped")) onCardOpened(flip, idx);
+    });
+    if (readSet.has(idx)) flip.classList.add("read");
+    grid.appendChild(flip);
+  });
+}
+buildCards();
+
+/* ---------- カテゴリフィルタ ---------- */
+let activeFilter = "all";
+const filterDefs = [{key:"all", label:"すべて"}].concat(
+  Object.keys(CATS).map(k => ({key:k, label:CATS[k].label}))
+);
+filterDefs.forEach(f => {
+  const btn = document.createElement("button");
+  btn.className = "filter" + (f.key === "all" ? " active" : "");
+  btn.textContent = f.label;
+  btn.addEventListener("click", () => {
+    activeFilter = f.key;
+    Array.from(filtersEl.children).forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    Array.from(grid.children).forEach(card => {
+      const show = (f.key === "all" || card.dataset.cat === f.key);
+      card.style.display = show ? "" : "none";
+      card.classList.remove("flipped");
+    });
+  });
+  filtersEl.appendChild(btn);
+});
+
+/* ---------- 今日の一問クイズ ---------- */
+const quizQ = document.getElementById("quizQ");
+const quizOpts = document.getElementById("quizOpts");
+const quizExplain = document.getElementById("quizExplain");
+const quizStart = document.getElementById("quizStart");
+const quizNext = document.getElementById("quizNext");
+const streakEl = document.getElementById("streak");
+let streak = 0;
+let currentQuiz = null;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function makeQuiz(){
+  // 正解1問 + 他カードの答えからダミー2問
+  const correct = TRIVIA[Math.floor(Math.random() * TRIVIA.length)];
+  const others = shuffle(TRIVIA.filter(t => t !== correct)).slice(0, 2);
+  const options = shuffle([correct].concat(others));
+  return {correct, options};
+}
+
+function shortAnswer(t){
+  // 答えの1文目を選択肢用に抜き出す
+  const first = t.a.split("。")[0];
+  return first + "。";
+}
+
+function renderQuiz(){
+  currentQuiz = makeQuiz();
+  quizQ.textContent = "Q. " + currentQuiz.correct.q;
+  quizExplain.classList.remove("show");
+  quizExplain.innerHTML = "";
+  quizNext.style.display = "none";
+  quizStart.style.display = "none";
+  quizOpts.innerHTML = "";
+  currentQuiz.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.textContent = shortAnswer(opt);
+    btn.addEventListener("click", () => answerQuiz(btn, opt));
+    quizOpts.appendChild(btn);
+  });
+}
+
+function answerQuiz(btn, opt){
+  const correct = currentQuiz.correct;
+  const buttons = Array.from(quizOpts.children);
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (currentQuiz.options[i] === correct) b.classList.add("correct");
+  });
+  const isRight = opt === correct;
+  if (!isRight) btn.classList.add("wrong");
+  if (isRight) {
+    const prevTitle = titleFor(streak);
+    streak++;
+    quizExplain.innerHTML = "⭕ <b>正解！</b><br>" + correct.a;
+    const newTitle = titleFor(streak);
+    if (newTitle !== prevTitle) {
+      celebrate(newTitle.emoji, "称号アップ！「" + newTitle.name + "」に昇進", "連続正解 " + streak + " 問を達成。研究所一同、拍手喝采です 👏");
+    }
+  } else {
+    streak = 0;
+    quizExplain.innerHTML = "❌ <b>残念！</b> 正解は「" + shortAnswer(correct) +
+      "」<br>" + correct.a;
+  }
+  streakEl.textContent = "連続正解 " + streak;
+  updateTitleChip();
+  quizExplain.classList.add("show");
+  quizNext.style.display = "";
+}
+
+quizStart.addEventListener("click", renderQuiz);
+quizNext.addEventListener("click", renderQuiz);
+
+/* ================================================================
+   ここから遊び心ゾーン
+   ================================================================ */
+
+/* ---------- 称号システム（連続正解で進化） ---------- */
+const TITLES = [
+  {min:20, name:"ノーベルくだらない賞", emoji:"🏆"},
+  {min:15, name:"教授",                 emoji:"🎓"},
+  {min:10, name:"主任研究員",           emoji:"🥼"},
+  {min:5,  name:"研究員",               emoji:"🔬"},
+  {min:3,  name:"助手",                 emoji:"📎"},
+  {min:0,  name:"見習い",               emoji:"🐣"}
+];
+function titleFor(n){ return TITLES.find(t => n >= t.min); }
+const titleChip = document.getElementById("titleChip");
+function updateTitleChip(){
+  const t = titleFor(streak);
+  titleChip.textContent = "称号：" + t.emoji + " " + t.name;
+}
+updateTitleChip();
+
+/* ---------- 表彰演出（称号アップ・全問読破で共用） ---------- */
+const celebrateEl = document.getElementById("celebrate");
+let celebrateTimer = null;
+function celebrate(emoji, title, sub){
+  document.getElementById("celebrateEmoji").textContent = emoji;
+  document.getElementById("celebrateTitle").textContent = title;
+  document.getElementById("celebrateSub").textContent = sub;
+  celebrateEl.style.display = "flex";
+  const box = document.getElementById("celebrateBox");
+  const emojis = ["🎉","✨","🎊","⭐"];
+  for (let k = 0; k < 16; k++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = (Math.random() * 95) + "%";
+    s.style.animationDelay = (Math.random() * .4) + "s";
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 2200);
+  }
+  clearTimeout(celebrateTimer);
+  celebrateTimer = setTimeout(() => { celebrateEl.style.display = "none"; }, 3000);
+}
+celebrateEl.addEventListener("click", () => {
+  celebrateEl.style.display = "none";
+  clearTimeout(celebrateTimer);
+});
+
+/* ---------- めくった枚数カウンター＆博識バッジ ---------- */
+const flipCountEl = document.getElementById("flipCount");
+const masterBadge = document.getElementById("masterBadge");
+const LS_BADGE = "triviaLab.masterBadgeShown";
+
+function updateFlipCount(){
+  flipCountEl.textContent = "🃏 めくった雑学：" + readSet.size + " / " + TRIVIA.length + " 枚";
+  if (readSet.size >= TRIVIA.length) {
+    masterBadge.style.display = "";
+    let shown = false;
+    try { shown = localStorage.getItem(LS_BADGE) === "1"; } catch(e) {}
+    if (!shown) {
+      try { localStorage.setItem(LS_BADGE, "1"); } catch(e) {}
+      celebrate("🏅", "全問読破！博識の証", "研究所の雑学をすべて読み切りました。あなたはもう立派なはかせです");
+    }
+  }
+}
+
+/* ---------- はかせの独り言（10%の確率で裏面に追記） ---------- */
+const MUTTERS = [
+  "この研究のせいで昨晩も夜ふかしじゃ…",
+  "ちなみにわしは、きのこの山派じゃ",
+  "論文にしようとしたら助手に止められたのじゃ",
+  "この雑学、飲み会で3回スベった実績があるぞい",
+  "研究費はほぼお茶菓子代に消えたのじゃ",
+  "知っていても人生は変わらん。だが面白いじゃろ？",
+  "次の研究テーマは『靴下が片方だけ消える謎』じゃ",
+  "はかせ検定1級に出るかもしれんぞい。知らんけど"
+];
+
+function onCardOpened(flip, idx){
+  // 読了記録
+  if (!readSet.has(idx)) {
+    readSet.add(idx);
+    saveRead();
+    flip.classList.add("read");
+  }
+  updateFlipCount();
+  // はかせの独り言（10%）
+  const back = flip.querySelector(".face-back");
+  const old = back.querySelector(".hakase-mutter");
+  if (old) old.remove();
+  if (Math.random() < 0.1) {
+    const m = document.createElement("div");
+    m.className = "hakase-mutter";
+    m.textContent = "🗨️ はかせの独り言：" + MUTTERS[Math.floor(Math.random() * MUTTERS.length)];
+    back.appendChild(m);
+  }
+}
+updateFlipCount();
+
+/* ---------- 本日の研究テーマ（1日1回、日替わりで1枚めくれた状態に） ---------- */
+(function(){
+  const now = new Date();
+  const key = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
+  let seed = 0;
+  for (let i = 0; i < key.length; i++) seed = (seed * 31 + key.charCodeAt(i)) >>> 0;
+  const idx = seed % TRIVIA.length;
+  const card = grid.children[idx];
+  if (!card) return;
+  card.classList.add("daily"); // 今日のテーマは常にハイライト
+  let last = null;
+  try { last = localStorage.getItem("triviaLab.dailyDate"); } catch(e) {}
+  if (last !== key) {
+    // 今日はじめて開いたときだけ、最初からめくれた状態でお出迎え
+    try { localStorage.setItem("triviaLab.dailyDate", key); } catch(e) {}
+    card.classList.add("flipped");
+    onCardOpened(card, idx);
+  }
+})();
+</script>
+</body>
+</html>
