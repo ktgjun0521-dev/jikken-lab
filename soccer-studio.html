@@ -484,6 +484,31 @@
 <div id="flash"></div>
 <div id="golazo">&#9917; ゴラッソ!!</div>
 
+<!-- ============ 選手名 一括入力モーダル ============ -->
+<div id="bulkMask">
+  <div id="bulkModal">
+    <h2>&#128100; 選手名をまとめて入力</h2>
+    <div class="bk-sub">現在のビューの駒に、番号順で名前を入力できます。空欄は「名前なし」になります。よく使う名前セットは保存して呼び出せます。</div>
+    <div class="bk-tpl">
+      <button class="tbtn" id="bkTplSave">&#128190; この内容をテンプレ保存</button>
+      <select id="bkTplSel" class="tbtn" style="flex:1;min-width:120px;"></select>
+      <button class="tbtn warn" id="bkTplDel">&#128465;</button>
+    </div>
+    <div class="bk-sec" id="bkAtkSec">
+      <div class="bk-h"><i class="bk-dot" style="background:var(--red)"></i>攻撃</div>
+      <div id="bkAtkList"></div>
+    </div>
+    <div class="bk-sec" id="bkDefSec">
+      <div class="bk-h"><i class="bk-dot" style="background:var(--blue)"></i>守備</div>
+      <div id="bkDefList"></div>
+    </div>
+    <div class="bk-foot">
+      <button class="tbtn" id="bkCancel">キャンセル</button>
+      <button class="tbtn hero" id="bkApply">&#9989; 反映</button>
+    </div>
+  </div>
+</div>
+
 <script>
 "use strict";
 /* ============================================================
@@ -2404,30 +2429,6 @@ window.__studioPending = function(){ if (window.Studio3D && window.Studio3D.read
   }, 200);
 })();
 </script>
-<!-- ============ 選手名 一括入力モーダル ============ -->
-<div id="bulkMask">
-  <div id="bulkModal">
-    <h2>&#128100; 選手名をまとめて入力</h2>
-    <div class="bk-sub">現在のビューの駒に、番号順で名前を入力できます。空欄は「名前なし」になります。よく使う名前セットは保存して呼び出せます。</div>
-    <div class="bk-tpl">
-      <button class="tbtn" id="bkTplSave">&#128190; この内容をテンプレ保存</button>
-      <select id="bkTplSel" class="tbtn" style="flex:1;min-width:120px;"></select>
-      <button class="tbtn warn" id="bkTplDel">&#128465;</button>
-    </div>
-    <div class="bk-sec" id="bkAtkSec">
-      <div class="bk-h"><i class="bk-dot" style="background:var(--red)"></i>攻撃</div>
-      <div id="bkAtkList"></div>
-    </div>
-    <div class="bk-sec" id="bkDefSec">
-      <div class="bk-h"><i class="bk-dot" style="background:var(--blue)"></i>守備</div>
-      <div id="bkDefList"></div>
-    </div>
-    <div class="bk-foot">
-      <button class="tbtn" id="bkCancel">キャンセル</button>
-      <button class="tbtn hero" id="bkApply">&#9989; 反映</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
 
