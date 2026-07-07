@@ -188,6 +188,40 @@
   #arrowProp .ap-del{color:#ff9d9d !important;}
   #arrowProp .ap-close{background:#0e3b23 !important;border-color:var(--accent) !important;color:var(--accent) !important;font-weight:700;}
 
+  /* ---------- 注釈レイヤー(スペース/コメント) ---------- */
+  .tbtn.anno{color:#ffe1a0;}
+  .tbtn.anno.active{background:#3a2e0c;border-color:var(--gold);color:#ffe9a8;}
+  #annoToggleWrap{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--sub);cursor:pointer;user-select:none;}
+  #annoToggleWrap input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}
+  .anno-legend{margin-top:6px;}
+  .anno-legend .al-lbl{color:var(--sub);font-weight:700;}
+  .anno-legend .zbox{width:16px;height:12px;border-radius:3px;border:1.5px solid;display:inline-block;}
+  /* ゾーン編集ポップオーバー */
+  #zonePop,#cmtPop{position:absolute;z-index:44;display:none;flex-direction:column;gap:9px;
+    background:rgba(16,22,30,.98);border:1px solid var(--line);border-radius:12px;padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.6);width:230px;backdrop-filter:blur(5px);}
+  #zonePop.on,#cmtPop.on{display:flex;}
+  #zonePop .zp-ttl,#cmtPop .cp-ttl{font-size:12px;color:var(--gold);font-weight:700;}
+  #zonePop label{font-size:11px;color:var(--sub);display:block;margin-bottom:4px;}
+  #zonePop .zp-colors{display:flex;gap:8px;flex-wrap:wrap;}
+  #zonePop .zp-sw{width:30px;height:30px;border-radius:8px;cursor:pointer;border:2px solid transparent;
+    position:relative;transition:transform .1s;}
+  #zonePop .zp-sw:hover{transform:scale(1.08);}
+  #zonePop .zp-sw.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25);}
+  #zonePop .zp-shapes{display:flex;gap:6px;}
+  #zonePop .zp-shape{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:6px 0;font-size:12.5px;cursor:pointer;font-family:inherit;}
+  #zonePop .zp-shape.on{border-color:var(--gold);background:#3a2e0c;color:#ffe9a8;font-weight:700;}
+  #zonePop input,#cmtPop textarea{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:8px 9px;font-size:13.5px;font-family:inherit;width:100%;}
+  #cmtPop textarea{resize:vertical;line-height:1.5;min-height:56px;}
+  #zonePop input:focus,#cmtPop textarea:focus{outline:none;border-color:var(--gold);}
+  #zonePop .zp-foot,#cmtPop .cp-foot{display:flex;gap:6px;}
+  #zonePop .zp-foot button,#cmtPop .cp-foot button{flex:1;border:1px solid var(--line);border-radius:8px;
+    padding:7px 0;font-size:12.5px;cursor:pointer;font-family:inherit;background:var(--panel2);color:var(--txt);}
+  #zonePop .zp-del,#cmtPop .cp-del{color:#ff9d9d !important;}
+  #zonePop .zp-ok,#cmtPop .cp-ok{background:#3a2e0c !important;border-color:var(--gold) !important;color:#ffe9a8 !important;font-weight:700;}
+
   /* ---------- タイムライン(動画編集風) ---------- */
   #timeline{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
     padding:11px 12px 12px;}
@@ -407,6 +441,10 @@
         <button class="tbtn" data-tool="dribble">&#8767; ドリブル</button>
         <button class="tbtn" data-tool="erase">&#9986; 消しゴム</button>
         <div class="sep"></div>
+        <button class="tbtn anno" data-tool="zone" title="ドラッグでスペース(ゾーン)を描く">&#11034; スペース</button>
+        <button class="tbtn anno" data-tool="comment" title="タップでコメントを置く">&#128172; コメント</button>
+        <label id="annoToggleWrap" title="注釈レイヤーの表示ON/OFF"><input type="checkbox" id="annoToggle" checked>注釈表示</label>
+        <div class="sep"></div>
         <button class="tbtn warn" id="clearBtn">&#128465; 全消去</button>
         <button class="tbtn play" id="playBtn2d">&#9654; 再生</button>
         <button class="tbtn hero" id="to3dBtn">&#127916; この盤面を3Dで見る</button>
@@ -450,6 +488,38 @@
             <button class="np-ok" id="npOk">OK</button>
           </div>
         </div>
+        <!-- ゾーン(スペース)編集ポップオーバー -->
+        <div id="zonePop">
+          <div class="zp-ttl"><span>&#11034; スペースの設定</span></div>
+          <div class="zp-field">
+            <label>色（意味）</label>
+            <div class="zp-colors" id="zpColors"></div>
+          </div>
+          <div class="zp-field">
+            <label>形</label>
+            <div class="zp-shapes" id="zpShapes">
+              <button type="button" class="zp-shape" data-shape="rect">&#9645; 矩形</button>
+              <button type="button" class="zp-shape" data-shape="ellipse">&#11093; 楕円</button>
+            </div>
+          </div>
+          <div class="zp-field">
+            <label>ラベル（例：フリーなスペース）</label>
+            <input type="text" id="zpLabel" maxlength="24" placeholder="短い説明（任意）" autocomplete="off">
+          </div>
+          <div class="zp-foot">
+            <button class="zp-del" id="zpDel">&#128465; 削除</button>
+            <button class="zp-ok" id="zpOk">OK</button>
+          </div>
+        </div>
+        <!-- コメント編集ポップオーバー -->
+        <div id="cmtPop">
+          <div class="cp-ttl"><span>&#128172; コメント</span></div>
+          <textarea id="cpText" rows="3" maxlength="140" placeholder="気づいたことを書く（改行OK）"></textarea>
+          <div class="cp-foot">
+            <button class="cp-del" id="cpDel">&#128465; 削除</button>
+            <button class="cp-ok" id="cpOk">OK</button>
+          </div>
+        </div>
       </div>
       <div class="legend">
         <span><i class="dot" style="background:#e5484d"></i>攻撃</span>
@@ -458,6 +528,14 @@
         <span><i class="lin" style="border-color:#f0c649"></i>移動</span>
         <span><i class="lin" style="border-color:#fff;border-top-style:dashed"></i>パス</span>
         <span><i class="lin" style="border-color:#ff8c42"></i>ドリブル</span>
+      </div>
+      <div class="legend anno-legend" id="annoLegend">
+        <span class="al-lbl">&#11034; スペースの色:</span>
+        <span><i class="zbox" style="background:rgba(240,198,73,.30);border-color:#f0c649"></i>注目</span>
+        <span><i class="zbox" style="background:rgba(229,72,77,.30);border-color:#e5484d"></i>危険</span>
+        <span><i class="zbox" style="background:rgba(62,123,250,.30);border-color:#3e7bfa"></i>好機</span>
+        <span><i class="zbox" style="background:rgba(74,222,128,.30);border-color:#4ade80"></i>スペース</span>
+        <span><i class="dot" style="background:#ffd54a;border:1px solid #fff"></i>&#128172; コメント</span>
       </div>
       <!-- ============ タイムライン(動きの順序・タイミング) ============ -->
       <div id="timeline" class="hidden">
@@ -670,13 +748,14 @@ const VIEWS = {
 };
 let view = "eight";
 const boards = {
-  eight:   { players:[], arrows:[] },
-  corner:  { players:[], arrows:[] },
-  throwin: { players:[], arrows:[] }
+  eight:   { players:[], arrows:[], annotations:[] },
+  corner:  { players:[], arrows:[], annotations:[] },
+  throwin: { players:[], arrows:[], annotations:[] }
 };
 let tool = "select";
 let scaleB = 10;
 let tempArrow = null, dragP = null, animating = false, activePresetBtn = null;
+let tempZone = null, selectedAnno = null, dragAnno = null;
 const board = () => boards[view];
 const V = () => VIEWS[view];
 
@@ -963,9 +1042,193 @@ function drawPlayerB(p){
   }
   ctx.restore();
 }
+/* ============================================================
+   注釈レイヤー(スペース/コメント)
+   ・zone   : 半透明ゾーン {type:"zone",id,shape:"rect"|"ellipse",x,y,w,h,color,label}
+   ・comment: 付箋/吹き出し {type:"comment",id,x,y,text}
+   座標はすべてメートル座標。board().annotations に保持。
+   描画順: ゾーン=駒/矢印より背面、コメント=最前面(再生中も表示)。
+============================================================ */
+let annotationsOn = true;
+let annoIdSeq = 1;
+const _cmtBoxes = new Map(); // comment id → 直近の描画ボックス(px)。ヒットテスト用
+function newAnnoId(){ return "n" + (annoIdSeq++) + "_" + Math.random().toString(36).slice(2, 7); }
+const ZONE_COLORS = {
+  yellow: { key:"yellow", fill:"rgba(240,198,73,.28)", stroke:"#f0c649", label:"注目" },
+  red:    { key:"red",    fill:"rgba(229,72,77,.28)",  stroke:"#e5484d", label:"危険" },
+  blue:   { key:"blue",   fill:"rgba(62,123,250,.28)", stroke:"#3e7bfa", label:"好機" },
+  green:  { key:"green",  fill:"rgba(74,222,128,.30)", stroke:"#4ade80", label:"スペース" }
+};
+function zoneColor(k){ return ZONE_COLORS[k] || ZONE_COLORS.yellow; }
+/* annotations 配列を無くても壊れないよう保証 */
+function annos(){ const b = board(); if (!Array.isArray(b.annotations)) b.annotations = []; return b.annotations; }
+/* 読み込んだ注釈を検証・正規化(不正値は除去) */
+function normalizeAnnotations(b){
+  if (!Array.isArray(b.annotations)){ b.annotations = []; return; }
+  const out = [];
+  for (const a of b.annotations){
+    if (!a || typeof a !== "object") continue;
+    if (a.type === "zone"){
+      if (![a.x, a.y, a.w, a.h].every(v => typeof v === "number" && isFinite(v))) continue;
+      const n = { type:"zone", id: typeof a.id === "string" ? a.id : newAnnoId(),
+        shape: a.shape === "ellipse" ? "ellipse" : "rect",
+        x:+a.x, y:+a.y, w:Math.abs(+a.w), h:Math.abs(+a.h),
+        color: ZONE_COLORS[a.color] ? a.color : "yellow",
+        label: typeof a.label === "string" ? a.label.slice(0, 24) : "" };
+      out.push(n);
+    } else if (a.type === "comment"){
+      if (![a.x, a.y].every(v => typeof v === "number" && isFinite(v))) continue;
+      out.push({ type:"comment", id: typeof a.id === "string" ? a.id : newAnnoId(),
+        x:+a.x, y:+a.y, text: typeof a.text === "string" ? a.text.slice(0, 140) : "" });
+    }
+    // 未知typeは無視(将来拡張の後方互換)
+  }
+  // id連番シードの更新 & 重複回避
+  const seen = new Set();
+  for (const a of out){
+    if (seen.has(a.id)) a.id = newAnnoId();
+    seen.add(a.id);
+    const m = /^n(\d+)_/.exec(a.id); if (m && +m[1] >= annoIdSeq) annoIdSeq = +m[1] + 1;
+  }
+  b.annotations = out;
+}
+/* ---------- 注釈の描画 ---------- */
+function roundRectPath(g, x, y, w, h, r){
+  r = Math.min(r, w / 2, h / 2);
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function drawZone(a, ghost){
+  const c = zoneColor(a.color);
+  const x = m2x(a.x), y = m2y(a.y), w = a.w * scaleB, h = a.h * scaleB;
+  const isSel = !ghost && selectedAnno === a;
+  ctx.save();
+  ctx.globalAlpha = ghost ? 0.75 : 1;
+  ctx.fillStyle = c.fill; ctx.strokeStyle = c.stroke;
+  ctx.lineWidth = isSel ? Math.max(3, scaleB * 0.28) : Math.max(2, scaleB * 0.18);
+  ctx.setLineDash(ghost ? [Math.max(5, scaleB * 0.5), Math.max(4, scaleB * 0.4)] : []);
+  if (a.shape === "ellipse"){
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h / 2, Math.abs(w / 2), Math.abs(h / 2), 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+  } else {
+    roundRectPath(ctx, x, y, w, h, Math.max(4, scaleB * 0.4));
+    ctx.fill(); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  if (isSel){ ctx.shadowColor = c.stroke; ctx.shadowBlur = 12;
+    if (a.shape === "ellipse"){ ctx.beginPath(); ctx.ellipse(x + w/2, y + h/2, Math.abs(w/2), Math.abs(h/2), 0, 0, Math.PI*2); ctx.stroke(); }
+    else { roundRectPath(ctx, x, y, w, h, Math.max(4, scaleB * 0.4)); ctx.stroke(); }
+    ctx.shadowColor = "transparent";
+  }
+  // ラベル(中央上寄り)
+  if (!ghost && a.label){
+    const fs = Math.max(11, Math.min(15, scaleB * 0.95));
+    ctx.font = "700 " + fs + "px 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const tw = ctx.measureText(a.label).width;
+    const pad = fs * 0.55, bw = tw + pad * 2, bh = fs + 8;
+    const cx = x + w / 2, cy = y + Math.min(h * 0.5, bh);
+    ctx.globalAlpha = 1;
+    roundRectPath(ctx, cx - bw / 2, cy - bh / 2, bw, bh, bh / 2);
+    ctx.fillStyle = "rgba(10,14,20,.82)"; ctx.fill();
+    ctx.lineWidth = 1.4; ctx.strokeStyle = c.stroke; ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.fillText(a.label, cx, cy + 0.5);
+  }
+  ctx.restore();
+}
+/* コメント(付箋)を描画。返り値でヒット領域(px)を保持 */
+function commentBox(a){
+  const fs = Math.max(11, Math.min(15, scaleB * 0.9));
+  ctx.save();
+  ctx.font = "600 " + fs + "px 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif";
+  const lines = (a.text || "コメント").split("\n");
+  let maxW = 0;
+  for (const ln of lines) maxW = Math.max(maxW, ctx.measureText(ln || " ").width);
+  ctx.restore();
+  const padX = fs * 0.7, padY = fs * 0.55, lh = fs * 1.35;
+  const bw = Math.min(maxW + padX * 2, Math.max(120, scaleB * 22));
+  const bh = lines.length * lh + padY * 2;
+  const ax = m2x(a.x), ay = m2y(a.y); // アンカー(先端)
+  // 付箋は右下に出す。はみ出す場合は左/上に反転
+  const bw2 = boardBox.clientWidth, bh2 = boardBox.clientHeight;
+  let bx = ax + 10, by = ay + 10;
+  if (bx + bw > bw2) bx = ax - bw - 10;
+  if (by + bh > bh2) by = ay - bh - 10;
+  bx = Math.max(2, bx); by = Math.max(2, by);
+  return { bx, by, bw, bh, ax, ay, fs, lh, padX, padY, lines };
+}
+function drawComment(a){
+  const isSel = selectedAnno === a;
+  const bx = commentBox(a);
+  ctx.save();
+  // 引き出し線(アンカー→付箋)
+  ctx.strokeStyle = "rgba(255,213,74,.9)"; ctx.lineWidth = Math.max(1.5, scaleB * 0.14);
+  ctx.setLineDash([Math.max(3, scaleB * 0.3), Math.max(3, scaleB * 0.3)]);
+  ctx.beginPath(); ctx.moveTo(bx.ax, bx.ay);
+  ctx.lineTo(bx.bx + bx.bw * 0.16, bx.by + bx.bh * 0.5); ctx.stroke();
+  ctx.setLineDash([]);
+  // アンカー点
+  ctx.beginPath(); ctx.arc(bx.ax, bx.ay, Math.max(3.5, scaleB * 0.3), 0, Math.PI * 2);
+  ctx.fillStyle = "#ffd54a"; ctx.fill(); ctx.lineWidth = 1.4; ctx.strokeStyle = "#7a5c00"; ctx.stroke();
+  // 付箋の本体
+  ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  roundRectPath(ctx, bx.bx, bx.by, bx.bw, bx.bh, Math.max(6, scaleB * 0.55));
+  ctx.fillStyle = "#fff6d8"; ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.lineWidth = isSel ? 2.5 : 1.5; ctx.strokeStyle = isSel ? "#f0a020" : "#e6c060"; ctx.stroke();
+  // テキスト
+  ctx.fillStyle = "#3a2c00";
+  ctx.font = "600 " + bx.fs + "px 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif";
+  ctx.textAlign = "left"; ctx.textBaseline = "top";
+  bx.lines.forEach((ln, i) => ctx.fillText(ln, bx.bx + bx.padX, bx.by + bx.padY + i * bx.lh));
+  ctx.restore();
+  _cmtBoxes.set(a.id, bx); // ヒットテスト用に保持(annotation本体は汚さない)
+}
+/* ---------- 注釈のヒットテスト(メートル座標) ---------- */
+function hitZone(mx, my){
+  const list = annos();
+  for (let i = list.length - 1; i >= 0; i--){
+    const a = list[i]; if (a.type !== "zone") continue;
+    const x0 = Math.min(a.x, a.x + a.w), x1 = Math.max(a.x, a.x + a.w);
+    const y0 = Math.min(a.y, a.y + a.h), y1 = Math.max(a.y, a.y + a.h);
+    if (a.shape === "ellipse"){
+      const cx = a.x + a.w / 2, cy = a.y + a.h / 2, rx = Math.abs(a.w / 2) || 0.01, ry = Math.abs(a.h / 2) || 0.01;
+      if (((mx - cx) / rx) ** 2 + ((my - cy) / ry) ** 2 <= 1) return a;
+    } else if (mx >= x0 && mx <= x1 && my >= y0 && my <= y1) return a;
+  }
+  return null;
+}
+/* コメントは付箋(px)の矩形 or アンカー近傍でヒット。返り値 {a, part:"box"|"anchor"} */
+function hitComment(mx, my){
+  const px = m2x(mx), py = m2y(my), list = annos();
+  for (let i = list.length - 1; i >= 0; i--){
+    const a = list[i]; if (a.type !== "comment") continue;
+    const bx = _cmtBoxes.get(a.id) || commentBox(a);
+    if (px >= bx.bx && px <= bx.bx + bx.bw && py >= bx.by && py <= bx.by + bx.bh) return { a, part:"box" };
+    if (Math.hypot(px - bx.ax, py - bx.ay) < Math.max(10, scaleB * 0.8)) return { a, part:"anchor" };
+  }
+  return null;
+}
+function removeAnno(a){
+  const list = annos(), i = list.indexOf(a);
+  if (i >= 0) list.splice(i, 1);
+  if (selectedAnno === a) selectedAnno = null;
+  closeZonePop(); closeCmtPop(); drawBoard();
+}
+
 function drawBoard(){
   ctx.clearRect(0, 0, cv.width, cv.height);
   V().draw();
+  // ゾーンは駒/矢印より背面。再生中は少し薄く。
+  if (annotationsOn){
+    ctx.save(); if (animating) ctx.globalAlpha = 0.55;
+    for (const a of annos()) if (a.type === "zone") drawZone(a, false);
+    if (tempZone) drawZone(tempZone, true);
+    ctx.restore();
+  }
   for (const a of board().arrows) drawArrowB(a, false);
   if (tempArrow) drawArrowB(tempArrow, true);
   for (const p of board().players) drawPlayerB(p);
@@ -974,6 +1237,12 @@ function drawBoard(){
     const r = p.team === "ball" ? markerR() * 0.72 : markerR();
     ctx.save(); ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
     drawNameLabel(p, m2x(p.x), m2y(p.y), r); ctx.restore();
+  }
+  // コメントは最前面。再生中も表示(少し薄く)。
+  if (annotationsOn){
+    ctx.save(); if (animating) ctx.globalAlpha = 0.7;
+    for (const a of annos()) if (a.type === "comment") drawComment(a);
+    ctx.restore();
   }
 }
 
@@ -1004,7 +1273,14 @@ function eraseAt(mx, my){
   const p = hitPlayer(mx, my);
   if (p){ board().players.splice(board().players.indexOf(p), 1); drawBoard(); return; }
   const a = hitArrow(mx, my);
-  if (a){ removeArrow(a); }
+  if (a){ removeArrow(a); return; }
+  // 注釈も消しゴム対象(コメント→ゾーンの順で優先。表示中のみ)
+  if (annotationsOn){
+    const c = hitComment(mx, my);
+    if (c){ removeAnno(c.a); return; }
+    const z = hitZone(mx, my);
+    if (z){ removeAnno(z); return; }
+  }
 }
 /* 矢印を削除し、それをトリガーにしていた矢印の参照を外す */
 function removeArrow(a){
@@ -1024,6 +1300,19 @@ function pointerDown(e){
   if (animating) return;
   const m = evPos(e);
   if (tool === "erase"){ eraseAt(m.x, m.y); dragP = "erasing"; return; }
+  // ゾーンツール: ドラッグで矩形/楕円ゾーンを描く
+  if (tool === "zone"){
+    closeArrowProp(); closeZonePop(); closeCmtPop();
+    tempZone = { type:"zone", shape: zoneShapeCurrent, x:m.x, y:m.y, w:0, h:0, color: zoneColorCurrent, label:"" };
+    return;
+  }
+  // コメントツール: タップで付箋を1つ置く(直後に編集)
+  if (tool === "comment"){
+    closeArrowProp(); closeZonePop();
+    const a = { type:"comment", id:newAnnoId(), x:m.x, y:m.y, text:"" };
+    annos().push(a); clearPresetSel(); drawBoard();
+    openCmtPop(a, e); return;
+  }
   if (tool === "move" || tool === "pass" || tool === "dribble"){ tempArrow = { kind:tool, x1:m.x, y1:m.y, x2:m.x, y2:m.y }; return; }
   const hit = hitPlayer(m.x, m.y);
   if (hit){ dragP = hit; closeArrowProp(); return; }
@@ -1031,25 +1320,50 @@ function pointerDown(e){
     const p = { team:tool, x:m.x, y:m.y, num: tool === "ball" ? 0 : nextNum(tool), name:"" };
     board().players.push(p); dragP = p; clearPresetSel(); drawBoard(); return;
   }
-  // 選択ツール: 矢印をタップでプロパティパネルを開く
+  // 選択ツール: 矢印→コメント→ゾーンの順でタップ対象を判定
   if (tool === "select"){
     const a = hitArrow(m.x, m.y);
     if (a){ openArrowProp(a); return; }
     closeArrowProp();
+    if (annotationsOn){
+      const c = hitComment(m.x, m.y);
+      if (c){ selectedAnno = c.a; dragAnno = { a:c.a, part:c.part, ox:c.a.x, oy:c.a.y, mx:m.x, my:m.y, moved:false }; drawBoard(); return; }
+      const z = hitZone(m.x, m.y);
+      if (z){ selectedAnno = z; dragAnno = { a:z, part:"zone", ox:z.x, oy:z.y, mx:m.x, my:m.y, moved:false }; drawBoard(); return; }
+    }
+    if (selectedAnno){ selectedAnno = null; drawBoard(); }
   }
 }
 function pointerMove(e){
   if (animating) return;
   const m = evPos(e);
+  if (tempZone){ tempZone.w = m.x - tempZone.x; tempZone.h = m.y - tempZone.y; drawBoard(); return; }
   if (tempArrow){ tempArrow.x2 = m.x; tempArrow.y2 = m.y; drawBoard(); return; }
   if (dragP === "erasing"){ eraseAt(m.x, m.y); return; }
+  if (dragAnno){
+    dragAnno.moved = true;
+    dragAnno.a.x = dragAnno.ox + (m.x - dragAnno.mx);
+    dragAnno.a.y = dragAnno.oy + (m.y - dragAnno.my);
+    drawBoard(); return;
+  }
   if (dragP){
     dragP.x = Math.max(-V().ml, Math.min(V().fw + V().mr, m.x));
     dragP.y = Math.max(-V().mt, Math.min(V().fh + V().mb, m.y));
     drawBoard();
   }
 }
-function pointerUp(){
+function pointerUp(e){
+  if (tempZone){
+    // 正規化(負のw/hは正に)。極小はキャンセル。
+    let { x, y, w, h } = tempZone;
+    if (w < 0){ x += w; w = -w; } if (h < 0){ y += h; h = -h; }
+    if (w > 0.8 && h > 0.8){
+      const z = { type:"zone", id:newAnnoId(), shape: zoneShapeCurrent, x, y, w, h, color: zoneColorCurrent, label:"" };
+      annos().push(z); clearPresetSel(); selectedAnno = z; tempZone = null; drawBoard();
+      openZonePop(z, e);
+    } else { tempZone = null; drawBoard(); }
+    return;
+  }
   if (tempArrow){
     const len = Math.hypot(tempArrow.x2 - tempArrow.x1, tempArrow.y2 - tempArrow.y1);
     if (len > 1.2){
@@ -1059,11 +1373,20 @@ function pointerUp(){
     }
     tempArrow = null; drawBoard();
   }
+  if (dragAnno){
+    const da = dragAnno; dragAnno = null;
+    // 動かさずタップ(=クリック)なら編集ポップを開く
+    if (!da.moved){
+      if (da.a.type === "zone") openZonePop(da.a, e ? { clientX: (e.changedTouches ? e.changedTouches[0].clientX : e.clientX), clientY: (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) } : null);
+      else openCmtPop(da.a, e ? { clientX: (e.changedTouches ? e.changedTouches[0].clientX : e.clientX), clientY: (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) } : null);
+    }
+    drawBoard();
+  }
   dragP = null;
 }
 cv.addEventListener("mousedown", pointerDown);
-window.addEventListener("mousemove", e => { if ((dragP || tempArrow) && currentScreen === "board") pointerMove(e); });
-window.addEventListener("mouseup", () => { if (currentScreen === "board") pointerUp(); });
+window.addEventListener("mousemove", e => { if ((dragP || tempArrow || tempZone || dragAnno) && currentScreen === "board") pointerMove(e); });
+window.addEventListener("mouseup", e => { if (currentScreen === "board") pointerUp(e); });
 /* ダブルクリック = 名前編集(選手のみ)。削除は消しゴムツールで。 */
 cv.addEventListener("dblclick", e => { const m = evPos(e); openNamePopAt(m.x, m.y, e); });
 cv.addEventListener("touchstart", e => {
@@ -1071,15 +1394,15 @@ cv.addEventListener("touchstart", e => {
   const m = evPos(e), now = Date.now(), rc = cv.getBoundingClientRect(), t = e.touches[0];
   const sx = t.clientX - rc.left, sy = t.clientY - rc.top;
   if (now - lastTap.t < 350 && Math.hypot(sx - lastTap.x, sy - lastTap.y) < 28){
-    // ダブルタップ = 名前編集
-    lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null;
+    // ダブルタップ = 名前編集(選手)。注釈は単タップで編集できるのでここでは選手のみ。
+    lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; tempZone = null; dragAnno = null;
     openNamePopAt(m.x, m.y, { clientX: t.clientX, clientY: t.clientY });
     return;
   }
   lastTap = { t:now, x:sx, y:sy }; pointerDown(e);
 }, { passive:false });
 cv.addEventListener("touchmove", e => { e.preventDefault(); pointerMove(e); }, { passive:false });
-cv.addEventListener("touchend", e => { e.preventDefault(); pointerUp(); }, { passive:false });
+cv.addEventListener("touchend", e => { e.preventDefault(); pointerUp(e); }, { passive:false });
 
 /* ---------- 名前入力ポップオーバー ---------- */
 const namePop = $("namePop"), npInput = $("npInput"), npBadge = $("npBadge"), npKind = $("npKind");
@@ -1120,6 +1443,118 @@ document.addEventListener("mousedown", e => {
   if (namePop.classList.contains("on") && !namePop.contains(e.target) && e.target !== cv) closeNamePop();
 });
 $("nameToggle").addEventListener("change", e => { nameLabelsOn = e.target.checked; drawBoard(); });
+
+/* ============================================================
+   注釈レイヤー: ツール状態・編集ポップオーバー・表示トグル
+============================================================ */
+let zoneColorCurrent = "yellow";
+let zoneShapeCurrent = "rect";   // 直近に使った形状を記憶(既定は矩形)
+/* --- 注釈ポップオーバーをボード内に配置(はみ出し防止) --- */
+function placePopInBoard(popEl, ev, anchorPx){
+  popEl.classList.add("on");
+  const bw = boardBox.clientWidth, bh = boardBox.clientHeight;
+  const pw = popEl.offsetWidth || 230, ph = popEl.offsetHeight || 150;
+  let px, py;
+  if (ev && typeof ev.clientX === "number"){
+    const rc = cv.getBoundingClientRect();
+    px = ev.clientX - rc.left + 12; py = ev.clientY - rc.top + 12;
+  } else if (anchorPx){ px = anchorPx.x + 12; py = anchorPx.y + 12; }
+  else { px = 12; py = 12; }
+  if (px + pw > bw) px = Math.max(4, px - pw - 24);
+  if (py + ph > bh) py = Math.max(4, bh - ph - 6);
+  popEl.style.left = Math.max(4, px) + "px";
+  popEl.style.top  = Math.max(4, py) + "px";
+}
+/* --- ゾーン編集ポップオーバー --- */
+const zonePop = $("zonePop"), zpLabel = $("zpLabel"), zpColors = $("zpColors");
+let zonePopTarget = null;
+function renderZpColors(){
+  zpColors.innerHTML = "";
+  for (const k of ["yellow", "red", "blue", "green"]){
+    const c = ZONE_COLORS[k];
+    const sw = document.createElement("button");
+    sw.type = "button"; sw.className = "zp-sw" + (zonePopTarget && zonePopTarget.color === k ? " on" : "");
+    sw.style.background = c.stroke; sw.title = c.label;
+    sw.addEventListener("click", () => {
+      if (!zonePopTarget) return;
+      zonePopTarget.color = k; zoneColorCurrent = k; renderZpColors(); drawBoard();
+    });
+    zpColors.appendChild(sw);
+  }
+}
+function renderZpShapes(){
+  zonePop.querySelectorAll(".zp-shape").forEach(b => b.classList.toggle("on", zonePopTarget && b.dataset.shape === zonePopTarget.shape));
+}
+zonePop.querySelectorAll(".zp-shape").forEach(b => b.addEventListener("click", () => {
+  if (!zonePopTarget) return;
+  zonePopTarget.shape = b.dataset.shape === "ellipse" ? "ellipse" : "rect";
+  zoneShapeCurrent = zonePopTarget.shape; renderZpShapes(); drawBoard();
+}));
+function openZonePop(z, ev){
+  if (animating) return;
+  closeCmtPop(); closeArrowProp();
+  zonePopTarget = z; selectedAnno = z;
+  zpLabel.value = z.label || "";
+  renderZpColors(); renderZpShapes();
+  placePopInBoard(zonePop, ev, { x: m2x(z.x), y: m2y(z.y) });
+  setTimeout(() => { zpLabel.focus(); }, 0);
+}
+function closeZonePop(){ zonePop.classList.remove("on"); zonePopTarget = null; }
+function commitZonePop(){
+  if (zonePopTarget){ zonePopTarget.label = (zpLabel.value || "").trim().slice(0, 24); drawBoard(); }
+  closeZonePop();
+}
+zpLabel.addEventListener("input", () => { if (zonePopTarget){ zonePopTarget.label = zpLabel.value.slice(0, 24); drawBoard(); } });
+zpLabel.addEventListener("keydown", e => {
+  if (e.key === "Enter"){ e.preventDefault(); commitZonePop(); }
+  else if (e.key === "Escape"){ e.preventDefault(); closeZonePop(); drawBoard(); }
+});
+$("zpOk").addEventListener("click", commitZonePop);
+$("zpDel").addEventListener("click", () => { if (zonePopTarget) removeAnno(zonePopTarget); });
+
+/* --- コメント編集ポップオーバー --- */
+const cmtPop = $("cmtPop"), cpText = $("cpText");
+let cmtPopTarget = null;
+function openCmtPop(c, ev){
+  if (animating) return;
+  closeZonePop(); closeArrowProp();
+  cmtPopTarget = c; selectedAnno = c;
+  cpText.value = c.text || "";
+  placePopInBoard(cmtPop, ev, { x: m2x(c.x), y: m2y(c.y) });
+  setTimeout(() => { cpText.focus(); }, 0);
+}
+function closeCmtPop(){
+  // 空コメントはキャンセル時に自動削除(付箋の残骸を残さない)
+  if (cmtPopTarget && !(cmtPopTarget.text || "").trim()){
+    const list = annos(), i = list.indexOf(cmtPopTarget);
+    if (i >= 0) list.splice(i, 1);
+    if (selectedAnno === cmtPopTarget) selectedAnno = null;
+  }
+  cmtPop.classList.remove("on"); cmtPopTarget = null;
+}
+cpText.addEventListener("input", () => { if (cmtPopTarget){ cmtPopTarget.text = cpText.value.slice(0, 140); drawBoard(); } });
+cpText.addEventListener("keydown", e => { if (e.key === "Escape"){ e.preventDefault(); closeCmtPop(); drawBoard(); } });
+$("cpOk").addEventListener("click", () => { commitCmtPop(); });
+$("cpDel").addEventListener("click", () => { if (cmtPopTarget){ const t = cmtPopTarget; cmtPopTarget = null; removeAnno(t); } });
+function commitCmtPop(){
+  if (cmtPopTarget){ cmtPopTarget.text = (cpText.value || "").trim().slice(0, 140); }
+  const empty = cmtPopTarget && !(cmtPopTarget.text || "").trim();
+  const t = cmtPopTarget;
+  cmtPop.classList.remove("on"); cmtPopTarget = null;
+  if (empty && t){ const list = annos(), i = list.indexOf(t); if (i >= 0) list.splice(i, 1); if (selectedAnno === t) selectedAnno = null; }
+  drawBoard();
+}
+// ポップオーバー外クリックで確定して閉じる
+document.addEventListener("mousedown", e => {
+  if (zonePop.classList.contains("on") && !zonePop.contains(e.target) && e.target !== cv) commitZonePop();
+  if (cmtPop.classList.contains("on") && !cmtPop.contains(e.target) && e.target !== cv) commitCmtPop();
+});
+/* 注釈表示トグル */
+$("annoToggle").addEventListener("change", e => {
+  annotationsOn = e.target.checked;
+  if (!annotationsOn){ closeZonePop(); closeCmtPop(); selectedAnno = null; }
+  drawBoard();
+});
 
 /* ============================================================
    フェーズセレクタ(ツールバー)
@@ -1472,12 +1907,16 @@ document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
   b.addEventListener("click", () => {
     tool = b.dataset.tool;
     document.querySelectorAll("#toolbar [data-tool]").forEach(x => x.classList.toggle("active", x === b));
+    // ツール変更時は注釈編集を閉じ、選択を解除(選択ツール以外)
+    closeZonePop(); closeCmtPop();
+    if (tool !== "select" && selectedAnno){ selectedAnno = null; drawBoard(); }
   });
 });
 $("clearBtn").addEventListener("click", () => {
   if (animating) return;
-  board().players = []; board().arrows = []; clearPresetSel();
-  currentPhase = 1; closeArrowProp(); renderPhaseChips(); refreshTimeline();
+  board().players = []; board().arrows = []; board().annotations = []; clearPresetSel();
+  currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null;
+  renderPhaseChips(); refreshTimeline();
   setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
   drawBoard();
 });
@@ -1487,7 +1926,8 @@ document.querySelectorAll("#bViews .vtab").forEach(t => {
     view = t.dataset.view;
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x === t));
     buildPresetList(); clearPresetSel();
-    currentPhase = 1; closeArrowProp(); normalizeBoardArrows(board()); renderPhaseChips(); refreshTimeline();
+    currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null;
+    normalizeBoardArrows(board()); normalizeAnnotations(board()); renderPhaseChips(); refreshTimeline();
     setDesc("", "プリセットを選ぶと配置と動きが再現されます。");
     resizeBoard();
   });
@@ -1611,9 +2051,11 @@ function applyPreset(i, btn){
     b.players.push({ team:pl[0], x:pl[1], y:pl[2], num, name:"" });
   }
   b.arrows = p.arrows.map(a => normalizeArrow({ kind:a[0], x1:a[1], y1:a[2], x2:a[3], y2:a[4], step:(a[5] || 1), delay:(a[6] || 0), trigger:null }));
-  normalizeBoardArrows(b);
+  b.annotations = (p.annotations ? JSON.parse(JSON.stringify(p.annotations)) : []);
+  normalizeBoardArrows(b); normalizeAnnotations(b);
   clearPresetSel(); activePresetBtn = btn; btn.classList.add("on");
-  currentPhase = 1; closeArrowProp(); renderPhaseChips(); refreshTimeline();
+  currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null;
+  renderPhaseChips(); refreshTimeline();
   setDesc(p.name, p.desc, p.coach);
   drawBoard();
   toast("プリセット「" + p.name + "」を配置しました");
@@ -1764,7 +2206,10 @@ function loadBoardData(d, switchView){
         if (a.speedScale != null && isFinite(a.speedScale) && +a.speedScale > 0) na.speedScale = +a.speedScale;
         return normalizeArrow(na);
       });
+      // 注釈(annotations): 追加フィールド。無い旧JSONは空配列(後方互換)。
+      boards[k].annotations = Array.isArray(d.boards[k].annotations) ? d.boards[k].annotations.slice() : [];
       normalizeBoardArrows(boards[k]);
+      normalizeAnnotations(boards[k]);
     }
   }
   if (switchView && d.activeView && VIEWS[d.activeView]){
@@ -1772,7 +2217,8 @@ function loadBoardData(d, switchView){
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x.dataset.view === view));
     buildPresetList();
   }
-  clearPresetSel(); currentPhase = 1; closeArrowProp(); renderPhaseChips(); refreshTimeline(); resizeBoard();
+  clearPresetSel(); currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop();
+  selectedAnno = null; renderPhaseChips(); refreshTimeline(); resizeBoard();
 }
 
 /* ---------- マイ戦術ライブラリ (localStorage) ---------- */
