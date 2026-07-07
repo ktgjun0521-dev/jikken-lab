@@ -558,6 +558,15 @@ function resizeBoard(){
   drawBoard();
 }
 window.addEventListener("resize", () => { if (currentScreen === "board") resizeBoard(); });
+/* ボードの実サイズが確定/変化した瞬間に確実に再サイズ(初期ロード時の300x150取り残し対策) */
+let _lastBoardW = 0;
+if (window.ResizeObserver) {
+  new ResizeObserver(() => {
+    if (currentScreen !== "board") return;
+    const w = boardBox.clientWidth;
+    if (w > 0 && w !== _lastBoardW) { _lastBoardW = w; resizeBoard(); }
+  }).observe(boardBox);
+}
 
 /* ---------- ピッチ描画 ---------- */
 const GRASS1 = "#2c8a45", GRASS2 = "#25763b", LINE = "rgba(255,255,255,.88)";
