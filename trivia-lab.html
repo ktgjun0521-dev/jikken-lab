@@ -313,6 +313,48 @@
     100%{transform:translateY(260px) rotate(520deg);opacity:0;}
   }
   .confetti{position:absolute;top:0;font-size:1.2rem;pointer-events:none;animation:confettiFall 1.6s ease-in forwards;}
+  /* ---------- こどもモード ---------- */
+  .kids-toggle{
+    margin-top:10px;
+    border:2px solid var(--c-main);
+    background:#fff;color:var(--c-dark);
+    font-family:inherit;font-size:.85rem;font-weight:bold;
+    padding:7px 16px;border-radius:999px;cursor:pointer;
+    transition:all .2s;
+  }
+  .kids-toggle:hover{transform:translateY(-1px);}
+  .kids-toggle.on{
+    background:linear-gradient(135deg,#ff5fa2,#ffb703);
+    border-color:#ff5fa2;color:#fff;
+    box-shadow:0 3px 12px rgba(255,95,162,.45);
+  }
+  body.kids{
+    --c-main:#ff5fa2;
+    --c-accent:#ffb703;
+    --c-dark:#d6336c;
+    --c-ink:#4a3342;
+    --grid:#ffdff0;
+    --paper:#fff9e6;
+    font-size:1.05em;
+  }
+  body.kids header h1{color:#ff4f8b;text-shadow:2px 2px 0 #ffe066;}
+  body.kids .flip{height:250px;}
+  body.kids .card-q{font-size:1.08rem;line-height:1.6;}
+  body.kids .card-a{font-size:1rem;line-height:1.8;}
+  body.kids .face-front{border-width:3px;border-color:#ffc0e0;background:linear-gradient(160deg,#ffffff,#fff5fa);}
+  body.kids .face-back{background:linear-gradient(160deg,#ffffff,#fff3c4);border-color:#ffb703;}
+  body.kids .quiz-q{font-size:1.15rem;}
+  body.kids .opt{font-size:1.05rem;background:#fff5fa;}
+  body.kids .quiz-card{border-color:#ff8fc2;box-shadow:0 4px 14px rgba(255,95,162,.18);}
+  body.kids .filter{border-color:#ff8fc2;}
+  .star-fly{
+    position:fixed;z-index:650;pointer-events:none;font-size:1.4rem;
+    animation:starFly 1.1s ease-out forwards;
+  }
+  @keyframes starFly{
+    0%{transform:translate(0,0) scale(.4) rotate(0);opacity:1;}
+    100%{transform:translate(var(--dx),var(--dy)) scale(1.5) rotate(400deg);opacity:0;}
+  }
   footer{
     text-align:center;
     font-size:.75rem;
@@ -331,6 +373,7 @@
 <header>
   <h1>🔬 くだらない雑学研究所 🧪</h1>
   <p class="sub">「なぜ？」を真面目に解き明かす、はかせの研究ノート</p>
+  <button class="kids-toggle" id="kidsToggle" aria-pressed="false">👨‍👩‍👧 こどもモード</button>
 </header>
 
 <!-- 今日の一問 クイズモード -->
@@ -493,6 +536,95 @@ const TRIVIA = [
   }
 ];
 
+/* ---------- こどもモード用テキスト（TRIVIAと同じ順序。kq=こども用の問い, k=こども用の説明） ---------- */
+const KIDS_TEXT = [
+  {kq:"ゾウのはなは、どうしてながいの？",
+   k:"ゾウはからだがとても大きくなって、くびをまげて口を地めんにとどかせるのがむずかしくなったんだ。そのかわりに、はなとうわくちびるがいっしょにのびて、水やごはんを口にはこべるようになったよ。ながいはなは、シャワーにもストローにもなる、べんりなアイテムなんだ。"},
+  {kq:"キリンのくびは、どうしてながいの？",
+   k:"たかい木のはっぱをたべられるとべんりだから、というせつがあるよ。オスどうしがくびをぶつけあってたたかうから、ながいくびがつよくてモテた、というせつもゆうりょくなんだ。じつは、くびのほねのかずは人間とおなじ7こ。ひとつひとつが、すごーくながいんだよ。"},
+  {kq:"シマウマのしまもようは、なんのため？",
+   k:"ちをすうアブなどの虫が、しまもようだとうまくとまれなくて、さされにくくなる、というせつがいまは有力（ゆうりょく）だよ。からだのおんどをちょうせつしたり、なかまを見わけたりするのにも、やくだつと考えられているんだ。"},
+  {kq:"カニは、どうしてよこあるきするの？",
+   k:"カニのあしのかんせつは、よこむきにまがるつくりになっていて、あしがからだのよこにならんでいるんだ。だから、まえにすすむより、よこにあるくほうがはやくてラクなんだよ。でも、まえにあるけるしゅるいのカニもいるよ。"},
+  {kq:"ネコは、たかいところからおちても、どうして足からおりられるの？",
+   k:"ネコには「たちなおりはんしゃ」というとくぎがあるんだ。耳のおくで上と下をすばやくかんじて、空中でくるっとからだをひねって、足からちゃくちできるんだよ。でも、まんのうではなくて、大けがをすることもあるから、ぜったいにためしちゃだめだよ。"},
+  {kq:"フラミンゴは、どうしてピンクいろなの？",
+   k:"エサの藻（も）やちいさなエビのなかまに入っている「カロテノイド」という色のもとが、はねにたまってピンクになるんだ。生まれたばかりのヒナは、はいいろっぽい色。エサをたべて、だんだんピンクになっていくんだよ。"},
+  {kq:"そらは、どうしてあおいの？",
+   k:"たいようのひかりには、いろんな色がまざっているよ。そのなかで、あおいひかりは空気のつぶにぶつかって、そらいっぱいにちらばりやすいんだ。ちらばったあおいひかりが目にとどくから、そらはあおく見えるんだよ。"},
+  {kq:"ゆうやけは、どうしてあかいの？",
+   k:"ゆうがたは、たいようがひくいところにあって、ひかりが空気のなかをながーくとおってくるんだ。とちゅうであおいひかりはちらばってしまって、のこったあかいひかりだけが目にとどく。だから、そらがあかくそまって見えるんだよ。"},
+  {kq:"お月さまは、どうしていつもおなじかおを見せているの？",
+   k:"月がじぶんでくるっと1回まわる日にちと、地球のまわりを1しゅうする日にちが、ほとんどおなじ（やく27日）だからなんだ。だから地球からは、いつも月のおなじがわしか見えないんだよ。うらがわは、うちゅうせんでしか見られないんだ。"},
+  {kq:"かみなりは、どうしてひかったあとに音がきこえるの？",
+   k:"ひかりは1びょうで地球を7しゅうはんもできるくらいはやいけど、音は1びょうにやく340メートルしかすすめないんだ。だから、ひかりが先について、音はおくれてとどくんだよ。ひかってから音がなるまでのびょうすうをかぞえると、かみなりまでのきょりがわかるよ。"},
+  {kq:"うみの水は、どうしてしょっぱいの？",
+   k:"あめが山や岩をすこしずつけずって、そのなかのしおのもとが川にとけて、うみにはこばれつづけてきたからだよ。うみの水がじょうはつしても、しおはうみにのこる。ながーい時間をかけて、うみはどんどんしょっぱくなったんだ。"},
+  {kq:"せいざをすると、どうしてあしがしびれるの？",
+   k:"せいざであしがおしつぶされると、ちのながれがわるくなって、しんけいに「さんそ」がとどかなくなるんだ。すると、しんけいがうまくはたらけなくなって、ビリビリしびれちゃう。あしをくずして、ちがながれだすと、ジンジンしながらもどっていくよ。"},
+  {kq:"たまねぎをきると、どうしてなみだが出るの？",
+   k:"たまねぎをきると、目にツンとくるガスのようなせいぶんがとび出してくるんだ。それが目に入ると、目が「あらいながそう！」とがんばって、なみだを出すんだよ。たまねぎをれいぞうこでひやしてからきると、なみだが出にくくなるよ。"},
+  {kq:"くしゃみは、どうして出るの？",
+   k:"はなのなかに、ほこりやウイルスが入ってくると、からだが「ふきとばせー！」といきおいよく空気を出すんだ。それがくしゃみだよ。スピードはじそく数十キロメートル。はなのなかをおそうじしてくれる、からだのそうじきなんだ。"},
+  {kq:"おなかがすくと、どうしておなかがなるの？",
+   k:"いのなかがからっぽになると、つぎのごはんにそなえて、いやちょうが「おそうじタイム」をはじめるんだ。ぐにぐにうごくときに、なかにのこった空気や水分がうごかされて、「グ〜」という音になるんだよ。はずかしくないよ、からだががんばっているしるしだよ。"},
+  {kq:"さむいと、どうしてとりはだがたつの？",
+   k:"はだの毛のねもとにある、ちいさなきんにくがきゅっとちぢんで、毛がさかだつからだよ。毛がふさふさのどうぶつは、毛をたてて空気のふとんをつくって、あったかくするんだ。人間は毛がすくないから、ブツブツだけがのこったんだね。"},
+  {kq:"とうがらしは、どうしてからいの？",
+   k:"とうがらしには「カプサイシン」というせいぶんが入っていて、したの「あつい！いたい！」をかんじるところをしげきするんだ。つまり「からい」は、あじではなくて、いたさやあつさのなかまなんだよ。だからからいものをたべると、あせが出るんだね。"},
+  {kq:"パンやおもちは、やくとどうしてふくらむの？",
+   k:"きじのなかの水分があたためられて水じょうきになると、ぐーんとふくらむんだ。パンは、イーストというちいさな生きものが出したガスのあわも、あつさでふくらむよ。まわりのきじがそれをつつんだままかたまるから、ふっくらするんだね。"},
+  {kq:"リンゴをきると、どうしてちゃいろになるの？",
+   k:"リンゴのなかの「ポリフェノール」というせいぶんが、空気にふれると、はんのうして色がかわるんだ。しお水やレモン水につけると、色がかわりにくくなるよ。ちゃいろになっても、たべてもだいじょうぶだよ。"},
+  {kq:"たんさんジュースは、どうしてシュワシュワするの？",
+   k:"たんさんジュースには「にさんかたんそ」というガスが、ぎゅーっとおしこまれて水にとけているんだ。フタをあけると、おさえる力がなくなって、とけていられなくなったガスがあわになって出てくるよ。それがはじけるのが、シュワシュワのしょうたいなんだ。"}
+];
+if (KIDS_TEXT.length === TRIVIA.length) {
+  TRIVIA.forEach((t, i) => { t.kq = KIDS_TEXT[i].kq; t.k = KIDS_TEXT[i].k; });
+}
+
+/* ---------- こどもモード限定の追加雑学（10枚・笑えて正確） ---------- */
+const KIDS_TRIVIA = [
+  {cat:"animal",
+   q:"ダンゴムシは、じつは虫じゃない？",
+   a:"ダンゴムシは、こんちゅうではなくて、エビやカニとおなじ「こうかくるい」のなかまなんだ。だから、しめったところがだいすき。あしは14本もあって、あぶないときは、まんまるくなってみをまもるよ。"},
+  {cat:"animal",
+   q:"キリンのしたは、なにいろ？",
+   a:"キリンのしたは、むらさきいろ（くろっぽいむらさき）なんだ。ながさは、やく45センチもあって、たかい木のはっぱをベロでからめとってたべるよ。つよい日ざしの下でベロを出しっぱなしにするから、日やけからまもる色になった、といわれているんだ。"},
+  {cat:"body",
+   q:"おならのしょうたいは、なに？",
+   a:"おならは、ごはんといっしょに飲みこんだ空気と、おなかのなかのさいきんが、食べものをぶんかいするときに出すガスがまざったものなんだ。だれでも1日に何回も出るのがふつうだよ。がまんしすぎは、おなかによくないんだって。"},
+  {cat:"animal",
+   q:"ラッコは、ねるとき手をつなぐってほんと？",
+   a:"ほんとだよ。ラッコは海にぷかぷかういたままねるから、ながされないように、なかまと手をつないだり、かいそうをからだにまきつけたりするんだ。ながされないための、かしこい工夫（くふう）なんだね。"},
+  {cat:"food",
+   q:"バナナは木になる？ならない？",
+   a:"じつは、バナナがなっている「バナナの木」みたいなものは、木じゃなくて、とても大きな草なんだ。みきに見えるところは、はっぱのねもとが、なんまいもかさなったもの。だからバナナは「草になるみ」ということになるんだよ。"},
+  {cat:"animal",
+   q:"カタツムリには、歯があるの？",
+   a:"あるよ。しかも1まん本いじょう！「しぜつ」という、やすりみたいなちいさな歯がぎっしりならんでいて、それで食べものをけずってたべるんだ。カルシウムをとるために、コンクリートをかじることもあるんだよ。"},
+  {cat:"body",
+   q:"しゃっくりのしょうたいは、なに？",
+   a:"むねとおなかのあいだにある「おうかくまく」といういきをするためのきんにくが、ビクッとけいれんするのが、しゃっくりだよ。きゅうに空気をすいこむから「ヒック」と音が出るんだ。「びっくりさせると止まる」といわれるけど、かがくてきには、まだはっきりしていないんだって。"},
+  {cat:"food",
+   q:"ハチミツは、くさらないってほんと？",
+   a:"ほんとだよ。ハチミツは水分がとてもすくなくて、さとうがぎゅっとこいから、ばいきんがふえられないんだ。ちゃんとふたをしてほぞんすれば、何年もたべられるよ。ただし、1さいより小さいあかちゃんには、あげてはいけないよ。"},
+  {cat:"space",
+   q:"うちゅうに行くと、せがのびるってほんと？",
+   a:"ほんとだよ。うちゅうでは、からだを下におしつける「じゅうりょく」がほとんどないから、せぼねとせぼねのあいだがひろがって、せが数センチのびるんだ。でも、地球にかえってくると、しばらくして、もとにもどっちゃうよ。"},
+  {cat:"animal",
+   q:"ペンギンのあしは、じつはながい？",
+   a:"見た目はみじかそうだけど、ほねを見ると、ペンギンのあしはけっこうながいんだ。ひざをまげたまま、からだの中にかくれているんだよ。ずっと「くうきいす」をしているようなかんじ。だから、あのよちよちあるきになるんだね。"}
+];
+
+/* ---------- こどもモード状態 ---------- */
+const LS_KIDS = "triviaLab.kidsMode";
+let kidsMode = false;
+try { kidsMode = localStorage.getItem(LS_KIDS) === "1"; } catch(e) {}
+function activeList(){ return kidsMode ? TRIVIA.concat(KIDS_TRIVIA) : TRIVIA; }
+function displayQ(t){ return (kidsMode && t.kq) ? t.kq : t.q; }
+function displayA(t){ return (kidsMode && t.k) ? t.k : t.a; }
+
 /* ---------- カード生成 ---------- */
 const grid = document.getElementById("grid");
 const filtersEl = document.getElementById("filters");
@@ -507,10 +639,23 @@ try {
 function saveRead(){
   try { localStorage.setItem(LS_READ, JSON.stringify(Array.from(readSet))); } catch(e) {}
 }
+/* こどもモード限定カードの読了は別キーで記憶（既存データを壊さない） */
+const LS_READ_KIDS = "triviaLab.readCardsKids";
+let kidsReadSet = new Set();
+try {
+  const savedK = JSON.parse(localStorage.getItem(LS_READ_KIDS) || "[]");
+  kidsReadSet = new Set(savedK.filter(n => Number.isInteger(n) && n >= 0 && n < KIDS_TRIVIA.length));
+} catch(e) {}
+function saveKidsRead(){
+  try { localStorage.setItem(LS_READ_KIDS, JSON.stringify(Array.from(kidsReadSet))); } catch(e) {}
+}
+function isRead(idx){
+  return idx < TRIVIA.length ? readSet.has(idx) : kidsReadSet.has(idx - TRIVIA.length);
+}
 
 function buildCards(){
   grid.innerHTML = "";
-  TRIVIA.forEach((t, idx) => {
+  activeList().forEach((t, idx) => {
     const c = CATS[t.cat];
     const flip = document.createElement("div");
     flip.className = "flip";
@@ -520,19 +665,19 @@ function buildCards(){
         '<div class="face face-front">' +
           '<span class="cat-tag" style="background:' + c.color + '">' + c.label + '</span>' +
           '<div class="q-mark">❓</div>' +
-          '<div class="card-q">' + t.q + '</div>' +
+          '<div class="card-q">' + displayQ(t) + '</div>' +
           '<div class="card-hint">タップして答えを見る 🔍</div>' +
         '</div>' +
         '<div class="face face-back">' +
           '<div class="a-label">■ けんきゅう結果</div>' +
-          '<div class="card-a">' + t.a + '</div>' +
+          '<div class="card-a">' + displayA(t) + '</div>' +
         '</div>' +
       '</div>';
     flip.addEventListener("click", () => {
       flip.classList.toggle("flipped");
       if (flip.classList.contains("flipped")) onCardOpened(flip, idx);
     });
-    if (readSet.has(idx)) flip.classList.add("read");
+    if (isRead(idx)) flip.classList.add("read");
     grid.appendChild(flip);
   });
 }
@@ -580,22 +725,23 @@ function shuffle(arr){
 }
 
 function makeQuiz(){
-  // 正解1問 + 他カードの答えからダミー2問
-  const correct = TRIVIA[Math.floor(Math.random() * TRIVIA.length)];
-  const others = shuffle(TRIVIA.filter(t => t !== correct)).slice(0, 2);
+  // 正解1問 + 他カードの答えからダミー2問（こどもモードではこども向けカードも出題）
+  const pool = activeList();
+  const correct = pool[Math.floor(Math.random() * pool.length)];
+  const others = shuffle(pool.filter(t => t !== correct)).slice(0, 2);
   const options = shuffle([correct].concat(others));
   return {correct, options};
 }
 
 function shortAnswer(t){
-  // 答えの1文目を選択肢用に抜き出す
-  const first = t.a.split("。")[0];
+  // 答えの1文目を選択肢用に抜き出す（こどもモードではひらがな中心の説明から）
+  const first = displayA(t).split("。")[0];
   return first + "。";
 }
 
 function renderQuiz(){
   currentQuiz = makeQuiz();
-  quizQ.textContent = "Q. " + currentQuiz.correct.q;
+  quizQ.textContent = "Q. " + displayQ(currentQuiz.correct);
   quizExplain.classList.remove("show");
   quizExplain.innerHTML = "";
   quizNext.style.display = "none";
@@ -622,15 +768,16 @@ function answerQuiz(btn, opt){
   if (isRight) {
     const prevTitle = titleFor(streak);
     streak++;
-    quizExplain.innerHTML = "⭕ <b>正解！</b><br>" + correct.a;
+    quizExplain.innerHTML = "⭕ <b>" + (kidsMode ? "せいかい！すごい！" : "正解！") + "</b><br>" + displayA(correct);
+    if (kidsMode) starBurst(btn); // こどもモードは星が飛ぶ派手な正解演出
     const newTitle = titleFor(streak);
     if (newTitle !== prevTitle) {
       celebrate(newTitle.emoji, "称号アップ！「" + newTitle.name + "」に昇進", "連続正解 " + streak + " 問を達成。研究所一同、拍手喝采です 👏");
     }
   } else {
     streak = 0;
-    quizExplain.innerHTML = "❌ <b>残念！</b> 正解は「" + shortAnswer(correct) +
-      "」<br>" + correct.a;
+    quizExplain.innerHTML = "❌ <b>" + (kidsMode ? "ざんねん！" : "残念！") + "</b> 正解は「" + shortAnswer(correct) +
+      "」<br>" + displayA(correct);
   }
   streakEl.textContent = "連続正解 " + streak;
   updateTitleChip();
@@ -695,7 +842,9 @@ const masterBadge = document.getElementById("masterBadge");
 const LS_BADGE = "triviaLab.masterBadgeShown";
 
 function updateFlipCount(){
-  flipCountEl.textContent = "🃏 めくった雑学：" + readSet.size + " / " + TRIVIA.length + " 枚";
+  const total = activeList().length;
+  const cnt = readSet.size + (kidsMode ? kidsReadSet.size : 0);
+  flipCountEl.textContent = "🃏 めくった雑学：" + cnt + " / " + total + " 枚";
   if (readSet.size >= TRIVIA.length) {
     masterBadge.style.display = "";
     let shown = false;
@@ -720,11 +869,20 @@ const MUTTERS = [
 ];
 
 function onCardOpened(flip, idx){
-  // 読了記録
-  if (!readSet.has(idx)) {
-    readSet.add(idx);
-    saveRead();
-    flip.classList.add("read");
+  // 読了記録（通常カードとこども限定カードで保存先を分ける）
+  if (idx < TRIVIA.length) {
+    if (!readSet.has(idx)) {
+      readSet.add(idx);
+      saveRead();
+      flip.classList.add("read");
+    }
+  } else {
+    const ki = idx - TRIVIA.length;
+    if (!kidsReadSet.has(ki)) {
+      kidsReadSet.add(ki);
+      saveKidsRead();
+      flip.classList.add("read");
+    }
   }
   updateFlipCount();
   // はかせの独り言（10%）
@@ -741,24 +899,89 @@ function onCardOpened(flip, idx){
 updateFlipCount();
 
 /* ---------- 本日の研究テーマ（1日1回、日替わりで1枚めくれた状態に） ---------- */
+let dailyIdx = -1;
 (function(){
   const now = new Date();
   const key = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
   let seed = 0;
   for (let i = 0; i < key.length; i++) seed = (seed * 31 + key.charCodeAt(i)) >>> 0;
-  const idx = seed % TRIVIA.length;
-  const card = grid.children[idx];
-  if (!card) return;
-  card.classList.add("daily"); // 今日のテーマは常にハイライト
+  dailyIdx = seed % TRIVIA.length;
   let last = null;
   try { last = localStorage.getItem("triviaLab.dailyDate"); } catch(e) {}
-  if (last !== key) {
-    // 今日はじめて開いたときだけ、最初からめくれた状態でお出迎え
+  const firstToday = (last !== key);
+  if (firstToday) {
     try { localStorage.setItem("triviaLab.dailyDate", key); } catch(e) {}
-    card.classList.add("flipped");
-    onCardOpened(card, idx);
   }
+  applyDaily(firstToday);
 })();
+function applyDaily(autoFlip){
+  const card = grid.children[dailyIdx];
+  if (!card) return;
+  card.classList.add("daily"); // 今日のテーマは常にハイライト
+  if (autoFlip) {
+    // 今日はじめて開いたときだけ、最初からめくれた状態でお出迎え
+    card.classList.add("flipped");
+    onCardOpened(card, dailyIdx);
+  }
+}
+
+/* ================================================================
+   こどもモード 👨‍👩‍👧
+   ================================================================ */
+const kidsToggle = document.getElementById("kidsToggle");
+
+function starBurst(anchor){
+  // 星がたくさん飛ぶ、こどもモードの派手な正解演出
+  const rect = anchor ? anchor.getBoundingClientRect() : null;
+  const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+  const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+  const stars = ["⭐","🌟","✨","💫","⭐"];
+  for (let i = 0; i < 36; i++) {
+    const s = document.createElement("span");
+    s.className = "star-fly";
+    s.textContent = stars[Math.floor(Math.random() * stars.length)];
+    s.style.left = cx + "px";
+    s.style.top = cy + "px";
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 90 + Math.random() * 190;
+    s.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+    s.style.setProperty("--dy", Math.sin(ang) * dist + "px");
+    s.style.animationDelay = (Math.random() * .15) + "s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1400);
+  }
+}
+
+function applyKidsUI(){
+  document.body.classList.toggle("kids", kidsMode);
+  kidsToggle.classList.toggle("on", kidsMode);
+  kidsToggle.setAttribute("aria-pressed", kidsMode ? "true" : "false");
+  kidsToggle.textContent = kidsMode ? "👨‍👩‍👧 こどもモード ON" : "👨‍👩‍👧 こどもモード";
+}
+
+function refreshForMode(){
+  buildCards();
+  applyDaily(false);
+  // 現在のカテゴリフィルタを再適用
+  Array.from(grid.children).forEach(card => {
+    card.style.display = (activeFilter === "all" || card.dataset.cat === activeFilter) ? "" : "none";
+  });
+  updateFlipCount();
+  // 出題中のクイズはモードの文体に合わせて出し直す
+  if (currentQuiz) renderQuiz();
+}
+
+kidsToggle.addEventListener("click", () => {
+  kidsMode = !kidsMode;
+  try { localStorage.setItem(LS_KIDS, kidsMode ? "1" : "0"); } catch(e) {}
+  applyKidsUI();
+  refreshForMode();
+  if (kidsMode) starBurst(kidsToggle);
+});
+
+/* 初期状態の反映（localStorageに保存されたモードで起動） */
+applyKidsUI();
+if (kidsMode) refreshForMode();
 </script>
 </body>
 </html>

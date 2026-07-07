@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>傾斜割り勘シミュレーター ⚖️</title>
+<meta name="description" content="飲み会の合計金額を役職や立場に応じた傾斜で楽しく割り勘。天秤アニメーションと発表モードで宴会が盛り上がる割り勘シミュレーター。">
+<meta property="og:title" content="傾斜割り勘シミュレーター ⚖️">
+<meta property="og:description" content="部長は多め、新人は少なめ。立場に応じた傾斜で楽しく割り勘するツール。発表モードと運命モードで飲み会が盛り上がる！">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/warikan.html">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
+<style>
+:root{
+  --bg:#1a1216;
+  --bg2:#241820;
+  --card:#2d1f28;
+  --card2:#382531;
+  --lantern:#ff6b35;
+  --lantern2:#ff8f5a;
+  --gold:#ffd166;
+  --cream:#fff3e0;
+  --muted:#b89aa5;
+  --green:#7ee8a2;
+  --red:#ff5c7a;
+  --radius:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","BIZ UDPGothic","Yu Gothic",Meiryo,sans-serif;
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(255,107,53,.14), transparent 50%),
+    radial-gradient(ellipse at 85% 0%, rgba(255,209,102,.10), transparent 45%),
+    var(--bg);
+  color:var(--cream);
+  min-height:100vh;
+  padding-bottom:60px;
+}
+.wrap{max-width:560px;margin:0 auto;padding:16px;}
+a.back{color:var(--muted);text-decoration:none;font-size:.9rem;display:inline-block;margin-bottom:6px;}
+a.back:hover{color:var(--gold);}
+header{text-align:center;margin-bottom:18px;position:relative;}
+.lanterns{font-size:1.7rem;letter-spacing:.6em;display:block;animation:sway 3.2s ease-in-out infinite alternate;transform-origin:top center;}
+@keyframes sway{from{transform:rotate(-3deg);}to{transform:rotate(3deg);}}
+h1{
+  font-size:1.75rem;font-weight:900;line-height:1.25;margin-top:4px;
+  background:linear-gradient(120deg,var(--gold),var(--lantern2) 60%,var(--lantern));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:0 0 30px rgba(255,107,53,.25);
+}
+.subtitle{color:var(--muted);font-size:.85rem;margin-top:6px;}
+section{
+  background:linear-gradient(180deg,var(--bg2),var(--card) 120%);
+  border:1px solid rgba(255,209,102,.14);
+  border-radius:var(--radius);
+  padding:16px;margin-bottom:16px;
+  box-shadow:0 6px 24px rgba(0,0,0,.35);
+}
+.sec-title{font-size:1.05rem;font-weight:800;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.sec-title small{color:var(--muted);font-weight:400;font-size:.75rem;}
+
+/* 金額入力 */
+.total-row{display:flex;align-items:center;gap:8px;}
+.yen-mark{font-size:1.8rem;font-weight:900;color:var(--gold);}
+#totalInput{
+  flex:1;width:100%;font-size:2rem;font-weight:900;text-align:right;
+  background:#140d11;color:var(--cream);
+  border:2px solid rgba(255,209,102,.3);border-radius:14px;
+  padding:10px 14px;outline:none;
+}
+#totalInput:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,209,102,.18);}
+.seg{display:flex;gap:6px;margin-top:12px;}
+.seg button{
+  flex:1;padding:10px 4px;font-size:.9rem;font-weight:700;
+  background:#140d11;color:var(--muted);
+  border:1.5px solid rgba(255,209,102,.2);border-radius:12px;cursor:pointer;
+}
+.seg button.on{background:linear-gradient(135deg,var(--lantern),#e0491f);color:#fff;border-color:var(--lantern2);box-shadow:0 2px 12px rgba(255,107,53,.4);}
+.opt-label{font-size:.8rem;color:var(--muted);margin:12px 0 5px;font-weight:700;}
+
+/* 参加者 */
+.mode-toggle{display:flex;gap:6px;margin-bottom:12px;}
+.mode-toggle button{
+  flex:1;padding:8px;font-size:.85rem;font-weight:700;border-radius:10px;cursor:pointer;
+  background:#140d11;color:var(--muted);border:1.5px solid rgba(255,209,102,.2);
+}
+.mode-toggle button.on{background:rgba(255,209,102,.15);color:var(--gold);border-color:var(--gold);}
+.member{
+  background:var(--card2);border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;padding:10px;margin-bottom:10px;
+}
+.member-top{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.member-emoji{font-size:1.5rem;width:36px;text-align:center;flex-shrink:0;}
+.member input[type=text]{
+  flex:1;min-width:0;background:#140d11;color:var(--cream);font-size:1rem;font-weight:700;
+  border:1.5px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 10px;outline:none;
+}
+.member input[type=text]:focus{border-color:var(--gold);}
+.del-btn{
+  background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;flex-shrink:0;
+}
+.del-btn:hover{color:var(--red);}
+.chips{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{
+  font-size:.78rem;font-weight:700;padding:5px 9px;border-radius:99px;cursor:pointer;
+  background:#140d11;color:var(--muted);border:1.5px solid rgba(255,255,255,.14);
+  user-select:none;
+}
+.chip.role.on{background:linear-gradient(135deg,var(--gold),#e6a92f);color:#3a2200;border-color:var(--gold);}
+.chip.mod.on{background:linear-gradient(135deg,var(--lantern),#e0491f);color:#fff;border-color:var(--lantern2);}
+.chips-divider{width:100%;height:0;}
+.add-btn{
+  width:100%;padding:12px;font-size:1rem;font-weight:800;border-radius:14px;cursor:pointer;
+  background:rgba(255,209,102,.12);color:var(--gold);border:2px dashed rgba(255,209,102,.5);
+}
+.add-btn:active{transform:scale(.98);}
+.quick-panel{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;}
+.quick-panel select,.quick-panel input{
+  background:#140d11;color:var(--cream);font-size:1rem;font-weight:700;
+  border:1.5px solid rgba(255,209,102,.3);border-radius:10px;padding:10px;outline:none;
+}
+.quick-panel select{flex:2;}
+.quick-panel input{flex:1;width:70px;text-align:center;}
+.quick-panel button{
+  flex:1.2;background:linear-gradient(135deg,var(--lantern),#e0491f);color:#fff;font-weight:800;font-size:.95rem;
+  border:none;border-radius:10px;padding:10px;cursor:pointer;
+}
+.switch-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.1);}
+.switch-row .lbl{font-size:.88rem;font-weight:700;}
+.switch-row .lbl small{display:block;color:var(--muted);font-weight:400;font-size:.72rem;margin-top:2px;}
+.toggle{position:relative;width:52px;height:28px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle .tk{
+  position:absolute;inset:0;background:#140d11;border:1.5px solid rgba(255,255,255,.2);
+  border-radius:99px;cursor:pointer;transition:.25s;
+}
+.toggle .tk::before{
+  content:"";position:absolute;width:20px;height:20px;left:3px;top:2.5px;
+  background:var(--muted);border-radius:50%;transition:.25s;
+}
+.toggle input:checked + .tk{background:linear-gradient(135deg,var(--lantern),#e0491f);border-color:var(--lantern2);}
+.toggle input:checked + .tk::before{transform:translateX(23px);background:#fff;}
+
+/* プリセット */
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.presets button{
+  padding:12px 6px;border-radius:14px;cursor:pointer;font-weight:800;font-size:.9rem;
+  background:#140d11;color:var(--muted);border:2px solid rgba(255,255,255,.12);
+  line-height:1.4;
+}
+.presets button .pe{font-size:1.3rem;display:block;}
+.presets button.on{
+  background:linear-gradient(150deg,rgba(255,107,53,.28),rgba(255,209,102,.14));
+  color:var(--cream);border-color:var(--gold);box-shadow:0 0 16px rgba(255,209,102,.22);
+}
+.presets .custom-btn{grid-column:1 / -1;}
+#customPanel{margin-top:12px;border-top:1px dashed rgba(255,255,255,.12);padding-top:12px;}
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.slider-row .sl-label{width:110px;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.slider-row input[type=range]{flex:1;accent-color:var(--lantern);}
+.slider-row .sl-val{width:44px;text-align:right;font-weight:800;color:var(--gold);font-size:.85rem;flex-shrink:0;}
+
+/* 天秤 */
+#seesawBox{overflow:hidden;}
+#seesawSvg{width:100%;height:auto;display:block;}
+#seesawG{transition:transform .9s cubic-bezier(.34,1.56,.64,1);}
+.seesaw-emoji{transition:all .9s cubic-bezier(.34,1.56,.64,1);}
+.seesaw-cap{font-size:.75rem;color:var(--muted);text-align:center;margin-top:2px;}
+
+/* 結果 */
+#sumBar{
+  height:34px;border-radius:12px;overflow:hidden;display:flex;
+  border:1.5px solid rgba(255,255,255,.15);background:#140d11;margin-bottom:6px;
+}
+#sumBar .segpart{height:100%;transition:width .5s ease;min-width:2px;}
+.sumbar-note{font-size:.85rem;font-weight:800;text-align:center;margin-bottom:14px;}
+.sumbar-note.good{color:var(--green);}
+.sumbar-note.bad{color:var(--red);}
+#cards{display:flex;flex-direction:column;gap:10px;}
+.rcard{
+  border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;
+  border:1px solid rgba(255,209,102,.25);
+  transition:all .4s ease;position:relative;
+}
+.rcard .rc-emoji{flex-shrink:0;}
+.rcard .rc-name{font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rcard .rc-name small{display:block;font-size:.68rem;color:rgba(255,243,224,.7);font-weight:600;}
+.rcard .rc-amt{font-weight:900;white-space:nowrap;}
+.rcard .rc-amt small{font-size:.7em;}
+.badge{
+  position:absolute;top:-8px;right:10px;font-size:.68rem;font-weight:800;padding:3px 8px;border-radius:99px;
+}
+.badge.abs{background:var(--gold);color:#3a2200;}
+.badge.lucky{background:linear-gradient(135deg,#ff5c7a,#ff8f5a);color:#fff;left:10px;right:auto;}
+.actions{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.big-btn{
+  width:100%;padding:15px;font-size:1.1rem;font-weight:900;border-radius:16px;cursor:pointer;border:none;
+}
+.big-btn:active{transform:scale(.98);}
+#presentBtn{background:linear-gradient(135deg,var(--lantern),#d63b12);color:#fff;box-shadow:0 4px 18px rgba(255,107,53,.45);}
+#fateBtn{background:linear-gradient(135deg,#9b5cff,#5c7aff);color:#fff;box-shadow:0 4px 18px rgba(120,92,255,.4);}
+#copyBtn{background:linear-gradient(135deg,#06c755,#04a344);color:#fff;box-shadow:0 4px 18px rgba(6,199,85,.35);}
+.hint{color:var(--muted);font-size:.75rem;text-align:center;margin-top:8px;}
+.empty-msg{color:var(--muted);text-align:center;padding:24px 8px;font-size:.9rem;}
+
+/* 発表モード */
+#overlay{
+  position:fixed;inset:0;background:rgba(12,7,10,.96);z-index:50;display:none;
+  flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;
+}
+#overlay.show{display:flex;}
+#ovStage{width:100%;max-width:420px;}
+.drum{font-size:3rem;animation:drumshake .12s linear infinite;}
+@keyframes drumshake{0%{transform:translate(0,0) rotate(-3deg);}50%{transform:translate(2px,-3px) rotate(3deg);}100%{transform:translate(-2px,1px) rotate(-2deg);}}
+.ov-card{
+  background:linear-gradient(150deg,var(--card2),var(--card));
+  border:2px solid var(--gold);border-radius:22px;padding:28px 20px;margin:0 auto;
+  box-shadow:0 0 50px rgba(255,209,102,.3);
+  animation:pop .35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+.ov-emoji{font-size:3.4rem;}
+.ov-name{font-size:1.5rem;font-weight:900;margin:6px 0 10px;}
+.ov-amt{font-size:2.8rem;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;}
+.ov-amt.rolling{color:var(--lantern2);filter:blur(.5px);}
+.ov-prog{color:var(--muted);font-size:.85rem;margin-top:16px;}
+.ov-close{
+  margin-top:22px;background:none;border:1.5px solid rgba(255,255,255,.3);color:var(--muted);
+  padding:10px 26px;border-radius:99px;font-size:.9rem;font-weight:700;cursor:pointer;
+}
+.ov-next{
+  margin-top:18px;background:linear-gradient(135deg,var(--lantern),#d63b12);border:none;color:#fff;
+  padding:13px 34px;border-radius:99px;font-size:1rem;font-weight:900;cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,53,.5);
+}
+.ov-final{font-size:1.2rem;font-weight:900;line-height:2;}
+.confetti-line{font-size:2rem;letter-spacing:.2em;animation:pop .5s;}
+
+/* 運命抽選バナー */
+#fateBanner{
+  display:none;margin-top:12px;padding:14px;border-radius:14px;text-align:center;
+  background:rgba(155,92,255,.15);border:1.5px solid rgba(155,92,255,.5);
+  font-weight:900;font-size:1.05rem;
+}
+#fateBanner.show{display:block;}
+
+.toast{
+  position:fixed;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);
+  background:var(--gold);color:#3a2200;font-weight:800;padding:12px 22px;border-radius:99px;
+  opacity:0;transition:.3s;z-index:99;pointer-events:none;font-size:.9rem;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← 実験ラボに戻る</a>
+  <header>
+    <span class="lanterns">🏮🏮🏮</span>
+    <h1>⚖️ 傾斜割り勘シミュレーター</h1>
+    <p class="subtitle">立場に応じてスマートに、楽しく割り勘。</p>
+  </header>
+
+  <!-- 金額 -->
+  <section>
+    <div class="sec-title">💰 合計金額</div>
+    <div class="total-row">
+      <span class="yen-mark">¥</span>
+      <input id="totalInput" type="text" inputmode="numeric" placeholder="23456">
+    </div>
+    <div class="opt-label">端数処理</div>
+    <div class="seg" id="unitSeg">
+      <button data-u="100">100円単位</button>
+      <button data-u="500">500円単位</button>
+      <button data-u="1">1円単位</button>
+    </div>
+    <div class="opt-label">端数（差額）を吸収する人</div>
+    <div class="seg" id="absorbSeg">
+      <button data-a="kanji">🎤 幹事</button>
+      <button data-a="top">👑 最上位役職</button>
+    </div>
+  </section>
+
+  <!-- 参加者 -->
+  <section>
+    <div class="sec-title">🧑‍🤝‍🧑 参加者 <small id="memberCount"></small></div>
+    <div class="mode-toggle">
+      <button id="modeNormal" class="on">✏️ 名前入り</button>
+      <button id="modeQuick">⚡ 人数だけサッと追加</button>
+    </div>
+    <div id="quickPanel" class="quick-panel" style="display:none;margin-bottom:12px;">
+      <select id="quickRole"></select>
+      <input id="quickNum" type="number" min="1" max="20" value="1">
+      <button id="quickAdd">＋追加</button>
+    </div>
+    <div id="memberList"></div>
+    <button class="add-btn" id="addMember">＋ 参加者を追加</button>
+    <div class="switch-row">
+      <div class="lbl">🌸 性別考慮モード<small>ONにすると各参加者に「女性」区分チップが出ます</small></div>
+      <label class="toggle"><input type="checkbox" id="genderToggle"><span class="tk"></span></label>
+    </div>
+    <div class="switch-row">
+      <div class="lbl">🎲 運命モード<small>1人だけ「本日のラッキー社員」(500円引き・差額は全員負担)を抽選</small></div>
+      <label class="toggle"><input type="checkbox" id="fateToggle"><span class="tk"></span></label>
+    </div>
+  </section>
+
+  <!-- 傾斜プリセット -->
+  <section>
+    <div class="sec-title">📐 傾斜の強さ</div>
+    <div class="presets" id="presetBtns">
+      <button data-p="equal"><span class="pe">🤝</span>みんな平等</button>
+      <button data-p="yanwari"><span class="pe">🍃</span>やんわり傾斜</button>
+      <button data-p="shikkari"><span class="pe">⛰️</span>しっかり傾斜</button>
+      <button data-p="gochisou"><span class="pe">🙏</span>ご馳走様です<br><small style="font-weight:400">(上が全部)</small></button>
+      <button data-p="custom" class="custom-btn"><span class="pe">🎛️</span>カスタム（重みを自分で調整）</button>
+    </div>
+    <div id="customPanel" style="display:none;"></div>
+  </section>
+
+  <!-- 天秤 -->
+  <section id="seesawBox">
+    <div class="sec-title">⚖️ 負担バランス天秤</div>
+    <svg id="seesawSvg" viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="plankGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ff8f5a"/><stop offset="1" stop-color="#ffd166"/>
+        </linearGradient>
+      </defs>
+      <polygon points="170,100 150,138 190,138" fill="#5a3a2a" stroke="#ffd166" stroke-width="1.5"/>
+      <g id="seesawG">
+        <rect x="20" y="96" width="300" height="9" rx="4.5" fill="url(#plankGrad)"/>
+        <g id="seesawPeople"></g>
+      </g>
+      <text x="170" y="148" text-anchor="middle" font-size="9" fill="#b89aa5">たくさん払う側 ←　　　→ 少なめ側</text>
+    </svg>
+    <div class="seesaw-cap" id="seesawCap"></div>
+  </section>
+
+  <!-- 結果 -->
+  <section>
+    <div class="sec-title">🧾 割り勘結果</div>
+    <div id="resultArea">
+      <div class="empty-msg">合計金額と参加者を入力すると結果が出ます🍻</div>
+    </div>
+    <div id="fateBanner"></div>
+    <div class="actions" id="actionArea" style="display:none;">
+      <button class="big-btn" id="fateBtn" style="display:none;">🎲 運命の抽選をする</button>
+      <button class="big-btn" id="presentBtn">🥁 発表モードで発表する</button>
+      <button class="big-btn" id="copyBtn">📋 LINE用テキストをコピー</button>
+      <div class="hint">設定は自動保存されます（この端末のみ）</div>
+    </div>
+  </section>
+
+  <footer>🧪 実験ラボ | Built with Claude Fable 5</footer>
+</div>
+
+<!-- 発表モードオーバーレイ -->
+<div id="overlay"><div id="ovStage"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================= データ定義 ================= */
+const ROLES = [
+  {id:"bucho",  label:"部長", emoji:"🦁", rank:0},
+  {id:"kacho",  label:"課長", emoji:"🐯", rank:1},
+  {id:"senpai", label:"先輩", emoji:"🦊", rank:2},
+  {id:"doki",   label:"同期", emoji:"🐶", rank:3},
+  {id:"kohai",  label:"後輩", emoji:"🐱", rank:4},
+  {id:"shinjin",label:"新人", emoji:"🐣", rank:5},
+];
+const ROLE_MAP = Object.fromEntries(ROLES.map(r=>[r.id,r]));
+const PRESET_ROLES = {
+  equal:    {bucho:1,   kacho:1,   senpai:1,   doki:1, kohai:1,   shinjin:1},
+  yanwari:  {bucho:1.6, kacho:1.4, senpai:1.2, doki:1, kohai:0.85,shinjin:0.7},
+  shikkari: {bucho:2.5, kacho:2.0, senpai:1.5, doki:1, kohai:0.6, shinjin:0.3},
+};
+const DEFAULT_MODS = {kanji:0.9, late:0.7, drink:1.25, soft:0.75, female:0.85};
+const MOD_DEFS = [
+  {id:"kanji", label:"🎤 幹事",        min:0.5, max:1.2},
+  {id:"late",  label:"⏰ 遅刻早退",     min:0.3, max:1.0},
+  {id:"drink", label:"🍺 たくさん飲んだ",min:1.0, max:2.0},
+  {id:"soft",  label:"🥤 飲んでない",   min:0.3, max:1.0},
+  {id:"female",label:"🌸 女性区分",     min:0.5, max:1.0},
+];
+const PRESET_LABEL = {equal:"みんな平等", yanwari:"やんわり傾斜", shikkari:"しっかり傾斜", gochisou:"ご馳走様です(上が全部)", custom:"カスタム"};
+const LS_KEY = "warikan-settings-v1";
+
+/* ================= 状態 ================= */
+let state = {
+  total: 0,
+  unit: 100,
+  absorb: "kanji",
+  preset: "yanwari",
+  gender: false,
+  fate: false,
+  custom: {roles: Object.assign({}, PRESET_ROLES.yanwari), mods: Object.assign({}, DEFAULT_MODS)},
+  members: [],
+};
+let nextId = 1;
+let fateResult = null; // {index, disc}
+let fateRolling = false;
+
+/* ================= 保存/復元 ================= */
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(s && typeof s === "object"){
+      state = Object.assign(state, s);
+      state.custom = s.custom || state.custom;
+      state.members = Array.isArray(s.members) ? s.members : [];
+      state.members.forEach(m=>{ m.id = nextId++; });
+    }
+  }catch(e){}
+}
+
+/* ================= ユーティリティ ================= */
+const $ = (sel)=>document.querySelector(sel);
+const fmt = (n)=>n.toLocaleString("ja-JP");
+function dispName(m){
+  if(m.name && m.name.trim()) return m.name.trim();
+  return ROLE_MAP[m.role].label;
+}
+function showToast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+/* ================= 重み計算 ================= */
+function effRoleWeights(){
+  if(state.preset === "custom") return state.custom.roles;
+  if(state.preset === "gochisou"){
+    // 出席者の中で最上位の役職だけが全額負担
+    const present = state.members.map(m=>ROLE_MAP[m.role].rank);
+    if(!present.length) return PRESET_ROLES.equal;
+    const top = Math.min.apply(null, present);
+    const w = {};
+    ROLES.forEach(r=>{ w[r.id] = (r.rank === top) ? 1 : 0; });
+    return w;
+  }
+  return PRESET_ROLES[state.preset] || PRESET_ROLES.yanwari;
+}
+function effMods(){
+  return (state.preset === "custom") ? state.custom.mods : DEFAULT_MODS;
+}
+function memberWeight(m, rw, mods){
+  let w = rw[m.role];
+  if(m.kanji) w *= mods.kanji;
+  if(m.late)  w *= mods.late;
+  if(m.drink) w *= mods.drink;
+  if(m.soft)  w *= mods.soft;
+  if(state.gender && m.female) w *= mods.female;
+  return w;
+}
+
+/* ================= 割り勘計算（合計一致保証） ================= */
+function calc(){
+  const total = state.total, u = state.unit, ms = state.members;
+  if(!total || total <= 0 || !ms.length) return null;
+  const rw = effRoleWeights(), mods = effMods();
+  const ws = ms.map(m=>memberWeight(m, rw, mods));
+  const W = ws.reduce((a,b)=>a+b, 0);
+  if(W <= 0) return null;
+
+  // 吸収者の決定
+  let ai = -1;
+  if(state.absorb === "kanji"){
+    ai = ms.findIndex((m,i)=>m.kanji && ws[i] > 0);
+  }
+  if(ai < 0){ // 最上位役職（重み>0の中で）
+    let bestRank = 99;
+    ms.forEach((m,i)=>{
+      if(ws[i] > 0 && ROLE_MAP[m.role].rank < bestRank){ bestRank = ROLE_MAP[m.role].rank; ai = i; }
+    });
+  }
+  if(ai < 0) ai = 0;
+
+  // 吸収者以外は切り捨て → 吸収者が差額を吸収（合計は必ず一致）
+  const amounts = new Array(ms.length).fill(0);
+  let others = 0;
+  ms.forEach((m,i)=>{
+    if(i === ai) return;
+    const raw = total * ws[i] / W;
+    amounts[i] = Math.floor(raw / u) * u;
+    others += amounts[i];
+  });
+  amounts[ai] = total - others;
+
+  // 運命モード適用
+  let lucky = -1;
+  if(state.fate && fateResult && fateResult.index < ms.length && ms.length >= 2){
+    lucky = fateResult.index;
+    const disc = Math.min(500, amounts[lucky]);
+    if(disc > 0){
+      amounts[lucky] -= disc;
+      const otherIdx = amounts.map((_,i)=>i).filter(i=>i!==lucky);
+      const per = Math.floor(disc / otherIdx.length);
+      let rem = disc - per * otherIdx.length;
+      otherIdx.forEach(i=>{ amounts[i] += per; });
+      const remTarget = (ai !== lucky) ? ai : otherIdx[0];
+      amounts[remTarget] += rem;
+    }
+  }
+  return {amounts, ai, lucky, ws, W};
+}
+
+/* ================= 参加者UI ================= */
+function addMember(role, name){
+  state.members.push({
+    id: nextId++, name: name || "", role: role || "doki",
+    female:false, kanji:false, late:false, drink:false, soft:false
+  });
+}
+function renderMembers(){
+  const list = $("#memberList");
+  list.innerHTML = "";
+  state.members.forEach((m, idx)=>{
+    const div = document.createElement("div");
+    div.className = "member";
+    const top = document.createElement("div");
+    top.className = "member-top";
+    const em = document.createElement("span");
+    em.className = "member-emoji";
+    em.textContent = ROLE_MAP[m.role].emoji;
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.placeholder = ROLE_MAP[m.role].label + "（名前は任意）";
+    inp.value = m.name;
+    inp.addEventListener("input", ()=>{ m.name = inp.value; onChange(false); });
+    const del = document.createElement("button");
+    del.className = "del-btn"; del.textContent = "✕"; del.title = "削除";
+    del.addEventListener("click", ()=>{ state.members.splice(idx,1); onChange(true); });
+    top.append(em, inp, del);
+
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    // 役職チップ
+    ROLES.forEach(r=>{
+      const c = document.createElement("span");
+      c.className = "chip role" + (m.role === r.id ? " on" : "");
+      c.textContent = r.emoji + r.label;
+      c.addEventListener("click", ()=>{ m.role = r.id; onChange(true); });
+      chips.appendChild(c);
+    });
+    chips.appendChild(Object.assign(document.createElement("span"), {className:"chips-divider"}));
+    // 属性チップ
+    const mods = [
+      ["kanji","🎤幹事"], ["late","⏰遅刻早退"], ["drink","🍺たくさん飲んだ"], ["soft","🥤飲んでない"],
+    ];
+    if(state.gender) mods.push(["female","🌸女性"]);
+    mods.forEach(([key,label])=>{
+      const c = document.createElement("span");
+      c.className = "chip mod" + (m[key] ? " on" : "");
+      c.textContent = label;
+      c.addEventListener("click", ()=>{
+        m[key] = !m[key];
+        if(key === "drink" && m.drink) m.soft = false;
+        if(key === "soft" && m.soft) m.drink = false;
+        onChange(true);
+      });
+      chips.appendChild(c);
+    });
+    div.append(top, chips);
+    list.appendChild(div);
+  });
+  $("#memberCount").textContent = state.members.length ? `${state.members.length}名` : "";
+}
+
+/* ================= カスタムスライダー ================= */
+function renderCustomPanel(){
+  const p = $("#customPanel");
+  p.style.display = (state.preset === "custom") ? "block" : "none";
+  if(state.preset !== "custom") return;
+  p.innerHTML = "<div class='opt-label' style='margin-top:0'>役職の重み（大きいほど多く払う）</div>";
+  ROLES.forEach(r=>{
+    p.appendChild(sliderRow(r.emoji + " " + r.label, state.custom.roles[r.id], 0, 3, 0.05, v=>{
+      state.custom.roles[r.id] = v; onChange(true);
+    }));
+  });
+  const lb = document.createElement("div");
+  lb.className = "opt-label"; lb.textContent = "属性の倍率";
+  p.appendChild(lb);
+  MOD_DEFS.forEach(d=>{
+    p.appendChild(sliderRow(d.label, state.custom.mods[d.id], d.min, d.max, 0.05, v=>{
+      state.custom.mods[d.id] = v; onChange(true);
+    }));
+  });
+}
+function sliderRow(label, val, min, max, step, onInput){
+  const row = document.createElement("div");
+  row.className = "slider-row";
+  const l = document.createElement("span"); l.className = "sl-label"; l.textContent = label;
+  const s = document.createElement("input");
+  s.type = "range"; s.min = min; s.max = max; s.step = step; s.value = val;
+  const v = document.createElement("span"); v.className = "sl-val"; v.textContent = "×" + Number(val).toFixed(2);
+  s.addEventListener("input", ()=>{
+    v.textContent = "×" + Number(s.value).toFixed(2);
+    onInput(parseFloat(s.value));
+  });
+  row.append(l, s, v);
+  return row;
+}
+
+/* ================= 天秤 ================= */
+function renderSeesaw(res){
+  const g = $("#seesawG"), people = $("#seesawPeople"), cap = $("#seesawCap");
+  people.innerHTML = "";
+  if(!state.members.length){
+    g.style.transform = "rotate(0deg)";
+    g.style.transformOrigin = "170px 100px";
+    cap.textContent = "参加者を追加すると天秤に乗ります";
+    return;
+  }
+  const rw = effRoleWeights(), mods = effMods();
+  const items = state.members.map((m,i)=>({m, w: memberWeight(m, rw, mods)}));
+  items.sort((a,b)=>b.w - a.w);
+  const shown = items.slice(0, 12);
+
+  // 傾き角度：重みの最大/最小比から算出
+  const pos = items.map(it=>it.w).filter(w=>w > 0);
+  let angle = 0;
+  if(items.some(it=>it.w === 0) && pos.length){
+    angle = 18;
+  }else if(pos.length >= 2){
+    const ratio = Math.max.apply(null,pos) / Math.min.apply(null,pos);
+    angle = Math.min(16, (ratio - 1) * 4);
+  }
+  g.style.transformOrigin = "170px 100px";
+  g.style.transform = `rotate(${-angle}deg)`;
+
+  const n = shown.length;
+  shown.forEach((it, i)=>{
+    const x = (n === 1) ? 170 : 30 + i * (280 / (n - 1));
+    const maxW = Math.max.apply(null, items.map(a=>a.w)) || 1;
+    const size = 16 + 10 * (it.w / maxW);
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", x);
+    t.setAttribute("y", 92);
+    t.setAttribute("text-anchor", "middle");
+    t.setAttribute("font-size", size);
+    t.setAttribute("class", "seesaw-emoji");
+    t.textContent = ROLE_MAP[it.m.role].emoji;
+    people.appendChild(t);
+  });
+  if(items.length > 12){
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", 320); t.setAttribute("y", 88);
+    t.setAttribute("font-size", 10); t.setAttribute("fill", "#b89aa5");
+    t.textContent = "+" + (items.length - 12);
+    people.appendChild(t);
+  }
+  cap.textContent = angle === 0
+    ? "まっ平ら。全員フェアです 🤝"
+    : `「${PRESET_LABEL[state.preset]}」で傾き ${angle.toFixed(0)}° — 重い人がゴロゴロ左へ…`;
+}
+
+/* ================= 結果表示 ================= */
+const CARD_HUES = [14, 36, 350, 46, 24, 4, 30];
+function renderResults(){
+  const area = $("#resultArea");
+  const res = calc();
+  renderSeesaw(res);
+  $("#actionArea").style.display = res ? "flex" : "none";
+  $("#fateBtn").style.display = (res && state.fate && state.members.length >= 2 && fateResult === null) ? "block" : "none";
+  const fb = $("#fateBanner");
+  if(!(res && state.fate && fateResult !== null)) fb.className = "";
+  if(!res){
+    area.innerHTML = "<div class='empty-msg'>合計金額と参加者を入力すると結果が出ます🍻</div>";
+    fb.className = ""; fb.textContent = "";
+    return;
+  }
+  const {amounts, ai, lucky} = res;
+  const sum = amounts.reduce((a,b)=>a+b, 0);
+  const maxAmt = Math.max.apply(null, amounts) || 1;
+
+  // 合計チェックバー
+  let html = "<div id='sumBar'>";
+  amounts.forEach((a, i)=>{
+    const w = (a / state.total * 100).toFixed(2);
+    const hue = CARD_HUES[i % CARD_HUES.length];
+    html += `<div class="segpart" style="width:${w}%;background:hsl(${hue},80%,${48 + (i%2)*10}%)" title="${dispName(state.members[i])}"></div>`;
+  });
+  html += "</div>";
+  const ok = sum === state.total;
+  html += `<div class="sumbar-note ${ok?"good":"bad"}">${ok ? `✅ 全員合計 ${fmt(sum)}円 ＝ 請求額 ${fmt(state.total)}円 ピッタリ！` : `⚠️ 合計 ${fmt(sum)}円 ≠ 請求額 ${fmt(state.total)}円`}</div>`;
+
+  // カード（金額の大きい順）
+  html += "<div id='cards'>";
+  const order = amounts.map((a,i)=>i).sort((x,y)=>amounts[y]-amounts[x]);
+  order.forEach(i=>{
+    const m = state.members[i], a = amounts[i];
+    const ratio = a / maxAmt;
+    const fs = (1.15 + ratio * 0.75).toFixed(2);
+    const hue = CARD_HUES[i % CARD_HUES.length];
+    const alpha = (0.18 + ratio * 0.55).toFixed(2);
+    let badges = "";
+    if(i === ai) badges += `<span class="badge abs">端数吸収</span>`;
+    if(i === lucky) badges += `<span class="badge lucky">🎲ラッキー社員 -500円</span>`;
+    const tags = [];
+    if(m.kanji) tags.push("🎤幹事");
+    if(m.late) tags.push("⏰遅刻早退");
+    if(m.drink) tags.push("🍺");
+    if(m.soft) tags.push("🥤");
+    if(state.gender && m.female) tags.push("🌸");
+    html += `<div class="rcard" style="background:linear-gradient(135deg,hsla(${hue},75%,50%,${alpha}),hsla(${hue},70%,38%,${(alpha*0.7).toFixed(2)}))">
+      ${badges}
+      <span class="rc-emoji" style="font-size:${(1.6 + ratio).toFixed(2)}rem">${ROLE_MAP[m.role].emoji}</span>
+      <span class="rc-name" style="font-size:${(0.95 + ratio*0.25).toFixed(2)}rem">${escapeHtml(dispName(m))}<small>${ROLE_MAP[m.role].label}${tags.length ? "・" + tags.join(" ") : ""}</small></span>
+      <span class="rc-amt" style="font-size:${fs}rem">${fmt(a)}<small>円</small></span>
+    </div>`;
+  });
+  html += "</div>";
+  area.innerHTML = html;
+
+  // 運命バナー
+  if(state.fate && lucky >= 0){
+    fb.className = "show";
+    fb.innerHTML = `🎉 本日のラッキー社員は <span style="color:var(--gold)">${escapeHtml(dispName(state.members[lucky]))}</span> さん！ 500円引き（差額は全員で負担）`;
+  }else{
+    fb.className = ""; fb.textContent = "";
+  }
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ================= 運命の抽選 ================= */
+function runFate(){
+  const res = calc();
+  if(!res || fateRolling || state.members.length < 2) return;
+  fateRolling = true;
+  const btn = $("#fateBtn");
+  btn.disabled = true;
+  const fb = $("#fateBanner");
+  fb.className = "show";
+  let t = 0;
+  const iv = setInterval(()=>{
+    const i = Math.floor(Math.random() * state.members.length);
+    fb.innerHTML = `🎲 運命の抽選中… <span style="color:var(--gold)">${escapeHtml(dispName(state.members[i]))}</span>`;
+    tick(700 + Math.random()*300, 0.04);
+    t += 90;
+    if(t >= 1800){
+      clearInterval(iv);
+      fateResult = {index: Math.floor(Math.random() * state.members.length)};
+      fateRolling = false;
+      btn.disabled = false;
+      tick(1200, 0.15, 0.35);
+      onChange(false);
+    }
+  }, 90);
+}
+
+/* ================= 発表モード ================= */
+let audioCtx = null;
+function tick(freq, vol, dur){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "triangle"; o.frequency.value = freq || 800;
+    g.gain.value = vol || 0.05;
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (dur || 0.08));
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + (dur || 0.08));
+  }catch(e){}
+}
+function present(){
+  const res = calc();
+  if(!res) return;
+  const {amounts, lucky} = res;
+  const order = amounts.map((a,i)=>i).sort((x,y)=>amounts[x]-amounts[y]); // 少ない順→大トリは高額
+  const ov = $("#overlay"), stage = $("#ovStage");
+  ov.classList.add("show");
+  let step = -1;
+  let rollIv = null, drumIv = null;
+
+  function cleanup(){
+    clearInterval(rollIv); clearInterval(drumIv);
+  }
+  function close(){
+    cleanup();
+    ov.classList.remove("show");
+    stage.innerHTML = "";
+  }
+  function drumroll(next){
+    stage.innerHTML = `<div class="drum">🥁</div>
+      <div style="font-size:1.4rem;font-weight:900;margin-top:14px;letter-spacing:.2em;">ドゥルルルルル…</div>
+      <button class="ov-close" id="ovClose">閉じる</button>`;
+    $("#ovClose").onclick = close;
+    let cnt = 0;
+    drumIv = setInterval(()=>{ tick(150 + Math.random()*100, 0.06, 0.05); cnt++; if(cnt > 16){ clearInterval(drumIv); next(); } }, 90);
+  }
+  function reveal(){
+    step++;
+    if(step >= order.length){ finale(); return; }
+    const i = order[step], m = state.members[i], amt = amounts[i];
+    const isLast = step === order.length - 1;
+    stage.innerHTML = `
+      <div class="ov-card">
+        <div class="ov-emoji">${ROLE_MAP[m.role].emoji}</div>
+        <div class="ov-name">${escapeHtml(dispName(m))} さん${i === lucky ? " 🎲" : ""}</div>
+        <div class="ov-amt rolling" id="ovAmt">???</div>
+        <div class="ov-prog">${step + 1} / ${order.length} 人目${isLast ? "（大トリ！）" : ""}</div>
+      </div>
+      <button class="ov-next" id="ovNext" style="visibility:hidden">つぎへ ▶</button>
+      <br><button class="ov-close" id="ovClose">閉じる</button>`;
+    $("#ovClose").onclick = close;
+    const amtEl = $("#ovAmt");
+    const start = Date.now(), rollDur = isLast ? 2200 : 1300;
+    rollIv = setInterval(()=>{
+      if(Date.now() - start >= rollDur){
+        clearInterval(rollIv);
+        amtEl.classList.remove("rolling");
+        amtEl.textContent = fmt(amt) + "円";
+        tick(1050, 0.14, 0.4);
+        if(i === lucky){
+          amtEl.insertAdjacentHTML("afterend", `<div style="color:var(--red);font-weight:900;margin-top:8px;">🎲 本日のラッキー社員！ 500円引き済み</div>`);
+        }
+        const nx = $("#ovNext");
+        nx.style.visibility = "visible";
+        nx.textContent = (step === order.length - 1) ? "結果まとめ 🎉" : "つぎへ ▶";
+        nx.onclick = reveal;
+      }else{
+        const fake = Math.floor(Math.random() * Math.max(amt * 2, 10000) / 100) * 100;
+        amtEl.textContent = fmt(fake) + "円";
+        tick(500 + Math.random() * 600, 0.03, 0.04);
+      }
+    }, 70);
+  }
+  function finale(){
+    let lines = "";
+    const order2 = amounts.map((a,i)=>i).sort((x,y)=>amounts[y]-amounts[x]);
+    order2.forEach(i=>{
+      lines += `${ROLE_MAP[state.members[i].role].emoji} ${escapeHtml(dispName(state.members[i]))}：<span style="color:var(--gold)">${fmt(amounts[i])}円</span>${i === lucky ? " 🎲" : ""}<br>`;
+    });
+    stage.innerHTML = `
+      <div class="confetti-line">🎉🍻🏮🍻🎉</div>
+      <div class="ov-card" style="margin-top:14px;">
+        <div style="font-size:1.1rem;font-weight:900;color:var(--gold);margin-bottom:10px;">本日の会計 💰 合計 ${fmt(state.total)}円</div>
+        <div class="ov-final">${lines}</div>
+      </div>
+      <button class="ov-close" id="ovClose">閉じる</button>`;
+    $("#ovClose").onclick = close;
+    tick(1300, 0.15, 0.5);
+  }
+  drumroll(reveal);
+}
+
+/* ================= LINEコピー ================= */
+function buildLineText(){
+  const res = calc();
+  if(!res) return "";
+  const {amounts, lucky} = res;
+  const order = amounts.map((a,i)=>i).sort((x,y)=>amounts[y]-amounts[x]);
+  let lines = [`本日の会計💰 合計${fmt(state.total)}円（${PRESET_LABEL[state.preset]}）`];
+  order.forEach(i=>{
+    let l = `${dispName(state.members[i])}：${fmt(amounts[i])}円`;
+    if(i === lucky) l += " 🎲ラッキー社員(-500円)";
+    lines.push(l);
+  });
+  lines.push("⚖️ 傾斜割り勘シミュレーターで計算しました");
+  return lines.join("\n");
+}
+function copyLine(){
+  const text = buildLineText();
+  if(!text){ showToast("先に計算してください"); return; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>showToast("コピーしました！LINEに貼り付けてね📋"), ()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); showToast("コピーしました！📋"); }
+  catch(e){ showToast("コピーに失敗しました…"); }
+  document.body.removeChild(ta);
+}
+
+/* ================= 全体更新 ================= */
+function onChange(structural){
+  if(structural) fateResult = null; // 条件が変わったら抽選やり直し
+  save();
+  if(structural) renderMembers();
+  syncControls();
+  renderCustomPanel();
+  renderResults();
+}
+function syncControls(){
+  document.querySelectorAll("#unitSeg button").forEach(b=>b.classList.toggle("on", Number(b.dataset.u) === state.unit));
+  document.querySelectorAll("#absorbSeg button").forEach(b=>b.classList.toggle("on", b.dataset.a === state.absorb));
+  document.querySelectorAll("#presetBtns button").forEach(b=>b.classList.toggle("on", b.dataset.p === state.preset));
+  $("#genderToggle").checked = state.gender;
+  $("#fateToggle").checked = state.fate;
+}
+
+/* ================= イベント ================= */
+function init(){
+  load();
+
+  // 合計金額
+  const ti = $("#totalInput");
+  if(state.total) ti.value = fmt(state.total);
+  ti.addEventListener("input", ()=>{
+    const n = parseInt(ti.value.replace(/[^\d]/g, ""), 10);
+    state.total = isNaN(n) ? 0 : n;
+    onChange(true);
+  });
+  ti.addEventListener("blur", ()=>{ if(state.total) ti.value = fmt(state.total); });
+
+  // 端数処理・吸収先
+  document.querySelectorAll("#unitSeg button").forEach(b=>{
+    b.addEventListener("click", ()=>{ state.unit = Number(b.dataset.u); onChange(true); });
+  });
+  document.querySelectorAll("#absorbSeg button").forEach(b=>{
+    b.addEventListener("click", ()=>{ state.absorb = b.dataset.a; onChange(true); });
+  });
+
+  // プリセット
+  document.querySelectorAll("#presetBtns button").forEach(b=>{
+    b.addEventListener("click", ()=>{ state.preset = b.dataset.p; onChange(true); });
+  });
+
+  // 参加者追加モード
+  $("#modeNormal").addEventListener("click", ()=>{
+    $("#modeNormal").classList.add("on"); $("#modeQuick").classList.remove("on");
+    $("#quickPanel").style.display = "none"; $("#addMember").style.display = "block";
+  });
+  $("#modeQuick").addEventListener("click", ()=>{
+    $("#modeQuick").classList.add("on"); $("#modeNormal").classList.remove("on");
+    $("#quickPanel").style.display = "flex"; $("#addMember").style.display = "none";
+  });
+  const qr = $("#quickRole");
+  ROLES.forEach(r=>{
+    const o = document.createElement("option");
+    o.value = r.id; o.textContent = r.emoji + " " + r.label;
+    qr.appendChild(o);
+  });
+  qr.value = "doki";
+  $("#quickAdd").addEventListener("click", ()=>{
+    const n = Math.max(1, Math.min(20, parseInt($("#quickNum").value, 10) || 1));
+    for(let i = 0; i < n; i++) addMember(qr.value, "");
+    showToast(`${ROLE_MAP[qr.value].label}を${n}名追加しました`);
+    onChange(true);
+  });
+  $("#addMember").addEventListener("click", ()=>{ addMember("doki", ""); onChange(true); });
+
+  // トグル
+  $("#genderToggle").addEventListener("change", e=>{ state.gender = e.target.checked; onChange(true); });
+  $("#fateToggle").addEventListener("change", e=>{ state.fate = e.target.checked; onChange(true); });
+
+  // アクション
+  $("#fateBtn").addEventListener("click", runFate);
+  $("#presentBtn").addEventListener("click", present);
+  $("#copyBtn").addEventListener("click", copyLine);
+
+  // 初回サンプル（保存データがなければ）
+  if(!state.members.length && !state.total){
+    state.total = 23456;
+    ti.value = fmt(state.total);
+    addMember("bucho", ""); addMember("senpai", ""); addMember("senpai", "");
+    addMember("kohai", ""); addMember("kohai", "");
+    state.preset = "shikkari";
+  }
+  onChange(true);
+}
+init();
+</script>
+</body>
+</html>

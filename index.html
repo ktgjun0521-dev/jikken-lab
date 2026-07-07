@@ -80,6 +80,11 @@
   .tag.biz     { color: #9fc4f2; border-color: #9fc4f266; }
   .tag.drink   { color: #f2d59d; border-color: #f2d59d66; }
   .tag.money   { color: #ffb3b3; border-color: #ffb3b366; }
+  .tag.kids    { color: #8fe08a; border-color: #8fe08a66; }
+  .tag.d3      { color: #6fe3f2; border-color: #6fe3f266; }
+  .tag.split   { color: #ffcf87; border-color: #ffcf8766; }
+  .tag.love    { color: #ff9ec2; border-color: #ff9ec266; }
+  .tag.health  { color: #a3c9ff; border-color: #a3c9ff66; }
   a.card { position: relative; }
   a.card:hover .emoji { animation: wiggle 0.5s ease; }
   @keyframes wiggle {
@@ -216,6 +221,8 @@
     <button class="chip" type="button" data-cat="実務">実務</button>
     <button class="chip" type="button" data-cat="シミュレーション">シミュレーション</button>
     <button class="chip" type="button" data-cat="データ・雑学">データ・雑学</button>
+    <button class="chip" type="button" data-cat="こども">こども</button>
+    <button class="chip" type="button" data-cat="暮らし">暮らし</button>
   </div>
 
   <div class="cards">
@@ -302,6 +309,41 @@
       <p>クレカ明細CSVを読み込むと、節約の鬼コーチがあなたの支出をぶった斬り。サブスクの疑い・ラテマネー・深夜タクシーを検出して「年間◯円浮くぞ」と具体的にアドバイス。データは端末内だけで処理。</p>
       <span class="tag money">家計分析</span>
     </a>
+
+    <a class="card" href="soccer-kids.html">
+      <div class="emoji">🧒</div>
+      <h2>こどもサッカーきょうしつ</h2>
+      <p>オフサイドを体験装置で学び、「パントキックのときどこに戻る?」を判断クイズで身につける。⭐を集めてみならいからレジェンドへ。8人制世代の小学生向け。</p>
+      <span class="tag kids">こども向け</span>
+    </a>
+
+    <a class="card" href="soccer-3d.html">
+      <div class="emoji">🎮</div>
+      <h2>3D戦術シアター</h2>
+      <p>ニアゾーンアタックやパントキック対応の動きを、3Dピッチ上で三人称カメラ・ゴール裏カメラから立体再生。戦術ボードで作った盤面の読み込みにも対応。</p>
+      <span class="tag d3">3D再生</span>
+    </a>
+
+    <a class="card" href="warikan.html">
+      <div class="emoji">⚖️</div>
+      <h2>傾斜割り勘シミュレーター</h2>
+      <p>役職・後輩・幹事・飲んだ量で「傾斜」をつけた割り勘を天秤アニメで可視化。発表モードのスロット演出で会計タイムが盛り上がる。LINE用テキストのコピーつき。</p>
+      <span class="tag split">宴会会計</span>
+    </a>
+
+    <a class="card" href="kansha-maker.html">
+      <div class="emoji">💐</div>
+      <h2>プチ感謝メーカー</h2>
+      <p>予算と時間と相手のタイプを選ぶと、今日できる「プチ感謝」の具体的アイデアと添える一言を提案。実行記録が貯まると称号も。円満は一日にして成らず。</p>
+      <span class="tag love">夫婦円満</span>
+    </a>
+
+    <a class="card" href="hangover-guide.html">
+      <div class="emoji">💊</div>
+      <h2>二日酔いサイエンス</h2>
+      <p>アルコールが体内で分解される流れをアニメーション図解。ウコンやヘパリーゼに「期待できること・できないこと」を科学的に整理した、飲む人の教養アプリ。</p>
+      <span class="tag health">健康教養</span>
+    </a>
   </div>
 
   <footer>Built with Claude Fable 5 · 2026<br><span id="fun-fact"></span></footer>
@@ -352,14 +394,19 @@
       'soccer-stats.html':    ['スポーツ'],
       'poker-assist.html':    ['シミュレーション'],
       'tactics-board.html':   ['スポーツ'],
-      'trivia-lab.html':      ['データ・雑学'],
+      'trivia-lab.html':      ['データ・雑学', 'こども'],
       'enkai-lab.html':       ['宴会'],
       'golf-shindan.html':    ['診断', 'スポーツ'],
       'golf-type16.html':     ['診断', 'スポーツ'],
       'jihanki-sim.html':     ['シミュレーション'],
       'gaichu-cost.html':     ['実務'],
       'alcohol-counter.html': ['宴会'],
-      'setsuyaku-maker.html': ['実務']
+      'setsuyaku-maker.html': ['実務'],
+      'soccer-kids.html':     ['スポーツ', 'こども'],
+      'soccer-3d.html':       ['スポーツ'],
+      'warikan.html':         ['宴会'],
+      'kansha-maker.html':    ['暮らし'],
+      'hangover-guide.html':  ['宴会', '暮らし', '健康']
     };
 
     const LS_FAV = 'jikkenlab-favorites';

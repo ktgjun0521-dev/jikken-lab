@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プチ感謝メーカー</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%92%90</text></svg>">
+<meta name="description" content="パートナーへの日頃の感謝を伝える具体的なアイデアを提案するツール。予算・時間・相手のタイプの3問に答えるだけで、行動＋添える一言の例文をセットで提案します。">
+<meta property="og:title" content="プチ感謝メーカー">
+<meta property="og:description" content="予算・時間・相手のタイプの3問に答えるだけ。パートナーに感謝を伝える具体的なアイデアを、添える一言の例文つきで提案します。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/kansha-maker.html">
+<meta name="twitter:card" content="summary">
+<style>
+  :root{
+    --cream:#fff7ec;
+    --cream2:#fdefdc;
+    --coral:#f2836f;
+    --coral-dark:#d96450;
+    --coral-soft:#ffd9cf;
+    --ink:#4a3f38;
+    --sub:#9a8578;
+    --line:#f0ddc9;
+    --white:#fffdf9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+    color:var(--ink);
+    line-height:1.65;
+    background:linear-gradient(180deg,var(--cream) 0%,var(--cream2) 100%);
+    min-height:100vh;
+    padding-bottom:30px;
+  }
+  .back-link{
+    display:inline-block;
+    margin:14px 0 0 16px;
+    font-size:.9rem;
+    color:var(--sub);
+    text-decoration:none;
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,.75);
+    border:1px solid var(--line);
+    transition:background .2s;
+  }
+  .back-link:hover{background:#fff;}
+  header{text-align:center;padding:16px 16px 4px;}
+  header h1{
+    font-size:clamp(1.5rem,6vw,2.2rem);
+    letter-spacing:.05em;
+    color:var(--coral-dark);
+  }
+  header p.sub{font-size:.83rem;color:var(--sub);margin-top:4px;}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px;}
+  /* tabs */
+  .tabs{
+    display:flex;gap:6px;justify-content:center;margin:14px 0 12px;
+  }
+  .tab{
+    flex:1;max-width:150px;
+    border:1.5px solid var(--line);
+    background:var(--white);color:var(--sub);
+    font-family:inherit;font-size:.85rem;font-weight:bold;
+    padding:8px 4px;border-radius:999px;cursor:pointer;
+    transition:all .2s;
+  }
+  .tab.active{
+    background:var(--coral);border-color:var(--coral);color:#fff;
+    box-shadow:0 3px 10px rgba(242,131,111,.35);
+  }
+  section.pane{display:none;}
+  section.pane.active{display:block;}
+  /* mission banner */
+  .mission{
+    background:linear-gradient(135deg,#fff2e3,#ffe3d8);
+    border:1.5px solid #f5c9b5;
+    border-radius:16px;
+    padding:12px 16px;
+    margin-bottom:14px;
+    font-size:.86rem;
+    box-shadow:0 3px 12px rgba(217,100,80,.08);
+  }
+  .mission .m-head{font-weight:bold;color:var(--coral-dark);font-size:.8rem;letter-spacing:.06em;}
+  .mission .m-body{margin-top:4px;}
+  .mission.fresh{animation:missionPulse 1.4s ease 2;}
+  @keyframes missionPulse{0%,100%{box-shadow:0 3px 12px rgba(217,100,80,.08);}50%{box-shadow:0 0 0 5px rgba(242,131,111,.25);}}
+  .mission .m-done-btn{
+    margin-top:8px;
+    background:#fff;border:1.5px solid var(--coral);color:var(--coral-dark);
+    border-radius:999px;padding:5px 14px;font-size:.8rem;font-weight:bold;
+    font-family:inherit;cursor:pointer;
+  }
+  .mission .m-done-btn:disabled{opacity:.55;cursor:default;}
+  /* form */
+  .form-card{
+    background:var(--white);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 4px 16px rgba(74,63,56,.06);
+  }
+  .q-label{
+    font-size:.82rem;font-weight:bold;color:var(--coral-dark);
+    margin:12px 0 6px;letter-spacing:.04em;
+  }
+  .q-label:first-child{margin-top:0;}
+  .q-label small{font-weight:normal;color:var(--sub);}
+  .pills{display:flex;flex-wrap:wrap;gap:7px;}
+  .pill{
+    border:1.5px solid var(--line);
+    background:var(--cream);
+    color:var(--ink);
+    font-family:inherit;font-size:.83rem;
+    padding:7px 13px;border-radius:999px;cursor:pointer;
+    transition:all .18s;
+  }
+  .pill:hover{border-color:var(--coral);}
+  .pill.on{
+    background:var(--coral);border-color:var(--coral);color:#fff;font-weight:bold;
+    box-shadow:0 2px 8px rgba(242,131,111,.35);
+  }
+  .go-btn{
+    display:block;width:100%;
+    margin-top:16px;
+    background:linear-gradient(135deg,var(--coral),var(--coral-dark));
+    color:#fff;border:none;border-radius:999px;
+    padding:13px;font-size:1rem;font-weight:bold;font-family:inherit;
+    cursor:pointer;letter-spacing:.05em;
+    box-shadow:0 5px 16px rgba(217,100,80,.35);
+    transition:transform .15s,box-shadow .2s;
+  }
+  .go-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(217,100,80,.42);}
+  /* result card */
+  .result{
+    margin-top:16px;display:none;
+    background:var(--white);
+    border:2px solid var(--coral-soft);
+    border-radius:20px;
+    padding:18px 16px 16px;
+    box-shadow:0 6px 22px rgba(217,100,80,.13);
+    animation:cardIn .4s cubic-bezier(.3,1.3,.5,1);
+  }
+  .result.show{display:block;}
+  @keyframes cardIn{0%{transform:translateY(14px) scale(.96);opacity:0;}100%{transform:none;opacity:1;}}
+  .r-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .r-tag{
+    font-size:.7rem;font-weight:bold;
+    background:var(--cream);border:1px solid var(--line);color:var(--sub);
+    padding:2px 10px;border-radius:999px;
+  }
+  .r-act{font-size:1.02rem;font-weight:bold;line-height:1.6;}
+  .r-phrase{
+    margin-top:12px;
+    background:#fff4ee;
+    border:1.5px dashed var(--coral);
+    border-radius:14px;
+    padding:10px 14px;
+    font-size:.9rem;
+    position:relative;
+  }
+  .r-phrase::before{
+    content:"💬 添える一言";
+    display:block;font-size:.68rem;font-weight:bold;color:var(--coral-dark);
+    margin-bottom:3px;letter-spacing:.06em;
+  }
+  .meters{
+    display:flex;gap:14px;flex-wrap:wrap;
+    margin-top:12px;font-size:.8rem;
+  }
+  .meter b{font-size:.72rem;color:var(--sub);display:block;font-weight:bold;}
+  .r-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .r-btn{
+    flex:1;min-width:96px;
+    border-radius:999px;padding:9px 8px;
+    font-size:.83rem;font-weight:bold;font-family:inherit;cursor:pointer;
+    transition:all .18s;
+  }
+  .r-btn.gacha{background:#fff;border:1.5px solid var(--coral);color:var(--coral-dark);}
+  .r-btn.gacha:hover{background:#fff0ea;}
+  .r-btn.fav{background:#fff;border:1.5px solid #e8c66a;color:#a8801e;}
+  .r-btn.fav.faved{background:#fdf1cf;}
+  .r-btn.done{background:var(--coral);border:1.5px solid var(--coral);color:#fff;}
+  .r-btn.done:hover{background:var(--coral-dark);}
+  .no-hit{margin-top:14px;text-align:center;font-size:.85rem;color:var(--sub);display:none;}
+  /* favorites */
+  .fav-list{display:flex;flex-direction:column;gap:10px;}
+  .fav-item{
+    background:var(--white);border:1.5px solid var(--line);border-radius:16px;
+    padding:13px 14px;font-size:.88rem;
+  }
+  .fav-item .fi-act{font-weight:bold;}
+  .fav-item .fi-ph{font-size:.8rem;color:var(--sub);margin-top:4px;}
+  .fav-item .fi-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;font-size:.75rem;}
+  .fi-del{
+    margin-left:auto;background:none;border:1px solid var(--line);color:var(--sub);
+    border-radius:999px;padding:3px 10px;font-size:.72rem;font-family:inherit;cursor:pointer;
+  }
+  .empty-note{text-align:center;color:var(--sub);font-size:.85rem;padding:26px 0;}
+  /* record / calendar */
+  .title-card{
+    background:linear-gradient(135deg,#fff,#fff2e8);
+    border:1.5px solid var(--coral-soft);border-radius:18px;
+    padding:14px 16px;text-align:center;margin-bottom:14px;
+  }
+  .title-card .t-emoji{font-size:2rem;}
+  .title-card .t-name{font-weight:bold;color:var(--coral-dark);font-size:1.05rem;margin-top:2px;}
+  .title-card .t-sub{font-size:.78rem;color:var(--sub);margin-top:4px;}
+  .t-bar{
+    height:8px;background:var(--cream);border-radius:999px;margin-top:10px;overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .t-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--coral),#f7a48f);border-radius:999px;transition:width .5s;}
+  .cal-card{
+    background:var(--white);border:1.5px solid var(--line);border-radius:18px;padding:14px;
+  }
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .cal-head b{color:var(--coral-dark);}
+  .cal-nav{
+    background:var(--cream);border:1px solid var(--line);border-radius:999px;
+    width:32px;height:32px;font-family:inherit;cursor:pointer;color:var(--ink);
+  }
+  .cal-grid{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;
+  }
+  .cal-dow{font-size:.66rem;color:var(--sub);font-weight:bold;padding:2px 0;}
+  .cal-day{
+    border-radius:10px;padding:4px 0 3px;font-size:.75rem;min-height:44px;
+    background:var(--cream);border:1px solid transparent;
+  }
+  .cal-day.blank{background:none;}
+  .cal-day.today{border-color:var(--coral);}
+  .cal-day .heart{display:block;font-size:.8rem;line-height:1.2;}
+  .cal-note{font-size:.72rem;color:var(--sub);text-align:center;margin-top:8px;}
+  /* toast & celebrate */
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);
+    background:var(--ink);color:#fff;font-size:.85rem;
+    padding:10px 20px;border-radius:999px;z-index:400;
+    opacity:0;transition:all .35s;pointer-events:none;white-space:nowrap;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+  .celebrate{
+    position:fixed;inset:0;z-index:500;background:rgba(70,45,38,.5);
+    display:none;align-items:center;justify-content:center;padding:16px;cursor:pointer;
+  }
+  .celebrate.show{display:flex;}
+  .celebrate-box{
+    background:#fff;border:3px solid var(--coral);border-radius:22px;
+    padding:28px 32px;text-align:center;position:relative;overflow:hidden;
+    box-shadow:0 12px 50px rgba(0,0,0,.3);max-width:90vw;
+    animation:celebrateIn .5s cubic-bezier(.3,1.4,.5,1);
+  }
+  @keyframes celebrateIn{0%{transform:scale(.3);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  .celebrate-emoji{font-size:3rem;animation:bounceY 1s ease infinite;}
+  @keyframes bounceY{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  .celebrate-title{font-size:1.1rem;font-weight:bold;color:var(--coral-dark);margin-top:8px;}
+  .celebrate-sub{font-size:.83rem;color:var(--sub);margin-top:6px;}
+  @keyframes confettiFall{
+    0%{transform:translateY(-20px) rotate(0);opacity:1;}
+    100%{transform:translateY(240px) rotate(480deg);opacity:0;}
+  }
+  .confetti{position:absolute;top:0;font-size:1.1rem;pointer-events:none;animation:confettiFall 1.5s ease-in forwards;}
+  footer{
+    text-align:center;font-size:.75rem;color:var(--sub);
+    padding:26px 12px 10px;
+  }
+  footer a{color:inherit;}
+</style>
+</head>
+<body>
+<a class="back-link" href="index.html">← 実験ラボに戻る</a>
+<header>
+  <h1>💐 プチ感謝メーカー</h1>
+  <p class="sub">奥さん・パートナーに「ありがとう」を伝える小さなアイデア屋さん</p>
+</header>
+
+<div class="wrap">
+  <nav class="tabs">
+    <button class="tab active" data-pane="paneIdea">💡 提案</button>
+    <button class="tab" data-pane="paneFav">⭐ お気に入り</button>
+    <button class="tab" data-pane="paneLog">📅 きろく</button>
+  </nav>
+
+  <!-- 提案タブ -->
+  <section class="pane active" id="paneIdea">
+    <div class="mission" id="mission">
+      <div class="m-head">📮 今週のミッション</div>
+      <div class="m-body" id="missionBody"></div>
+      <button class="m-done-btn" id="missionDone">達成した！🎉</button>
+    </div>
+
+    <div class="form-card">
+      <div class="q-label">Q1. 予算はどのくらい？</div>
+      <div class="pills" id="pillBudget"></div>
+      <div class="q-label">Q2. 使える時間は？</div>
+      <div class="pills" id="pillTime"></div>
+      <div class="q-label">Q3. 相手のタイプは？</div>
+      <div class="pills" id="pillType"></div>
+      <div class="q-label">＋ 最近の状況 <small>（任意）</small></div>
+      <div class="pills" id="pillSit"></div>
+      <button class="go-btn" id="goBtn">アイデアをもらう 💐</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="r-tags" id="rTags"></div>
+      <div class="r-act" id="rAct"></div>
+      <div class="r-phrase" id="rPhrase"></div>
+      <div class="meters" id="rMeters"></div>
+      <div class="r-btns">
+        <button class="r-btn gacha" id="btnGacha">🎲 もう一個</button>
+        <button class="r-btn fav" id="btnFav">⭐ お気に入り</button>
+        <button class="r-btn done" id="btnDone">✅ 実行した！</button>
+      </div>
+    </div>
+    <div class="no-hit" id="noHit">条件に合うアイデアが見つかりませんでした…予算か時間をゆるめてみてください🙏</div>
+  </section>
+
+  <!-- お気に入りタブ -->
+  <section class="pane" id="paneFav">
+    <div class="fav-list" id="favList"></div>
+    <div class="empty-note" id="favEmpty">まだお気に入りがありません。<br>提案タブで ⭐ を押すとここに貯まります。</div>
+  </section>
+
+  <!-- きろくタブ -->
+  <section class="pane" id="paneLog">
+    <div class="title-card">
+      <div class="t-emoji" id="tEmoji">🌱</div>
+      <div class="t-name" id="tName"></div>
+      <div class="t-sub" id="tSub"></div>
+      <div class="t-bar"><span id="tBar" style="width:0%"></span></div>
+    </div>
+    <div class="cal-card">
+      <div class="cal-head">
+        <button class="cal-nav" id="calPrev">◀</button>
+        <b id="calTitle"></b>
+        <button class="cal-nav" id="calNext">▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-note">💖 = 感謝を実行した日。続けるほど称号が育ちます</div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box" id="celebrateBox">
+    <div class="celebrate-emoji" id="celebrateEmoji">🏆</div>
+    <div class="celebrate-title" id="celebrateTitle"></div>
+    <div class="celebrate-sub" id="celebrateSub"></div>
+  </div>
+</div>
+
+<footer>
+  ※アイデアは一例です。いちばん効くのは、あなたの言葉に変えて伝えることだったりします。<br>
+  🧪 <a href="index.html">実験ラボ</a> | Built with Claude Fable 5
+</footer>
+
+<script>
+"use strict";
+
+/* ========== 選択肢定義 ========== */
+const BUDGETS = [
+  {key:0, label:"0円"},
+  {key:1, label:"〜500円"},
+  {key:2, label:"〜2,000円"},
+  {key:3, label:"〜5,000円"},
+  {key:4, label:"特別な日"}
+];
+const TIMES = [
+  {key:0, label:"30秒"},
+  {key:1, label:"10分"},
+  {key:2, label:"1時間"},
+  {key:3, label:"半日"}
+];
+const TYPES = [
+  {key:"sweet", label:"🍰 甘いもの好き"},
+  {key:"prac",  label:"🧺 実用派"},
+  {key:"osha",  label:"💄 おしゃれ好き"},
+  {key:"relax", label:"🛁 のんびりしたい派"},
+  {key:"gour",  label:"🍣 グルメ派"}
+];
+const SITS = [
+  {key:"",        label:"指定なし"},
+  {key:"ikuji",   label:"👶 育児で疲れ気味"},
+  {key:"shigoto", label:"💼 仕事が忙しい"},
+  {key:"kinenbi", label:"🎂 記念日が近い"},
+  {key:"kimazui", label:"🌥️ ちょっと気まずい"}
+];
+const SIT_LABEL = {ikuji:"育児疲れに", shigoto:"忙しい時に", kinenbi:"記念日に", kimazui:"仲直りに"};
+
+/* ========== アイデアデータ（84個） ==========
+   b:予算(0=0円,1=〜500,2=〜2000,3=〜5000,4=特別な日)
+   t:時間(0=30秒,1=10分,2=1時間,3=半日)
+   ty:タイプ(sweet/prac/osha/relax/gour/all)  s:状況タグ
+   act:行動  ph:添える一言  ef:効果1-5  te:照れ度1-5 */
+const IDEAS = [
+/* ---------- 0円・30秒 ---------- */
+{b:0,t:0,ty:["all"],s:["shigoto"],ef:3,te:1,
+ act:"仕事の合間に「今日もおつかれさま」とLINEする。",
+ ph:"「今日もおつかれさま。無理しないでね」"},
+{b:0,t:0,ty:["all"],s:[],ef:3,te:2,
+ act:"帰宅したら開口一番、感謝から入る。",
+ ph:"「ただいま。今日も一日ありがとうね」"},
+{b:0,t:0,ty:["all"],s:[],ef:3,te:2,
+ act:"寝る前に、今日一日への感謝をひとこと伝える。",
+ ph:"「おやすみ。いつも本当にありがとう」"},
+{b:0,t:0,ty:["all"],s:[],ef:4,te:4,
+ act:"出かける前に3秒だけぎゅっとハグする。",
+ ph:"「いってきます。今日もよろしく」"},
+{b:0,t:0,ty:["osha"],s:[],ef:4,te:3,
+ act:"服・髪・小物のどれかを見つけて具体的に褒める。",
+ ph:"「今日のその色、すごく似合ってるね」"},
+{b:0,t:0,ty:["gour"],s:[],ef:4,te:2,
+ act:"ごはんを一口食べた瞬間に、感想を先に言う。",
+ ph:"「うま…これ、お店より好きかも」"},
+{b:0,t:0,ty:["all"],s:["ikuji"],ef:4,te:2,
+ act:"子どもの前で、パートナーのすごさを口に出して褒める。",
+ ph:"「ママ（パパ）って、ほんとすごいよねぇ」"},
+{b:0,t:0,ty:["prac"],s:[],ef:4,te:3,
+ act:"「いつも◯◯してくれて助かってる」と名指しで感謝する。",
+ ph:"「いつも洗濯やってくれて、ほんと助かってる」"},
+{b:0,t:0,ty:["all"],s:["kinenbi"],ef:4,te:4,
+ act:"昔の写真をLINEで送る。",
+ ph:"「懐かしいの出てきた。この時も今も、ありがとうね」"},
+{b:0,t:0,ty:["all"],s:["kimazui"],ef:5,te:5,
+ act:"意地を張らずに、自分から先に謝る。",
+ ph:"「ごめん、昨日は言い過ぎた。仲直りしたいです」"},
+{b:0,t:0,ty:["relax"],s:[],ef:4,te:1,
+ act:"食後すぐに「今日は自分が洗い物やる」と宣言して席を立つ。",
+ ph:"「洗い物は任せて。座ってていいよ」"},
+{b:0,t:0,ty:["all"],s:["shigoto"],ef:2,te:1,
+ act:"天気予報を見て、気づかいのLINEを送る。",
+ ph:"「明日寒いみたいだよ。あったかくして行きなね」"},
+{b:0,t:0,ty:["all"],s:[],ef:3,te:2,
+ act:"今日一日で「ありがとう」を3回言うチャレンジをする。",
+ ph:"「（お茶を受け取って）ありがと。…ってもう3回目か」"},
+{b:0,t:0,ty:["prac"],s:["shigoto"],ef:2,te:1,
+ act:"相手のスマホをこっそり充電しておく。",
+ ph:"「スマホ、充電しといたよ」"},
+/* ---------- 0円・10分 ---------- */
+{b:0,t:1,ty:["prac"],s:["ikuji"],ef:4,te:1,
+ act:"皿洗いを黙って全部やる。気づかれたら一言。",
+ ph:"「たまにはね。いつもありがとう」"},
+{b:0,t:1,ty:["relax"],s:[],ef:4,te:1,
+ act:"お風呂掃除と湯はりまで済ませてから声をかける。",
+ ph:"「お風呂わいてるよ。一番風呂どうぞ」"},
+{b:0,t:1,ty:["prac"],s:[],ef:3,te:1,
+ act:"洗濯物を取り込んで、たたんでおく。",
+ ph:"「たたんどいた。しまう場所これで合ってた？」"},
+{b:0,t:1,ty:["relax"],s:["shigoto"],ef:3,te:1,
+ act:"温かい飲み物を淹れて、そっと隣に置く。",
+ ph:"「はい、一息ついて」"},
+{b:0,t:1,ty:["relax"],s:["shigoto","ikuji"],ef:4,te:2,
+ act:"肩もみを10分。無言にならないよう軽い雑談つきで。",
+ ph:"「最近がんばりすぎだよ。凝ってるなぁ」"},
+{b:0,t:1,ty:["all"],s:["kimazui"],ef:4,te:4,
+ act:"付箋に「いつもありがとう」と書いて冷蔵庫に貼っておく。",
+ ph:"（メモに）「いつもありがとう。字が下手なのは許して」"},
+{b:0,t:1,ty:["all"],s:["ikuji","shigoto"],ef:4,te:1,
+ act:"スマホを裏返して置き、10分間ちゃんと話を聞く。",
+ ph:"「うんうん、それでそれで？」"},
+{b:0,t:1,ty:["prac"],s:[],ef:3,te:1,
+ act:"家じゅうのゴミを集めて、先回りでゴミ出しする。",
+ ph:"「ゴミ出しといたよ〜」"},
+{b:0,t:1,ty:["all"],s:["ikuji"],ef:5,te:1,
+ act:"寝かしつけを代わって、先に休んでもらう。",
+ ph:"「今日は任せて。先にお風呂入っちゃいなよ」"},
+{b:0,t:1,ty:["prac"],s:[],ef:4,te:1,
+ act:"トイレ掃除をこっそり済ませておく。",
+ ph:"「気づいた？たまにはやります」"},
+{b:0,t:1,ty:["gour","relax"],s:[],ef:4,te:2,
+ act:"朝5分早く起きて、コーヒーとパンを用意しておく。",
+ ph:"「おはよう。モーニングのご用意ができております」"},
+{b:0,t:1,ty:["relax"],s:["kinenbi"],ef:3,te:4,
+ act:"思い出の曲を流して、当時の話をする。",
+ ph:"「これ聴くと、あの頃を思い出すんだよね」"},
+{b:0,t:1,ty:["prac","osha"],s:[],ef:3,te:1,
+ act:"玄関の靴をそろえて、相手の靴を軽く磨いておく。",
+ ph:"「靴きれいにしといたよ。明日も頑張って」"},
+{b:0,t:1,ty:["relax"],s:[],ef:3,te:2,
+ act:"朝カーテンを開けて、白湯かお茶を渡してあげる。",
+ ph:"「おはよう。今日もよろしくお願いします」"},
+/* ---------- 0円・1時間 ---------- */
+{b:0,t:2,ty:["all"],s:["ikuji"],ef:5,te:1,
+ act:"子どもを連れて公園へ。1時間のひとり時間をプレゼント。",
+ ph:"「1時間、ひとり時間どうぞ。ゆっくりしてて」"},
+{b:0,t:2,ty:["gour"],s:[],ef:4,te:2,
+ act:"夕食を一品でも自分で作る。",
+ ph:"「今日は自分がメシの日。味は保証しない」"},
+{b:0,t:2,ty:["relax"],s:["kimazui"],ef:3,te:2,
+ act:"夕方の散歩に誘って、並んで歩きながら話す。",
+ ph:"「ちょっと歩かない？夜風が気持ちいいよ」"},
+{b:0,t:2,ty:["prac"],s:[],ef:3,te:1,
+ act:"シンク・洗面台・鏡の水回りをピカピカに磨く。",
+ ph:"「水回り光らせといた。眺めて」"},
+{b:0,t:2,ty:["all"],s:["kinenbi"],ef:4,te:3,
+ act:"スマホの写真を一緒に1時間見返す。",
+ ph:"「この時、めちゃくちゃ楽しかったよね」"},
+{b:0,t:2,ty:["relax"],s:["shigoto"],ef:5,te:2,
+ act:"肩→頭→足の全力マッサージフルコースを開店する。",
+ ph:"「本日、当店貸切です。うつ伏せにどうぞ」"},
+{b:0,t:2,ty:["prac"],s:["ikuji"],ef:3,te:1,
+ act:"買い出しリストをもらって、全部ひとりで買ってくる。",
+ ph:"「重いものは全部任せて。行ってきます」"},
+{b:0,t:2,ty:["all"],s:["ikuji"],ef:5,te:1,
+ act:"子どものお風呂から寝かしつけまでフル担当する。",
+ ph:"「今夜はフリータイムでどうぞ。あとは任せた」"},
+/* ---------- 0円・半日 ---------- */
+{b:0,t:3,ty:["all"],s:["ikuji"],ef:5,te:1,
+ act:"半日おでかけフリーチケットを発行。子どもは自分が見る。",
+ ph:"「半日、好きに使って。カフェでも美容院でも」"},
+{b:0,t:3,ty:["relax"],s:["ikuji","shigoto"],ef:5,te:1,
+ act:"休日の家事をまるっと全部担当する。",
+ ph:"「今日は何もしない日にしていいよ。全部やる」"},
+{b:0,t:3,ty:["relax"],s:[],ef:4,te:2,
+ act:"家にあるものでお弁当を詰めて、公園ピクニックに誘う。",
+ ph:"「たまには外ごはんにしよ。おにぎりは握った」"},
+{b:0,t:3,ty:["prac"],s:[],ef:3,te:1,
+ act:"部屋の大掃除・模様替えを主導する。重労働は全部担当。",
+ ph:"「模様替えしない？重いのは全部持つから」"},
+{b:0,t:3,ty:["all"],s:["kimazui"],ef:4,te:4,
+ act:"「今日は一日なんでも言うこと聞く券」を発行する。",
+ ph:"「本日限定、なんでも言うこと聞きます。ご命令をどうぞ」"},
+/* ---------- 〜500円 ---------- */
+{b:1,t:1,ty:["sweet"],s:["ikuji","shigoto"],ef:4,te:2,
+ act:"仕事帰りにコンビニで好きなアイスを買って帰る。",
+ ph:"「いつもありがとう。これ好きだったよね」"},
+{b:1,t:1,ty:["sweet"],s:[],ef:4,te:2,
+ act:"コンビニスイーツの新作を2個買って、選んでもらう。",
+ ph:"「新作あったよ。好きな方どうぞ。余りは自分が食べます」"},
+{b:1,t:1,ty:["sweet"],s:["shigoto"],ef:4,te:4,
+ act:"好きなチョコをこっそりカバンや机に忍ばせておく。",
+ ph:"（メモを添えて）「見つけたあなたへ。今日もおつかれさま」"},
+{b:1,t:1,ty:["gour","relax"],s:[],ef:3,te:1,
+ act:"ちょっと高いドリップコーヒーやティーバッグを買って帰る。",
+ ph:"「たまには良い豆で一服しよう」"},
+{b:1,t:1,ty:["relax"],s:["ikuji","shigoto"],ef:4,te:1,
+ act:"入浴剤をひとつ買って、お風呂に用意しておく。",
+ ph:"「今夜は長風呂でどうぞ。子どもは見てるから」"},
+{b:1,t:1,ty:["gour"],s:[],ef:3,te:1,
+ act:"帰りにパン屋で、相手の好きなパンを買っておく。",
+ ph:"「明日の朝ごはん、確保しておきました」"},
+{b:1,t:1,ty:["osha"],s:["kimazui","kinenbi"],ef:5,te:5,
+ act:"花屋で一輪だけ買って帰る。照れたら負け。",
+ ph:"「なんとなく、似合うと思って」"},
+{b:1,t:1,ty:["relax","gour"],s:[],ef:3,te:1,
+ act:"好きな飲み物を買って冷やしておく。",
+ ph:"「風呂上がりのお楽しみ、冷えてます」"},
+{b:1,t:1,ty:["all"],s:["kimazui"],ef:3,te:3,
+ act:"ガチャガチャで面白いものを回して、真顔で渡す。",
+ ph:"「これ見て。クオリティすごくない？…笑ってくれた？」"},
+{b:1,t:1,ty:["prac","osha"],s:["ikuji"],ef:3,te:3,
+ act:"コンビニでシートマスクを買って渡す。",
+ ph:"「お疲れの肌にどうぞ。今夜はエステ気分で」"},
+{b:1,t:1,ty:["sweet"],s:["kimazui"],ef:3,te:2,
+ act:"駄菓子を大人買いして、夜のおやつパーティーを開く。",
+ ph:"「今夜は無礼講。うまい棒から好きなだけどうぞ」"},
+{b:1,t:1,ty:["sweet"],s:["kinenbi"],ef:3,te:5,
+ act:"お菓子をテーブルに「ありがとう」の文字の形に並べる。",
+ ph:"「食べる前に一回読んでください」"},
+/* ---------- 〜2,000円 ---------- */
+{b:2,t:1,ty:["sweet"],s:[],ef:5,te:2,
+ act:"ケーキ屋で好きなケーキを2つ買って帰る。",
+ ph:"「今日は理由なくケーキの日です」"},
+{b:2,t:0,ty:["relax"],s:["shigoto"],ef:4,te:2,
+ act:"カフェのデジタルギフトをLINEで送る。",
+ ph:"「休憩時間にどうぞ。いつもおつかれさま」"},
+{b:2,t:1,ty:["gour"],s:["ikuji","shigoto"],ef:5,te:1,
+ act:"デパ地下やスーパーの惣菜を数品買って帰る。",
+ ph:"「今日は作らなくていい日にしよう」"},
+{b:2,t:1,ty:["sweet"],s:[],ef:4,te:2,
+ act:"ハーゲンダッツを家族分＋本人だけ2個買う。",
+ ph:"「あなたは2個ね。日頃の感謝の差です」"},
+{b:2,t:1,ty:["osha"],s:["kinenbi"],ef:5,te:4,
+ act:"ミニブーケを買って帰り、一緒に飾る場所を決める。",
+ ph:"「玄関に飾ろうと思って。選ぶの緊張した」"},
+{b:2,t:1,ty:["relax"],s:[],ef:4,te:2,
+ act:"入浴剤の詰め合わせを買う。",
+ ph:"「今週は毎日温泉気分でどうぞ」"},
+{b:2,t:1,ty:["prac"],s:["ikuji"],ef:5,te:3,
+ act:"ちょっといいハンドクリームを買う。",
+ ph:"「水仕事いつもありがとう。手、大事にして」"},
+{b:2,t:1,ty:["relax","gour"],s:["shigoto"],ef:3,te:2,
+ act:"お気に入りになりそうなお茶・紅茶のセットを買う。",
+ ph:"「休憩のお供に。どれから飲む？」"},
+{b:2,t:2,ty:["gour"],s:[],ef:4,te:2,
+ act:"ランチをテイクアウトして、家ランチデートにする。",
+ ph:"「たまには2人でゆっくり食べよう」"},
+{b:2,t:1,ty:["prac"],s:[],ef:4,te:2,
+ act:"もこもこルームソックスやあったか靴下を買う。",
+ ph:"「足元冷えるって言ってたから。即あったまって」"},
+{b:2,t:1,ty:["sweet"],s:[],ef:3,te:2,
+ act:"話題のお菓子をお取り寄せしておく。",
+ ph:"「並ばずに食べられるやつ、届きました」"},
+{b:2,t:2,ty:["relax"],s:[],ef:4,te:2,
+ act:"おやつと飲み物を用意して、おうち映画シアターを開く。",
+ ph:"「本日21時、リビング座席にて上映会です」"},
+/* ---------- 〜5,000円 ---------- */
+{b:3,t:1,ty:["gour"],s:["kinenbi"],ef:5,te:2,
+ act:"お寿司をテイクアウトして食卓を豪華にする。",
+ ph:"「本日、大将（買っただけ）のおまかせです」"},
+{b:3,t:0,ty:["relax"],s:["shigoto","ikuji"],ef:5,te:2,
+ act:"マッサージやヘッドスパのチケットを予約して渡す。",
+ ph:"「肩こりに勝てるのはプロだけだと思って」"},
+{b:3,t:2,ty:["osha"],s:["kinenbi"],ef:5,te:4,
+ act:"デパコスのリップやネイルを、店員さんと相談して選ぶ。",
+ ph:"「店員さんと本気で選んだ。似合うと思う」"},
+{b:3,t:1,ty:["osha"],s:["kimazui","kinenbi"],ef:5,te:5,
+ act:"小さめの花束を買って帰る。理由は「なんとなく」でいい。",
+ ph:"「特に記念日じゃないけど、いつもありがとう」"},
+{b:3,t:1,ty:["gour"],s:[],ef:4,te:2,
+ act:"ちょっといいワインやクラフトビール＋チーズで家飲みバルを開く。",
+ ph:"「今夜は家飲みバル、開店です。乾杯しよ」"},
+{b:3,t:1,ty:["sweet"],s:["kinenbi"],ef:5,te:3,
+ act:"名店のスイーツをお取り寄せして冷蔵庫に隠しておく。",
+ ph:"「冷蔵庫に隠してあります。探してみて」"},
+{b:3,t:1,ty:["relax","osha"],s:[],ef:4,te:3,
+ act:"アロマディフューザーやキャンドルを買って寝室に置く。",
+ ph:"「寝室をいい匂いにしてみた。今夜から快眠のはず」"},
+{b:3,t:1,ty:["prac"],s:["shigoto"],ef:4,te:2,
+ act:"ちょっといい枕カバーやブランケットを買う。",
+ ph:"「睡眠の質に投資しました。今夜から検証よろしく」"},
+{b:3,t:1,ty:["osha"],s:["kinenbi"],ef:4,te:3,
+ act:"ペアのマグカップを買う。",
+ ph:"「朝のコーヒー、おそろいで飲みたくなって」"},
+{b:3,t:1,ty:["prac","relax"],s:["shigoto"],ef:4,te:2,
+ act:"ホットアイマスクを大容量で買っておく。",
+ ph:"「毎晩1枚、目を休めてね。スマホは没収しないから」"},
+/* ---------- 特別な日 ---------- */
+{b:4,t:3,ty:["gour"],s:["kinenbi"],ef:5,te:4,
+ act:"レストランを予約する。予約完了画面を見せて誘う。",
+ ph:"「あの日のこと、ちゃんと覚えてたよ。空けておいて」"},
+{b:4,t:3,ty:["relax"],s:["ikuji","shigoto"],ef:5,te:2,
+ act:"日帰り温泉プランを手配する。タオルも段取りも全部済みで。",
+ ph:"「全部手配済み。あなたは浸かるだけでいいです」"},
+{b:4,t:2,ty:["osha"],s:["kinenbi"],ef:5,te:5,
+ act:"アクセサリーを選んで贈る。",
+ ph:"「センスに自信はないけど、気持ちは本物です」"},
+{b:4,t:3,ty:["sweet","osha"],s:["kinenbi"],ef:5,te:3,
+ act:"ホテルのアフタヌーンティーを予約する。",
+ ph:"「一度やってみたかったやつ、行きませんか」"},
+{b:4,t:3,ty:["relax"],s:["ikuji"],ef:5,te:2,
+ act:"エステ・スパの体験チケットを贈る。その間の家は全部見る。",
+ ph:"「その間、家のことは全部任せて。心置きなくどうぞ」"},
+{b:4,t:2,ty:["sweet"],s:["kinenbi"],ef:5,te:5,
+ act:"手紙を書いて、ケーキと一緒に渡す。",
+ ph:"「口で言うのは照れるので、手紙にしました」"},
+{b:4,t:3,ty:["all"],s:["kinenbi"],ef:5,te:4,
+ act:"家族写真・ふたり写真の撮影を予約する。",
+ ph:"「今の私たちを、ちゃんと残しておきたくて」"},
+{b:4,t:3,ty:["sweet"],s:["kinenbi"],ef:5,te:4,
+ act:"部屋を飾り付けて、ケーキでサプライズのお祝いをする。",
+ ph:"「おかえり。本日、当家は特別営業日です」"},
+{b:4,t:3,ty:["gour","osha"],s:["kinenbi","kimazui"],ef:5,te:4,
+ act:"出会った場所や思い出のお店を再訪するデートを計画する。",
+ ph:"「初心に帰るツアーを企画しました。ご参加ください」"}
+];
+
+/* ========== ユーティリティ ========== */
+const $ = id => document.getElementById(id);
+function lsGet(key, fallback){
+  try{ const v = JSON.parse(localStorage.getItem(key)); return v === null || v === undefined ? fallback : v; }
+  catch(e){ return fallback; }
+}
+function lsSet(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+function todayStr(d){
+  const dt = d || new Date();
+  return dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0");
+}
+
+/* ========== ピルUI ========== */
+const state = {budget:0, time:1, type:"sweet", sit:""};
+function buildPills(el, defs, cur, onPick){
+  defs.forEach(d => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pill" + (d.key === cur ? " on" : "");
+    b.textContent = d.label;
+    b.addEventListener("click", () => {
+      Array.from(el.children).forEach(c => c.classList.remove("on"));
+      b.classList.add("on");
+      onPick(d.key);
+    });
+    el.appendChild(b);
+  });
+}
+buildPills($("pillBudget"), BUDGETS, state.budget, k => state.budget = k);
+buildPills($("pillTime"),   TIMES,   state.time,   k => state.time = k);
+buildPills($("pillType"),   TYPES,   state.type,   k => state.type = k);
+buildPills($("pillSit"),    SITS,    state.sit,    k => state.sit = k);
+
+/* ========== タブ切替 ========== */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".pane").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    $(tab.dataset.pane).classList.add("active");
+    if (tab.dataset.pane === "paneFav") renderFavs();
+    if (tab.dataset.pane === "paneLog") { renderTitle(); renderCal(); }
+  });
+});
+
+/* ========== アイデア抽選 ========== */
+let currentIdx = -1;
+function pickIdea(){
+  const cands = [];
+  IDEAS.forEach((it, i) => {
+    if (i === currentIdx) return;
+    if (it.b > state.budget) return;
+    if (it.t > state.time) return;
+    const typeHit = it.ty.indexOf(state.type) !== -1;
+    if (!typeHit && it.ty.indexOf("all") === -1) return;
+    let w = 1;
+    if (it.b === state.budget) w += 2;
+    if (it.t === state.time) w += 1;
+    if (typeHit) w += 2;
+    if (state.sit && it.s.indexOf(state.sit) !== -1) w += 5;
+    cands.push({i, w});
+  });
+  if (!cands.length) return -1;
+  let total = cands.reduce((s,c) => s + c.w, 0);
+  let r = Math.random() * total;
+  for (const c of cands) { r -= c.w; if (r <= 0) return c.i; }
+  return cands[cands.length-1].i;
+}
+
+function meterHtml(it){
+  const hearts = "💖".repeat(it.ef) + "🤍".repeat(5-it.ef);
+  const tere = "🙈".repeat(it.te) + "◌".repeat(5-it.te);
+  const tl = TIMES[it.t].label;
+  return '<span class="meter"><b>効果メーター</b>' + hearts + '</span>' +
+         '<span class="meter"><b>照れ度</b>' + tere + '</span>' +
+         '<span class="meter"><b>所要時間</b>⏱️ ' + tl + '</span>';
+}
+
+function showIdea(idx){
+  const it = IDEAS[idx];
+  currentIdx = idx;
+  const tags = [BUDGETS[it.b].label, "⏱️" + TIMES[it.t].label]
+    .concat(it.s.map(s => SIT_LABEL[s]).filter(Boolean));
+  $("rTags").innerHTML = tags.map(t => '<span class="r-tag">' + t + '</span>').join("");
+  $("rAct").textContent = it.act;
+  $("rPhrase").textContent = it.ph;
+  $("rMeters").innerHTML = meterHtml(it);
+  updateFavBtn();
+  $("result").classList.add("show");
+  $("noHit").style.display = "none";
+  $("result").style.animation = "none";
+  void $("result").offsetWidth;
+  $("result").style.animation = "";
+}
+
+function drawIdea(){
+  const idx = pickIdea();
+  if (idx === -1) {
+    $("result").classList.remove("show");
+    $("noHit").style.display = "block";
+    return;
+  }
+  showIdea(idx);
+}
+$("goBtn").addEventListener("click", drawIdea);
+$("btnGacha").addEventListener("click", drawIdea);
+
+/* ========== お気に入り（localStorage） ========== */
+const LS_FAV = "kansha.favs";
+let favs = lsGet(LS_FAV, []).filter(n => Number.isInteger(n) && n >= 0 && n < IDEAS.length);
+
+function updateFavBtn(){
+  const on = favs.indexOf(currentIdx) !== -1;
+  $("btnFav").classList.toggle("faved", on);
+  $("btnFav").textContent = on ? "⭐ 保存済み" : "⭐ お気に入り";
+}
+$("btnFav").addEventListener("click", () => {
+  if (currentIdx < 0) return;
+  const pos = favs.indexOf(currentIdx);
+  if (pos === -1) { favs.push(currentIdx); toast("お気に入りに保存しました ⭐"); }
+  else { favs.splice(pos, 1); toast("お気に入りを外しました"); }
+  lsSet(LS_FAV, favs);
+  updateFavBtn();
+});
+
+function renderFavs(){
+  const list = $("favList");
+  list.innerHTML = "";
+  $("favEmpty").style.display = favs.length ? "none" : "block";
+  favs.forEach(idx => {
+    const it = IDEAS[idx];
+    const d = document.createElement("div");
+    d.className = "fav-item";
+    d.innerHTML =
+      '<div class="fi-act">' + it.act + '</div>' +
+      '<div class="fi-ph">💬 ' + it.ph + '</div>' +
+      '<div class="fi-row">' + meterHtml(it) +
+        '<button class="fi-del">外す</button></div>';
+    d.querySelector(".fi-del").addEventListener("click", () => {
+      favs = favs.filter(n => n !== idx);
+      lsSet(LS_FAV, favs);
+      renderFavs();
+      updateFavBtn();
+    });
+    list.appendChild(d);
+  });
+}
+
+/* ========== 実行記録（カレンダー＆称号） ========== */
+const LS_DONE = "kansha.done"; // {"YYYY-MM-DD": count}
+let done = lsGet(LS_DONE, {});
+if (typeof done !== "object" || done === null || Array.isArray(done)) done = {};
+function totalDone(){ return Object.values(done).reduce((s,n) => s + (Number(n)||0), 0); }
+
+const RANKS = [
+  {min:25, name:"殿堂入りパートナー", emoji:"👑", next:null},
+  {min:10, name:"感謝の達人",         emoji:"🏆", next:25},
+  {min:3,  name:"気配りの人",         emoji:"🌸", next:10},
+  {min:0,  name:"かけだし感謝人",     emoji:"🌱", next:3}
+];
+function rankFor(n){ return RANKS.find(r => n >= r.min); }
+
+function recordDone(){
+  const key = todayStr();
+  const before = rankFor(totalDone());
+  done[key] = (done[key] || 0) + 1;
+  lsSet(LS_DONE, done);
+  const after = rankFor(totalDone());
+  if (after !== before) {
+    celebrate(after.emoji, "称号アップ！「" + after.name + "」", "感謝の実行 " + totalDone() + " 回を達成。その調子です 👏");
+  } else {
+    celebrate("💖", "ナイス感謝！", "実行記録 " + totalDone() + " 回目。カレンダーに💖が刻まれました");
+  }
+  renderTitle();
+  renderCal();
+}
+$("btnDone").addEventListener("click", () => {
+  if (currentIdx < 0) return;
+  recordDone();
+});
+
+function renderTitle(){
+  const n = totalDone();
+  const r = rankFor(n);
+  $("tEmoji").textContent = r.emoji;
+  $("tName").textContent = "称号：" + r.name;
+  if (r.next) {
+    $("tSub").textContent = "実行 " + n + " 回 ／ あと " + (r.next - n) + " 回で次の称号";
+    const base = r.min, span = r.next - r.min;
+    $("tBar").style.width = Math.min(100, Math.round((n - base) / span * 100)) + "%";
+  } else {
+    $("tSub").textContent = "実行 " + n + " 回 ／ もはや伝説。この調子で";
+    $("tBar").style.width = "100%";
+  }
+}
+
+/* カレンダー描画 */
+let calY, calM;
+(function(){ const now = new Date(); calY = now.getFullYear(); calM = now.getMonth(); })();
+const DOWS = ["日","月","火","水","木","金","土"];
+function renderCal(){
+  $("calTitle").textContent = calY + "年 " + (calM+1) + "月";
+  const g = $("calGrid");
+  g.innerHTML = "";
+  DOWS.forEach(d => {
+    const c = document.createElement("div");
+    c.className = "cal-dow"; c.textContent = d;
+    g.appendChild(c);
+  });
+  const first = new Date(calY, calM, 1).getDay();
+  const days = new Date(calY, calM+1, 0).getDate();
+  const today = todayStr();
+  for (let i = 0; i < first; i++) {
+    const c = document.createElement("div");
+    c.className = "cal-day blank";
+    g.appendChild(c);
+  }
+  for (let d = 1; d <= days; d++) {
+    const key = calY + "-" + String(calM+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+    const c = document.createElement("div");
+    c.className = "cal-day" + (key === today ? " today" : "");
+    const cnt = done[key] || 0;
+    c.innerHTML = d + (cnt ? '<span class="heart">💖' + (cnt > 1 ? "×" + cnt : "") + '</span>' : "");
+    g.appendChild(c);
+  }
+}
+$("calPrev").addEventListener("click", () => { calM--; if (calM < 0){calM = 11; calY--;} renderCal(); });
+$("calNext").addEventListener("click", () => { calM++; if (calM > 11){calM = 0; calY++;} renderCal(); });
+
+/* ========== 今週のミッション ========== */
+const MISSIONS = [
+  "今週、「ありがとう」を口に出して5回言おう",
+  "皿洗いか洗濯たたみを、頼まれる前に2回引き受けよう",
+  "寝る前の「おつかれさま」を毎日続けてみよう",
+  "1回だけ、先に謝る勇気を出してみよう（心当たりがあれば）",
+  "好きなおやつを1回、理由なく買って帰ろう",
+  "10分だけスマホを置いて、今日の話をじっくり聞こう",
+  "出勤前か寝る前のハグを3回やってみよう",
+  "相手の「すごいところ」を本人に1回、直接伝えよう"
+];
+function weekKey(){
+  const d = new Date();
+  const onejan = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - onejan) / 86400000 + onejan.getDay() + 1) / 7);
+  return d.getFullYear() + "-W" + week;
+}
+(function initMission(){
+  const wk = weekKey();
+  let seed = 0;
+  for (let i = 0; i < wk.length; i++) seed = (seed * 31 + wk.charCodeAt(i)) >>> 0;
+  const mi = seed % MISSIONS.length;
+  $("missionBody").textContent = MISSIONS[mi];
+  const seen = lsGet("kansha.missionSeen", "");
+  if (seen !== wk) {
+    lsSet("kansha.missionSeen", wk);
+    $("mission").classList.add("fresh"); // 週1回、開いたときに光ってお知らせ
+  }
+  const doneWk = lsGet("kansha.missionDone", "");
+  if (doneWk === wk) markMissionDone();
+})();
+function markMissionDone(){
+  const b = $("missionDone");
+  b.disabled = true;
+  b.textContent = "今週のミッション達成済み ✅";
+}
+$("missionDone").addEventListener("click", () => {
+  const wk = weekKey();
+  if (lsGet("kansha.missionDone", "") === wk) return;
+  lsSet("kansha.missionDone", wk);
+  markMissionDone();
+  recordDone();
+});
+
+/* ========== トースト＆お祝い演出 ========== */
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+let celebrateTimer = null;
+function celebrate(emoji, title, sub){
+  $("celebrateEmoji").textContent = emoji;
+  $("celebrateTitle").textContent = title;
+  $("celebrateSub").textContent = sub;
+  $("celebrate").classList.add("show");
+  const box = $("celebrateBox");
+  const emojis = ["💖","🌸","✨","💐","🎉"];
+  for (let k = 0; k < 16; k++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = (Math.random() * 95) + "%";
+    s.style.animationDelay = (Math.random() * .4) + "s";
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 2100);
+  }
+  clearTimeout(celebrateTimer);
+  celebrateTimer = setTimeout(() => $("celebrate").classList.remove("show"), 2800);
+}
+$("celebrate").addEventListener("click", () => {
+  $("celebrate").classList.remove("show");
+  clearTimeout(celebrateTimer);
+});
+
+/* 初期描画 */
+renderTitle();
+renderCal();
+</script>
+</body>
+</html>

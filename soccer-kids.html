@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>こどもサッカーきょうしつ</title>
+<meta name="description" content="小学生（しょうがくせい）のためのサッカーがくしゅうアプリ。オフサイドたいけん・はんだんクイズ・うごきかたクイズで、8人制サッカーのルールとかしこいプレーをたのしくまなべる！">
+<meta property="og:title" content="こどもサッカーきょうしつ ⚽">
+<meta property="og:description" content="オフサイドたいけん・はんだんクイズ・うごきかたクイズ！ルールとかしこいうごきをゲームでまなぼう。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/soccer-kids.html">
+<meta property="og:site_name" content="実験ラボ">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{
+  font-family:"Hiragino Maru Gothic ProN","BIZ UDGothic","Yu Gothic",-apple-system,sans-serif;
+  background:linear-gradient(180deg,#7ed6f7 0%,#aee9ff 22%,#8fdc73 60%,#6cc94e 100%);
+  min-height:100vh;color:#234;
+}
+.wrap{max-width:780px;margin:0 auto;padding:10px 12px 40px;}
+.backlink{display:inline-block;background:#ffffffcc;border-radius:999px;padding:8px 16px;
+  text-decoration:none;color:#1b7a3d;font-weight:bold;font-size:.95rem;box-shadow:0 2px 6px #0002;margin-bottom:8px;}
+h1.title{
+  text-align:center;font-size:clamp(1.5rem,6vw,2.3rem);color:#fff;
+  text-shadow:2px 3px 0 #2e8b3a,-1px -1px 0 #2e8b3a,1px -1px 0 #2e8b3a,-1px 1px 0 #2e8b3a;
+  letter-spacing:.06em;margin:4px 0 10px;
+}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+#muteBtn{
+  border:none;background:#fff;border-radius:50%;width:48px;height:48px;font-size:1.4rem;
+  box-shadow:0 3px 0 #0003;cursor:pointer;flex-shrink:0;
+}
+#muteBtn:active{transform:translateY(2px);box-shadow:0 1px 0 #0003;}
+
+/* コーチくん */
+.coach{display:flex;align-items:flex-start;gap:10px;margin:8px 0 12px;}
+.coach .face{
+  font-size:2.4rem;background:#fff;border-radius:50%;width:62px;height:62px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px #0003;border:3px solid #ffb300;
+}
+.coach .bubble{
+  background:#fff;border-radius:18px;padding:12px 16px;position:relative;flex:1;
+  box-shadow:0 3px 8px #0002;font-size:1rem;line-height:1.55;font-weight:bold;color:#333;
+}
+.coach .bubble::before{
+  content:"";position:absolute;left:-10px;top:22px;border:10px solid transparent;border-right-color:#fff;border-left:0;
+}
+.coach .name{font-size:.72rem;color:#e07f00;display:block;margin-bottom:2px;}
+
+/* タブ */
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.tab{
+  border:none;border-radius:20px;padding:12px 4px 10px;font-size:.95rem;font-weight:bold;cursor:pointer;
+  color:#fff;box-shadow:0 5px 0 #00000030;transition:transform .1s;font-family:inherit;line-height:1.3;
+}
+.tab .em{display:block;font-size:1.7rem;margin-bottom:2px;}
+.tab:active{transform:translateY(3px);box-shadow:0 2px 0 #00000030;}
+.tab[data-t="a"]{background:linear-gradient(180deg,#ff9e40,#f4711f);}
+.tab[data-t="b"]{background:linear-gradient(180deg,#42a5f5,#1976d2);}
+.tab[data-t="c"]{background:linear-gradient(180deg,#ab7bf0,#7b3fd4);}
+.tab.on{outline:4px solid #fff;transform:scale(1.03);}
+
+/* パネル */
+.panel{display:none;background:#ffffffe8;border-radius:22px;padding:14px;box-shadow:0 6px 20px #0002;}
+.panel.on{display:block;}
+.panel h2{font-size:1.2rem;color:#1b7a3d;margin-bottom:8px;text-align:center;}
+canvas{width:100%;height:auto;display:block;border-radius:14px;touch-action:none;box-shadow:0 3px 10px #0003;background:#3f9e3f;}
+
+/* しんごう */
+.signal{
+  display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;
+  border-radius:999px;padding:10px 18px;font-size:1.25rem;font-weight:bold;color:#fff;transition:background .2s;
+}
+.signal .lamp{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 0 12px #fff8;flex-shrink:0;}
+.signal.ok{background:#2e9e44;}
+.signal.ng{background:#e53935;}
+.signal.ok .lamp{background:#aaffbb;box-shadow:0 0 16px #7dff9b;}
+.signal.ng .lamp{background:#ffb3ad;box-shadow:0 0 16px #ff8a80;}
+
+.btnrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0;}
+.bigbtn{
+  border:none;border-radius:999px;padding:14px 26px;font-size:1.1rem;font-weight:bold;color:#fff;cursor:pointer;
+  box-shadow:0 5px 0 #00000030;font-family:inherit;transition:transform .1s;
+}
+.bigbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #00000030;}
+.bigbtn.play{background:linear-gradient(180deg,#4caf50,#2e7d32);font-size:1.25rem;}
+.bigbtn.reset{background:linear-gradient(180deg,#90a4ae,#607d8b);}
+.bigbtn.why{background:linear-gradient(180deg,#ffca28,#f59f00);color:#5d3a00;}
+.bigbtn.next{background:linear-gradient(180deg,#42a5f5,#1976d2);}
+.bigbtn:disabled{opacity:.5;cursor:default;}
+
+.explain{
+  background:#fff8e1;border:3px dashed #ffb300;border-radius:16px;padding:12px 14px;margin:10px 0;
+  font-size:1rem;line-height:1.7;font-weight:bold;color:#5d4300;display:none;
+}
+.explain.on{display:block;}
+
+.result-a{
+  text-align:center;font-size:1.3rem;font-weight:bold;margin:8px 0;min-height:1.6em;
+}
+.result-a.good{color:#2e7d32;} .result-a.bad{color:#c62828;}
+
+/* クイズ */
+.qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
+.qnum{background:#1976d2;color:#fff;border-radius:999px;padding:6px 14px;font-weight:bold;font-size:.95rem;}
+.status{background:#fff;border:3px solid #ffca28;border-radius:999px;padding:6px 14px;font-weight:bold;font-size:.95rem;color:#7a5200;box-shadow:0 2px 6px #0002;}
+.qtext{
+  background:#e3f2fd;border-radius:16px;padding:12px 14px;font-size:1.05rem;line-height:1.7;font-weight:bold;
+  color:#0d3a66;margin:10px 0;
+}
+.choices{display:flex;flex-direction:column;gap:10px;margin:10px 0;}
+.choice{
+  border:none;border-radius:18px;padding:14px 16px;font-size:1rem;font-weight:bold;text-align:left;cursor:pointer;
+  background:#fff;box-shadow:0 4px 0 #b0bec5;color:#234;font-family:inherit;line-height:1.5;
+  display:flex;gap:10px;align-items:center;transition:transform .1s;
+}
+.choice:active{transform:translateY(2px);box-shadow:0 2px 0 #b0bec5;}
+.choice .mk{
+  background:#1976d2;color:#fff;border-radius:50%;min-width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  font-size:1.05rem;flex-shrink:0;
+}
+.choice.correct{background:#c8f7cf;box-shadow:0 4px 0 #2e9e44;}
+.choice.correct .mk{background:#2e9e44;}
+.choice.wrong{background:#ffe0dd;box-shadow:0 4px 0 #e57373;}
+.choice.wrong .mk{background:#e57373;}
+.choice:disabled{cursor:default;opacity:.92;}
+.verdict{text-align:center;font-size:1.35rem;font-weight:bold;margin:8px 0;min-height:1.6em;}
+.verdict.good{color:#2e7d32;} .verdict.bad{color:#e07f00;}
+
+.finish{
+  text-align:center;background:linear-gradient(180deg,#fff9e0,#ffefb3);border-radius:20px;padding:20px;
+  font-weight:bold;font-size:1.1rem;line-height:2;display:none;border:4px solid #ffca28;margin-top:10px;
+}
+.finish.on{display:block;}
+.finish .big{font-size:1.6rem;color:#e07f00;}
+
+.zonebtns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0;}
+.zonebtn{
+  border:none;border-radius:18px;padding:16px 6px;font-size:1.35rem;font-weight:bold;color:#fff;cursor:pointer;
+  box-shadow:0 5px 0 #00000030;font-family:inherit;
+}
+.zonebtn:active{transform:translateY(3px);box-shadow:0 2px 0 #00000030;}
+.zonebtn[data-z="0"]{background:linear-gradient(180deg,#ff8a65,#e64a19);}
+.zonebtn[data-z="1"]{background:linear-gradient(180deg,#4dd0e1,#0097a7);}
+.zonebtn[data-z="2"]{background:linear-gradient(180deg,#aed581,#689f38);}
+.zonebtn:disabled{opacity:.55;cursor:default;}
+
+.star-fly{position:fixed;left:0;top:0;pointer-events:none;font-size:30px;z-index:999;animation:starfly 1.1s ease-out forwards;}
+@keyframes starfly{
+  0%{transform:translate(var(--x),var(--y)) scale(.4) rotate(0deg);opacity:1;}
+  100%{transform:translate(calc(var(--x) + var(--dx)),calc(var(--y) + var(--dy))) scale(1.5) rotate(340deg);opacity:0;}
+}
+footer{text-align:center;margin-top:26px;color:#fff;font-weight:bold;text-shadow:0 1px 3px #0006;font-size:.95rem;}
+.hint{font-size:.85rem;color:#555;text-align:center;margin-top:4px;font-weight:bold;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="backlink" href="index.html">← 実験ラボに戻る</a>
+    <button id="muteBtn" aria-label="おとのオン・オフ">🔊</button>
+  </div>
+  <h1 class="title">⚽ こどもサッカーきょうしつ ⚽</h1>
+
+  <div class="coach">
+    <div class="face">⚽</div>
+    <div class="bubble"><span class="name">コーチくん</span><span id="coachText">ようこそ！すきな コーナーを えらんでね！</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-t="a"><span class="em">🚦</span>オフサイド<br>たいけん</button>
+    <button class="tab" data-t="b"><span class="em">🧠</span>はんだん<br>クイズ</button>
+    <button class="tab" data-t="c"><span class="em">🏃</span>うごきかた<br>クイズ</button>
+  </div>
+
+  <!-- A: オフサイド -->
+  <section class="panel on" id="panel-a">
+    <h2>🚦 オフサイドたいけん装置（そうち）</h2>
+    <canvas id="cvA" width="700" height="440"></canvas>
+    <p class="hint">あおの ★せんしゅを ゆびで うごかしてみよう（みぎの ゴールを めざすよ）</p>
+    <div class="signal ok" id="sigA"><span class="lamp"></span><span id="sigTextA">ナイス！オフサイドじゃないよ</span></div>
+    <div class="btnrow">
+      <button class="bigbtn play" id="passBtn">▶ パスを だす！</button>
+      <button class="bigbtn reset" id="resetBtn">🔄 もどす</button>
+      <button class="bigbtn why" id="whyBtn">❓ なぜ？</button>
+    </div>
+    <div class="result-a" id="resultA"></div>
+    <div class="explain" id="whyBox">
+      <b>🚦 オフサイドって なに？</b><br>
+      あいての ゴールの ちかくで、<b>まちぶせ</b>して パスを もらうのは 「ずるい！」という ルールだよ。<br><br>
+      ✅ みかたが パスを <b>ける しゅんかん</b>に、<br>
+      🟠 オレンジの せん（あいての まもりの せんしゅの せん）より まえに いたら…<br>
+      ❌ <b>オフサイド！</b> ふえが なって あいての ボールに なっちゃう。<br><br>
+      だいじなのは <b>「けった しゅんかんの いち」</b>！けった あとに はしって おいこすのは OK だよ。🏃💨
+    </div>
+  </section>
+
+  <!-- B: はんだんクイズ -->
+  <section class="panel" id="panel-b">
+    <h2>🧠 はんだんクイズ</h2>
+    <div class="qhead">
+      <span class="qnum" id="bNum">もんだい 1/12</span>
+      <span class="status" id="statusB">⭐0 みならい🌱</span>
+    </div>
+    <canvas id="cvB" width="700" height="440"></canvas>
+    <div class="qtext" id="bQ"></div>
+    <div class="choices" id="bChoices"></div>
+    <div class="verdict" id="bVerdict"></div>
+    <div class="explain" id="bExp"></div>
+    <div class="btnrow"><button class="bigbtn next" id="bNext" style="display:none">つぎへ ▶</button></div>
+    <div class="finish" id="bFinish"></div>
+  </section>
+
+  <!-- C: うごきかたクイズ -->
+  <section class="panel" id="panel-c">
+    <h2>🏃 うごきかたクイズ</h2>
+    <div class="qhead">
+      <span class="qnum" id="cNum">もんだい 1/8</span>
+      <span class="status" id="statusC">⭐0 みならい🌱</span>
+    </div>
+    <canvas id="cvC" width="700" height="440"></canvas>
+    <div class="qtext" id="cQ"></div>
+    <div class="zonebtns">
+      <button class="zonebtn" data-z="0">A</button>
+      <button class="zonebtn" data-z="1">B</button>
+      <button class="zonebtn" data-z="2">C</button>
+    </div>
+    <div class="verdict" id="cVerdict"></div>
+    <div class="explain" id="cExp"></div>
+    <div class="btnrow"><button class="bigbtn next" id="cNext" style="display:none">つぎへ ▶</button></div>
+    <div class="finish" id="cFinish"></div>
+  </section>
+
+  <footer>🧪 実験ラボ | Built with Claude Fable 5</footer>
+</div>
+
+<script>
+"use strict";
+/* ============ きょうつう ============ */
+const $ = id => document.getElementById(id);
+const W = 700, H = 440;
+const px = v => v/100*W, py = v => v/100*H;
+
+/* --- セーブデータ --- */
+let state = {stars:0, b:[], c:[], mute:false};
+try{
+  const s = localStorage.getItem('soccerKids_v1');
+  if(s) state = Object.assign(state, JSON.parse(s));
+}catch(e){}
+function save(){ try{ localStorage.setItem('soccerKids_v1', JSON.stringify(state)); }catch(e){} }
+
+function rankName(s){
+  return s>=18?'レジェンド👑':s>=14?'エース🔥':s>=9?'キャプテン🎖️':s>=4?'レギュラー⚽':'みならい🌱';
+}
+function updateStatus(){
+  const t = '⭐'+state.stars+' '+rankName(state.stars);
+  $('statusB').textContent = t; $('statusC').textContent = t;
+}
+function awardStar(){
+  const before = rankName(state.stars);
+  state.stars++; save(); updateStatus();
+  const after = rankName(state.stars);
+  if(before !== after){
+    coachSay('🎉 ランクアップ！きみは きょうから「'+after+'」だ！すごいぞ！');
+    spawnStars(innerWidth/2, innerHeight/2, 16);
+  }
+}
+
+/* --- おと (Web Audio) --- */
+let actx = null;
+function audio(){
+  if(state.mute) return null;
+  if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(actx.state==='suspended') actx.resume();
+  return actx;
+}
+function tone(freq, delay, dur, type, vol){
+  const a = audio(); if(!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type||'sine'; o.frequency.value = freq;
+  const t0 = a.currentTime + delay;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(vol||0.18, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(t0); o.stop(t0+dur+0.05);
+}
+function fanfare(){
+  [[523,0],[659,.12],[784,.24],[1047,.36]].forEach(n=>tone(n[0],n[1],.35,'triangle',.2));
+  tone(1319,.5,.5,'triangle',.15);
+}
+function sadSound(){ tone(392,0,.25,'sine',.12); tone(330,.18,.35,'sine',.12); }
+function whistle(){ tone(2100,0,.13,'square',.06); tone(2100,.18,.3,'square',.06); }
+function popSound(){ tone(880,0,.08,'sine',.1); }
+
+$('muteBtn').textContent = state.mute?'🔇':'🔊';
+$('muteBtn').addEventListener('click',()=>{
+  state.mute = !state.mute; save();
+  $('muteBtn').textContent = state.mute?'🔇':'🔊';
+});
+
+/* --- ⭐とぶ えんしゅつ --- */
+function spawnStars(x, y, n){
+  for(let i=0;i<(n||10);i++){
+    const s = document.createElement('span');
+    s.className = 'star-fly'; s.textContent = ['⭐','🌟','✨'][i%3];
+    s.style.setProperty('--x', x+'px');
+    s.style.setProperty('--y', y+'px');
+    s.style.setProperty('--dx', (Math.random()*260-130)+'px');
+    s.style.setProperty('--dy', (-60-Math.random()*200)+'px');
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(), 1200);
+  }
+}
+function starsFromEl(el){
+  const r = el.getBoundingClientRect();
+  spawnStars(r.left+r.width/2, r.top+r.height/2, 10);
+}
+
+/* --- コーチくん --- */
+function coachSay(t){ $('coachText').textContent = t; }
+
+/* --- タブ --- */
+let activeTab = 'a';
+const coachMsg = {
+  a:'あおの ★せんしゅを ドラッグして うごかそう！オレンジの せんより まえは オフサイドだよ。▶で パス！',
+  b:'しあいで よくある ばめんだよ。きみなら どうする？よ〜く かんがえてね！',
+  c:'★が きみだよ！ひかっている A・B・C から、いちばん いい うごきを えらぼう！'
+};
+document.querySelectorAll('.tab').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    b.classList.add('on');
+    activeTab = b.dataset.t;
+    $('panel-'+activeTab).classList.add('on');
+    coachSay(coachMsg[activeTab]);
+    popSound();
+    if(activeTab==='b') renderB();
+    if(activeTab==='c') renderC();
+  });
+});
+
+/* ============ おえかき きょうつう ============ */
+function drawPitch(ctx){
+  for(let i=0;i<10;i++){
+    ctx.fillStyle = i%2? '#4caf50' : '#43a047';
+    ctx.fillRect(i*70,0,70,H);
+  }
+  ctx.strokeStyle = '#ffffffdd'; ctx.lineWidth = 3;
+  ctx.strokeRect(22,22,W-44,H-44);
+  ctx.beginPath(); ctx.moveTo(W/2,22); ctx.lineTo(W/2,H-22); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W/2,H/2,52,0,Math.PI*2); ctx.stroke();
+  ctx.strokeRect(22,H/2-95,92,190);
+  ctx.strokeRect(W-22-92,H/2-95,92,190);
+  ctx.fillStyle = '#e8f5e9';
+  ctx.fillRect(10,H/2-38,12,76);
+  ctx.fillRect(W-22,H/2-38,12,76);
+  ctx.strokeStyle = '#666'; ctx.lineWidth = 2;
+  ctx.strokeRect(10,H/2-38,12,76); ctx.strokeRect(W-22,H/2-38,12,76);
+}
+function drawPlayer(ctx,x,y,color,you){
+  ctx.beginPath(); ctx.arc(x,y+3,15,0,Math.PI*2);
+  ctx.fillStyle = '#00000025'; ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y,16,0,Math.PI*2);
+  ctx.fillStyle = color==='b' ? '#2979ff' : '#ef5350';
+  ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+  if(you){ drawStar(ctx,x,y,10,'#ffd600','#e07f00'); }
+}
+function drawStar(ctx,cx,cy,r,fill,stroke){
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+    const ang = -Math.PI/2 + i*Math.PI/5;
+    const rr = i%2===0 ? r : r*0.45;
+    const x = cx+Math.cos(ang)*rr, y = cy+Math.sin(ang)*rr;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
+}
+function drawBall(ctx,x,y,r){
+  r = r||9;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#222'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x,y,r*0.4,0,Math.PI*2);
+  ctx.fillStyle = '#222'; ctx.fill();
+}
+function drawArrow(ctx,x1,y1,x2,y2,color,widthPx,dash,progress){
+  progress = progress===undefined ? 1 : progress;
+  const xe = x1+(x2-x1)*progress, ye = y1+(y2-y1)*progress;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = widthPx||4;
+  if(dash) ctx.setLineDash([10,7]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(xe,ye); ctx.stroke();
+  ctx.setLineDash([]);
+  if(progress>0.2){
+    const ang = Math.atan2(ye-y1,xe-x1);
+    ctx.beginPath();
+    ctx.moveTo(xe,ye);
+    ctx.lineTo(xe-16*Math.cos(ang-0.45), ye-16*Math.sin(ang-0.45));
+    ctx.lineTo(xe-16*Math.cos(ang+0.45), ye-16*Math.sin(ang+0.45));
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+/* クイズ ばめん を えがく（%ざひょう） */
+function drawScene(ctx, spec){
+  drawPitch(ctx);
+  (spec.arrows||[]).forEach(a=>{
+    drawArrow(ctx, px(a[0]),py(a[1]),px(a[2]),py(a[3]), '#ffffffaa', 4, true);
+  });
+  (spec.players||[]).forEach(p=>{
+    drawPlayer(ctx, px(p[0]), py(p[1]), p[2], p[3]==='you');
+  });
+  if(spec.ball) drawBall(ctx, px(spec.ball[0]), py(spec.ball[1]));
+}
+
+/* ============ 【A】オフサイドたいけん ============ */
+const cvA = $('cvA'), ctxA = cvA.getContext('2d');
+const A = {
+  passer:{x:180,y:250},
+  recv:{x:400,y:150},
+  defs:[{x:490,y:130},{x:465,y:305}],
+  gk:{x:652,y:220},
+  drag:false,
+  anim:null   // {t, frozen:{x,y}, off, ball:{x,y}, runner:{x,y}, done}
+};
+function offsideLineX(){
+  const xs = A.defs.map(d=>d.x).concat([A.gk.x]).sort((a,b)=>b-a);
+  return xs[1];
+}
+function judgeOffside(rx){
+  return rx > W/2 && rx > offsideLineX() && rx > A.passer.x;
+}
+let lastSig = null;
+function updateSignalA(){
+  const off = A.anim ? A.anim.off : judgeOffside(A.recv.x);
+  if(off === lastSig) return;
+  lastSig = off;
+  const sig = $('sigA'), txt = $('sigTextA');
+  if(off){ sig.className = 'signal ng'; txt.textContent = 'オフサイド！せんより まえだよ！'; }
+  else   { sig.className = 'signal ok'; txt.textContent = 'ナイス！オフサイドじゃないよ'; }
+}
+function drawA(){
+  drawPitch(ctxA);
+  // こうげき ほうこう
+  ctxA.save();
+  ctxA.fillStyle = '#ffffff88'; ctxA.font = 'bold 20px sans-serif'; ctxA.textAlign='center';
+  ctxA.fillText('こうげき →', W/2, 48);
+  ctxA.restore();
+  // オフサイドライン
+  const lx = offsideLineX();
+  ctxA.save();
+  ctxA.strokeStyle = '#ff9100'; ctxA.lineWidth = 5; ctxA.setLineDash([14,9]);
+  ctxA.beginPath(); ctxA.moveTo(lx,22); ctxA.lineTo(lx,H-22); ctxA.stroke();
+  ctxA.setLineDash([]);
+  ctxA.fillStyle = '#ff9100'; ctxA.font = 'bold 15px sans-serif'; ctxA.textAlign='center';
+  ctxA.fillText('まもりの せん', lx, H-30);
+  ctxA.restore();
+  // まもり
+  A.defs.forEach(d=>drawPlayer(ctxA,d.x,d.y,'r'));
+  drawPlayer(ctxA,A.gk.x,A.gk.y,'r');
+  ctxA.fillStyle='#fff'; ctxA.font='bold 12px sans-serif'; ctxA.textAlign='center';
+  ctxA.fillText('GK', A.gk.x, A.gk.y+32);
+  // パサー
+  drawPlayer(ctxA,A.passer.x,A.passer.y,'b');
+  ctxA.fillStyle='#fff'; ctxA.fillText('パスする ひと', A.passer.x, A.passer.y+34);
+
+  if(A.anim){
+    const an = A.anim;
+    // けった しゅんかんの いち（ゴースト）
+    ctxA.save(); ctxA.globalAlpha = 0.35;
+    drawPlayer(ctxA,an.frozen.x,an.frozen.y,'b',true);
+    ctxA.restore();
+    ctxA.fillStyle='#fff59d'; ctxA.font='bold 12px sans-serif';
+    ctxA.fillText('けった しゅんかんの いち', an.frozen.x, an.frozen.y-26);
+    drawPlayer(ctxA,an.runner.x,an.runner.y,'b',true);
+    drawBall(ctxA,an.ball.x,an.ball.y);
+    if(an.done && an.off){
+      ctxA.font = '46px sans-serif'; ctxA.textAlign='center';
+      ctxA.fillText('🚩', an.frozen.x, an.frozen.y-46);
+    }
+  }else{
+    drawPlayer(ctxA,A.recv.x,A.recv.y,'b',true);
+    ctxA.fillStyle='#fff'; ctxA.font='bold 12px sans-serif'; ctxA.textAlign='center';
+    ctxA.fillText('きみ（うごかせるよ）', A.recv.x, A.recv.y+34);
+    drawBall(ctxA,A.passer.x+22,A.passer.y+6);
+  }
+  updateSignalA();
+}
+/* ドラッグ */
+function posA(e){
+  const r = cvA.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height };
+}
+cvA.addEventListener('pointerdown', e=>{
+  if(A.anim) return;
+  const p = posA(e);
+  const dx = p.x-A.recv.x, dy = p.y-A.recv.y;
+  if(Math.hypot(dx,dy) < 42){
+    A.drag = true;
+    try{ cvA.setPointerCapture(e.pointerId); }catch(err){}
+  }
+  e.preventDefault();
+});
+cvA.addEventListener('pointermove', e=>{
+  if(!A.drag) return;
+  const p = posA(e);
+  A.recv.x = Math.max(45, Math.min(W-60, p.x));
+  A.recv.y = Math.max(45, Math.min(H-45, p.y));
+  e.preventDefault();
+});
+['pointerup','pointercancel'].forEach(ev=>cvA.addEventListener(ev, ()=>{ A.drag = false; }));
+
+/* ▶ パス アニメ */
+$('passBtn').addEventListener('click', ()=>{
+  if(A.anim) return;
+  audio();
+  const off = judgeOffside(A.recv.x);
+  A.anim = {
+    t:0, off:off,
+    frozen:{x:A.recv.x, y:A.recv.y},
+    ball:{x:A.passer.x+22, y:A.passer.y+6},
+    runner:{x:A.recv.x, y:A.recv.y},
+    done:false
+  };
+  $('resultA').textContent = ''; $('resultA').className = 'result-a';
+  popSound();
+  const start = performance.now(), DUR = 1300;
+  function step(now){
+    const an = A.anim; if(!an) return;
+    an.t = Math.min(1,(now-start)/DUR);
+    const t = an.t;
+    // ボール: パサー → けった しゅんかんの うけての いち
+    an.ball.x = A.passer.x+22 + (an.frozen.x - A.passer.x-22)*t;
+    an.ball.y = A.passer.y+6 + (an.frozen.y - A.passer.y-6)*t - Math.sin(t*Math.PI)*40;
+    // うけて: まえに はしる
+    an.runner.x = an.frozen.x + Math.min(70, (W-70-an.frozen.x))*t;
+    if(t>=1 && !an.done){
+      an.done = true;
+      if(an.off){
+        whistle();
+        $('resultA').textContent = '🚩 ピピーッ！オフサイド！けった しゅんかんに せんより まえに いたよ';
+        $('resultA').className = 'result-a bad';
+        coachSay('おしい！「けった しゅんかん」に オレンジの せんより うしろに いれば OK だよ。もういちど ためしてみよう！');
+        sadSound();
+      }else{
+        $('resultA').textContent = '🎉 ナイスパス！ゴールチャンスだ！';
+        $('resultA').className = 'result-a good';
+        coachSay('さすが！せんの うしろから とびだしたね。それが「うらぬけ」だ！');
+        fanfare();
+        starsFromEl($('resultA'));
+      }
+    }
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+});
+$('resetBtn').addEventListener('click', ()=>{
+  A.anim = null; A.recv = {x:400,y:150};
+  $('resultA').textContent = '';
+  lastSig = null;
+  popSound();
+});
+$('whyBtn').addEventListener('click', ()=>{
+  $('whyBox').classList.toggle('on');
+  coachSay('まちぶせは ずるいから、オフサイドの ルールが あるんだ。だいじなのは「けった しゅんかんの いち」だよ！');
+  popSound();
+});
+
+/* ============ 【B】はんだんクイズ ============ */
+const bQuiz = [
+{
+  q:'あいての GK（キーパー）が ボールを 手（て）に もって、大（おお）きく パントキックを けりそうだよ。きみは まんなかの せんしゅ。どうする？',
+  players:[[93,50,'r'],[60,30,'r'],[60,70,'r'],[35,30,'b'],[35,70,'b'],[50,50,'b','you']],
+  ball:[90,45],
+  arrows:[[90,45,30,50]],
+  c:['そのまま まえに のこって まつ','いったん ラインを さげて、ヘディングできる いちまで もどる','あいての GKに むかって ダッシュする'],
+  a:1,
+  exp:'パントキックは あたまの うえを こえて、とお〜くまで とんでくるよ。まえに のこっていると おいこされちゃう！いったん さがって、おちてくる ボールを ヘディングや トラップ できる いちで まつのが かしこい せんしゅだ。'
+},
+{
+  q:'あいての スローインだよ。きみは ちかくの あいて せんしゅを マークする。どこに 立（た）つ？',
+  players:[[55,6,'r'],[50,26,'r'],[45,31,'b','you'],[30,55,'b'],[65,50,'r'],[35,75,'b']],
+  ball:[55,4],
+  c:['あいての うしろに ぴったり つく（ボールは 見えなくて OK）','ボールと あいてが どうじに 見えて、じぶんの ゴールがわに 立つ','ボールだけを 見て、あいてから はなれる'],
+  a:1,
+  exp:'ボールと マークする あいて、りょうほうが 見える いちが ベスト！そして じぶんの ゴールがわに 立てば、ボールを もらわれても すぐ まもれるよ。どちらか いっぽうしか 見えないのは キケン！'
+},
+{
+  q:'あいての コーナーキック！きみは ゴールまえで あいてを マークしているよ。どうする？',
+  players:[[3,93,'r'],[15,58,'r'],[22,40,'r'],[17,52,'b','you'],[26,42,'b'],[5,50,'b'],[30,65,'b']],
+  ball:[3,95],
+  c:['ボールだけを ずっと 見る','マークする あいてだけを 見て ボールは 見ない','ボールと あいてを こうごに 見て、あいてから はなれない'],
+  a:2,
+  exp:'ボールだけ 見ていると…「ボールウォッチャー」！マークした あいてが うしろで フリーに なって、ヘディングシュートを うたれちゃう。くびを ふって、ボールと あいてを こうごに チェックしよう！'
+},
+{
+  q:'みかたの GKが ボールを キャッチしたよ。きみは DF（ディフェンダー）。どう うごく？',
+  players:[[7,50,'b'],[20,35,'b','you'],[20,65,'b'],[42,30,'b'],[42,70,'b'],[35,50,'r'],[55,42,'r']],
+  ball:[9,48],
+  c:['GKの ちかくに みんなで あつまる','よこに ひろ〜く ひろがって、パスを もらえる ばしょに うごく','ぜんいん まえに ダッシュする'],
+  a:1,
+  exp:'マイボールに なったら「ひろがる」が あいことば！みんなで ひろがると パスコースが たくさん できて、あいては ぜんぶは まもれない。せまいと まとめて とられちゃうよ。コートを ひろく つかおう！'
+},
+{
+  q:'あいてが ドリブルで きみに むかってくる！きみの うしろに みかたは GKしか いないよ。どうする？',
+  players:[[45,50,'r'],[30,50,'b','you'],[7,50,'b']],
+  ball:[42,50],
+  arrows:[[45,50,34,50]],
+  c:['すぐに あしを だして ボールを とりにいく','とびこまないで、あいてを おくらせながら みかたが もどるのを まつ','こわいので うしろに にげる'],
+  a:1,
+  exp:'かんたんに とびこんで かわされたら、うしろは GKだけ…だいピンチ！まずは おくらせて、みかたが もどる じかんを つくろう。ボールを とるのは、あいてが ボールを おおきく さわった しゅんかんだ！'
+},
+{
+  q:'じぶんの ゴールまえで だいピンチ！きみが ボールを クリアするよ。どこに ける？',
+  players:[[14,55,'b','you'],[25,45,'r'],[30,62,'r'],[6,50,'b'],[35,30,'b']],
+  ball:[15,53],
+  c:['まんなかに ける','よこ（タッチラインの そと）や ななめまえに おおきく ける','GKに よわい パスで もどす'],
+  a:1,
+  exp:'まんなかに けると、あいてに ひろわれて また シュートされちゃう！こまったら「そとに おおきく」が やくそく。よこや ななめまえに ければ、そのあいだに みんなで たいけいを ととのえられるよ。'
+},
+{
+  q:'みかたが シュートを うった！きみは ゴールの ちかくに いるよ。どうする？',
+  players:[[75,60,'b'],[72,40,'b','you'],[93,50,'r'],[80,30,'r']],
+  ball:[78,58],
+  arrows:[[78,58,92,50]],
+  c:['ゴールに はいるか どうか、見て まつ','こぼれだまを ねらって ゴールまえに つめる','すぐ もどって まもりの じゅんびをする'],
+  a:1,
+  exp:'シュートは GKが はじくことが おおいよ！つめていれば、こぼれだまを おしこむだけで ゴール⚽ できることも。「シュートで おわらず、さいごまで はしる」が とくてんの ひみつだ！'
+},
+{
+  q:'きみは FW（フォワード）。あいての DFが ボールを もっていて、よこには もうひとり あいてが いる。どう まもりに いく？',
+  players:[[80,50,'r'],[80,20,'r'],[60,45,'b','you'],[45,60,'b'],[93,50,'r']],
+  ball:[78,50],
+  arrows:[[80,47,80,24]],
+  c:['まっすぐ ぜんそくりょくで つっこむ','よこの あいてへの パスコースを からだで かくしながら ちかづく','つかれるので まもらない'],
+  a:1,
+  exp:'ただ つっこむと、よこに ポンと パスを とおされて おわり。パスの みちを からだで かくしながら ちかづけば、あいては こまって ミスしやすい！これを「パスコースを きる」って いうよ。'
+},
+{
+  q:'みかたから パスが きそうだよ。ボールが とどく まえに、きみが やっておくことは？',
+  players:[[30,60,'b'],[55,45,'b','you'],[63,40,'r'],[45,25,'r']],
+  ball:[32,58],
+  c:['ボールだけを じ〜っと 見る','くびを ふって、うしろや まわりを 見ておく','めを つぶって しゅうちゅうする'],
+  a:1,
+  exp:'もらう まえに まわりを 見ておくと、「うしろに あいてが いるな」「あっちが あいてるな」と わかって、つぎの プレーが はやく できる！この「かたごしチェック」は うまい せんしゅ みんなの ひみつだよ。'
+},
+{
+  q:'みかたの ゴールキックだよ。きみは サイドの せんしゅ。どこに いる？',
+  players:[[5,50,'b'],[30,45,'b','you'],[25,70,'b'],[40,40,'r'],[45,60,'r']],
+  ball:[8,50],
+  c:['ゴールの ちかくに あつまる','タッチラインの ちかくまで おもいっきり ひろがる','あいての GKの まえに 立ちにいく'],
+  a:1,
+  exp:'ゴールキックも「ひろがる」が だいじ！サイドいっぱいに ひろがれば、パスコースが できて GKも けりやすい。みんなが まんなかに いると、あいてに かこまれて すぐ とられちゃうよ。'
+},
+{
+  q:'みかたが ドリブル中（ちゅう）に ボールを とられちゃった！きみは どうする？',
+  players:[[55,50,'b'],[57,46,'r'],[45,40,'b','you'],[30,55,'b']],
+  ball:[58,47],
+  arrows:[[57,47,35,50]],
+  c:['「あ〜あ」と 見ている','すぐ まもりに きりかえて、ボールを おいかける・もどる','とられた みかたに おこる'],
+  a:1,
+  exp:'とられた しゅんかんが いちばん だいじ！あいては まだ じゅんびが できていないから、5びょう ぜんりょくで がんばれば とりかえせる チャンスも おおいよ。みかたを せめている ひまは ないぞ〜！'
+},
+{
+  q:'ゴールまえで パスを もらった！GKと 1たい1、まわりに あいては いない、どフリーだよ。どうする？',
+  players:[[85,50,'b','you'],[93,50,'r'],[65,35,'b'],[55,60,'r']],
+  ball:[83,50],
+  c:['もっと いい ばしょの みかたを さがして パスする','おちついて シュート！','いったん ドリブルで うしろに もどる'],
+  a:1,
+  exp:'ゴールまえで フリーなら、まよわず シュート！はずしても ぜんぜん OK、つぎが ある。でも うたなければ、ゴールは ぜったいに うまれないよ。ゴールの すみを ねらって おちついて けろう⚽'
+}
+];
+let bIdx = 0, bAnswered = false;
+const ctxB = $('cvB').getContext('2d');
+function renderB(){
+  if(bIdx >= bQuiz.length){ showFinishB(); return; }
+  $('bFinish').classList.remove('on');
+  const q = bQuiz[bIdx];
+  $('bNum').textContent = 'もんだい '+(bIdx+1)+'/'+bQuiz.length;
+  $('bQ').textContent = q.q;
+  $('bVerdict').textContent = ''; $('bVerdict').className = 'verdict';
+  $('bExp').classList.remove('on'); $('bExp').textContent = '';
+  $('bNext').style.display = 'none';
+  bAnswered = false;
+  drawScene(ctxB, q);
+  const box = $('bChoices'); box.innerHTML = '';
+  q.c.forEach((txt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.innerHTML = '<span class="mk">'+['A','B','C'][i]+'</span><span>'+txt+'</span>';
+    btn.addEventListener('click', ()=>answerB(i, btn));
+    box.appendChild(btn);
+  });
+  updateStatus();
+}
+function answerB(i, btn){
+  if(bAnswered) return; bAnswered = true;
+  const q = bQuiz[bIdx];
+  const btns = Array.from($('bChoices').children);
+  btns.forEach(b=>b.disabled = true);
+  btns[q.a].classList.add('correct');
+  if(i === q.a){
+    $('bVerdict').textContent = '🎉 せいかい！ナイスはんだん！';
+    $('bVerdict').className = 'verdict good';
+    coachSay('すばらしい！しあいでも きっと できるぞ！');
+    fanfare(); starsFromEl(btn);
+    if(!state.b[bIdx]){ state.b[bIdx] = true; awardStar(); save(); }
+  }else{
+    btn.classList.add('wrong');
+    $('bVerdict').textContent = '💪 おしい！つぎは できる！';
+    $('bVerdict').className = 'verdict bad';
+    coachSay('だいじょうぶ、まちがえて おぼえるのが れんしゅうだよ！かいせつを よんでみよう。');
+    sadSound();
+  }
+  $('bExp').textContent = '📖 かいせつ： '+q.exp;
+  $('bExp').classList.add('on');
+  $('bNext').style.display = 'inline-block';
+}
+$('bNext').addEventListener('click', ()=>{ bIdx++; popSound(); renderB(); });
+function showFinishB(){
+  $('bChoices').innerHTML = ''; $('bQ').textContent = '';
+  $('bVerdict').textContent = ''; $('bExp').classList.remove('on');
+  $('bNext').style.display = 'none';
+  $('bNum').textContent = 'クリア！';
+  const f = $('bFinish');
+  f.innerHTML = '<div class="big">🏆 ぜんぶ おわったよ！</div>'
+    +'⭐ あつめた ほし： '+state.stars+' こ<br>いまの ランク： <span class="big">'+rankName(state.stars)+'</span><br>'
+    +'<button class="bigbtn next" id="bRetry">🔄 もういちど ちょうせん</button>';
+  f.classList.add('on');
+  drawScene(ctxB, {players:[[50,50,'b','you']], ball:[54,50]});
+  coachSay('おつかれさま！なんども ちょうせんすると、しあいで からだが かってに うごくように なるよ！');
+  $('bRetry').addEventListener('click', ()=>{ bIdx = 0; popSound(); renderB(); });
+}
+
+/* ============ 【C】うごきかたクイズ ============ */
+const cQuiz = [
+{
+  q:'あいての ボールが はんたいがわの サイドに わたったよ（あいては ひだりの きみの ゴールを めざしている）。きみは とおいがわの DF。どこに うごく？',
+  players:[[45,10,'r'],[60,30,'r'],[30,25,'b'],[25,50,'b'],[35,85,'b','you'],[7,50,'b']],
+  you:[35,85], ball:[43,10],
+  zones:[[35,88],[26,55],[55,72]],
+  a:1,
+  exp:'ボールが とおい ときは、まんなかに「しぼる」！ゴールまえを かためて、みかたが ぬかれても すぐ カバーできる いちに いるのが かしこい DFだよ。'
+},
+{
+  q:'みかたが ドリブルで あいてを ぬいた！きみは ちかくの MF。どこに はしる？',
+  players:[[60,60,'b'],[52,64,'r'],[50,40,'b','you'],[75,60,'r'],[93,50,'r']],
+  you:[50,40], ball:[62,60],
+  zones:[[76,38],[40,30],[30,70]],
+  a:0,
+  exp:'ぬいた みかたは、パスの あいてが ほしい！おいこして まえの スペースに はしれば、あいての DFは 2人を どうじに 見なきゃ いけなくて おおこまり。ゴールへの みちが ひらくよ！'
+},
+{
+  q:'あいてが おおきく クリア！ボールが そらから おちてくる。みかたと あいてが ヘディングで きそいそうだよ。きみは MF。どこに いく？',
+  players:[[55,42,'b'],[58,47,'r'],[65,55,'b','you'],[30,50,'r'],[7,50,'b']],
+  you:[65,55], ball:[40,30],
+  arrows:[[25,50,54,42]],
+  zones:[[70,38],[55,15],[45,55]],
+  a:2,
+  exp:'ヘディングで きそった ボールは、ポロッと こぼれることが おおい！おちてくる ところの すこし てまえ（じぶんの ゴールがわ）で かまえておくと、セカンドボールを ひろいやすいよ。'
+},
+{
+  q:'みかたの DFが ボールを もっているよ。でも あいてが きみへの パスコースを ふさいでいる…。きみは MF。どこに うごいて パスを もらう？',
+  players:[[25,50,'b'],[45,45,'r'],[45,65,'r'],[55,55,'b','you'],[70,40,'r']],
+  you:[55,55], ball:[27,50],
+  zones:[[38,32],[46,55],[62,75]],
+  a:1,
+  exp:'あいての かげに かくれていたら、いつまでも パスは こない！あいてと あいての「あいだ」に スッと うごいて かおを だせば、パスコースが ひらくよ。「うごいて もらう」が サッカーの きほんだ！'
+},
+{
+  q:'みかたの コーナーキック！みんな ゴールの ちかいがわ（ニア）に あつまっているよ。きみは どこに はしりこむ？',
+  players:[[97,7,'b'],[88,32,'b'],[86,38,'r'],[89,42,'r'],[93,50,'r'],[75,45,'b','you'],[70,65,'b']],
+  you:[75,45], ball:[97,5],
+  zones:[[88,33],[78,18],[90,64]],
+  a:2,
+  exp:'みんなが ちかいがわに あつまると、とおいがわ（ファーサイド）が ガラあき！ファーに はしりこめば、あたまの うえを こえてきた ボールを どフリーで あわせられることが おおいんだ。'
+},
+{
+  q:'あいてが サイドを ドリブルで せめてくる（きみの ゴールは ひだり）。みかたの DFが ボールに よせたよ。きみは となりの DF。どこに うごく？',
+  players:[[40,80,'r'],[32,78,'b'],[28,50,'b','you'],[60,60,'r'],[7,50,'b']],
+  you:[28,50], ball:[38,80],
+  zones:[[24,66],[40,62],[15,30]],
+  a:0,
+  exp:'よせた みかたの「ななめ うしろ」で かまえるのが せいかい！みかたが ぬかれても、きみが すぐ とめられる。これが「チャレンジ＆カバー」。2人で 1つの ドアに カギを 2こ かけるイメージだよ。'
+},
+{
+  q:'サイドで みかたが あいてに かこまれて こまっている！きみは ちかくの MF。どこに うごいて たすける？',
+  players:[[75,10,'b'],[80,16,'r'],[70,6,'r'],[60,35,'b','you'],[50,60,'b']],
+  you:[60,35], ball:[74,12],
+  zones:[[63,22],[87,38],[40,60]],
+  a:0,
+  exp:'こまった みかたには「にげみち」を つくってあげよう！ななめ うしろに ちかづけば、あいてに じゃまされずに パスを もらえる。「サポート」は こえを だしながらね：「へいこう！」「もどせ！」'
+},
+{
+  q:'みかたが フリーで まえを むいた！ロングパスが けれそうだよ。きみは FW。どこに はしる？',
+  players:[[45,55,'b'],[65,35,'r'],[65,60,'r'],[60,30,'b','you'],[93,50,'r']],
+  you:[60,30], ball:[47,55],
+  zones:[[52,18],[60,30],[78,25]],
+  a:2,
+  exp:'まえを むいた みかたは チャンスの あいず！あいての DFの うしろ（うら）の スペースへ はしりだそう。オフサイドに ならないように、けった しゅんかんに とびだすのが コツだよ🚦'
+}
+];
+let cIdx = 0, cAnswered = false;
+const cvC = $('cvC'), ctxC = cvC.getContext('2d');
+let cAnim = null; // {t, from, to} やじるし アニメ
+let cChosen = -1;
+
+function renderC(){
+  if(cIdx >= cQuiz.length){ showFinishC(); return; }
+  $('cFinish').classList.remove('on');
+  const q = cQuiz[cIdx];
+  $('cNum').textContent = 'もんだい '+(cIdx+1)+'/'+cQuiz.length;
+  $('cQ').textContent = q.q;
+  $('cVerdict').textContent = ''; $('cVerdict').className = 'verdict';
+  $('cExp').classList.remove('on'); $('cExp').textContent = '';
+  $('cNext').style.display = 'none';
+  cAnswered = false; cAnim = null; cChosen = -1;
+  document.querySelectorAll('.zonebtn').forEach(b=>b.disabled = false);
+  updateStatus();
+}
+function drawC(ts){
+  if(cIdx >= cQuiz.length) return;
+  const q = cQuiz[cIdx];
+  drawScene(ctxC, q);
+  const pulse = 0.55 + 0.45*Math.sin(ts/280);
+  const zoneColors = ['#ff7043','#26c6da','#9ccc65'];
+  q.zones.forEach((z,i)=>{
+    const zx = px(z[0]), zy = py(z[1]);
+    ctxC.save();
+    ctxC.globalAlpha = cAnswered ? 0.85 : 0.35+0.4*pulse;
+    ctxC.beginPath(); ctxC.arc(zx,zy,44,0,Math.PI*2);
+    ctxC.fillStyle = zoneColors[i]+'55'; ctxC.fill();
+    ctxC.lineWidth = 4; ctxC.strokeStyle = zoneColors[i]; ctxC.stroke();
+    ctxC.globalAlpha = 1;
+    ctxC.fillStyle = '#fff'; ctxC.font = 'bold 26px sans-serif';
+    ctxC.textAlign = 'center'; ctxC.textBaseline = 'middle';
+    ctxC.fillText(['A','B','C'][i], zx, zy);
+    if(cAnswered){
+      ctxC.font = '26px sans-serif';
+      if(i === q.a) ctxC.fillText('⭕', zx+34, zy-34);
+      else if(i === cChosen) ctxC.fillText('❌', zx+34, zy-34);
+    }
+    ctxC.restore();
+  });
+  // やじるし アニメ（せいかいの うごき）
+  if(cAnim){
+    const fx = px(q.you[0]), fy = py(q.you[1]);
+    const tx = px(q.zones[q.a][0]), ty = py(q.zones[q.a][1]);
+    drawArrow(ctxC, fx, fy, tx, ty, '#ffd600', 7, false, cAnim.t);
+    // ★が うごく
+    const sx = fx+(tx-fx)*cAnim.t, sy = fy+(ty-fy)*cAnim.t;
+    drawPlayer(ctxC, sx, sy, 'b', true);
+  }
+}
+function answerC(i){
+  if(cAnswered || cIdx >= cQuiz.length) return;
+  cAnswered = true; cChosen = i;
+  const q = cQuiz[cIdx];
+  document.querySelectorAll('.zonebtn').forEach(b=>b.disabled = true);
+  if(i === q.a){
+    $('cVerdict').textContent = '🎉 せいかい！いい うごきだ！';
+    $('cVerdict').className = 'verdict good';
+    coachSay('かんぺき！その うごきが できたら コーチは うれしいぞ！');
+    fanfare(); starsFromEl($('cVerdict'));
+    if(!state.c[cIdx]){ state.c[cIdx] = true; awardStar(); save(); }
+  }else{
+    $('cVerdict').textContent = '💪 おしい！つぎは できる！';
+    $('cVerdict').className = 'verdict bad';
+    coachSay('だいじょうぶ！きいろい やじるしが せいかいの うごきだよ。よく 見てね！');
+    sadSound();
+  }
+  // やじるし アニメーション
+  cAnim = {t:0};
+  const start = performance.now(), DUR = 900;
+  function step(now){
+    if(!cAnim) return;
+    cAnim.t = Math.min(1,(now-start)/DUR);
+    if(cAnim.t < 1) requestAnimationFrame(step);
+    else{
+      $('cExp').textContent = '📖 かいせつ： '+q.exp;
+      $('cExp').classList.add('on');
+      $('cNext').style.display = 'inline-block';
+    }
+  }
+  requestAnimationFrame(step);
+}
+document.querySelectorAll('.zonebtn').forEach(b=>{
+  b.addEventListener('click', ()=>answerC(+b.dataset.z));
+});
+cvC.addEventListener('pointerdown', e=>{
+  if(cAnswered || cIdx >= cQuiz.length) return;
+  const r = cvC.getBoundingClientRect();
+  const x = (e.clientX-r.left)*W/r.width, y = (e.clientY-r.top)*H/r.height;
+  const q = cQuiz[cIdx];
+  q.zones.forEach((z,i)=>{
+    if(Math.hypot(x-px(z[0]), y-py(z[1])) < 50) answerC(i);
+  });
+});
+$('cNext').addEventListener('click', ()=>{ cIdx++; popSound(); renderC(); });
+function showFinishC(){
+  $('cQ').textContent = ''; $('cVerdict').textContent = '';
+  $('cExp').classList.remove('on'); $('cNext').style.display = 'none';
+  $('cNum').textContent = 'クリア！';
+  document.querySelectorAll('.zonebtn').forEach(b=>b.disabled = true);
+  const f = $('cFinish');
+  f.innerHTML = '<div class="big">🏆 うごきかた マスター！</div>'
+    +'⭐ あつめた ほし： '+state.stars+' こ<br>いまの ランク： <span class="big">'+rankName(state.stars)+'</span><br>'
+    +'<button class="bigbtn next" id="cRetry">🔄 もういちど ちょうせん</button>';
+  f.classList.add('on');
+  drawScene(ctxC, {players:[[50,50,'b','you']], ball:[54,50]});
+  coachSay('いい うごきは「クセ」に なるまで くりかえそう！グラウンドでも ためしてみてね！');
+  $('cRetry').addEventListener('click', ()=>{ cIdx = 0; popSound(); renderC(); });
+}
+
+/* ============ メインループ ============ */
+function tick(ts){
+  if(activeTab === 'a') drawA();
+  else if(activeTab === 'c' && cIdx < cQuiz.length) drawC(ts);
+  requestAnimationFrame(tick);
+}
+updateStatus();
+renderB(); renderC();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

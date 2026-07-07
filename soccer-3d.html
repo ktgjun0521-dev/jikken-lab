@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3D戦術シアター | 実験ラボ</title>
+<meta name="description" content="サッカーの戦術・練習メニューを3Dで立体再生する「3D戦術シアター」。コーナーキック・パントキック対応・ビルドアップなどを俯瞰/監督/三人称/ゴール裏カメラで観察。戦術ボードのJSON読み込みにも対応。">
+<meta property="og:title" content="3D戦術シアター">
+<meta property="og:description" content="サッカーの戦術・練習メニューを3D三人称視点で立体再生。戦術ボードJSON読み込み対応。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/soccer-3d.html">
+<meta property="og:site_name" content="実験ラボ">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+:root{
+  --bg:#0b0e15; --panel:rgba(13,17,27,.92); --panel2:rgba(20,26,40,.9);
+  --line:rgba(255,255,255,.1); --tx:#e8ecf5; --tx2:#93a0b8;
+  --acc:#f0c649; --red:#e5484d; --blue:#3e7bfa;
+}
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; overflow:hidden; }
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Noto Sans JP",Meiryo,sans-serif;
+  font-size:14px; touch-action:none;
+}
+#stage{ position:fixed; inset:0; }
+#stage canvas{ display:block; }
+
+/* ---------- ヘッダー ---------- */
+header{
+  position:fixed; top:0; left:0; right:0; z-index:20;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:linear-gradient(to bottom, rgba(8,10,16,.85), rgba(8,10,16,0));
+  pointer-events:none;
+}
+header > *{ pointer-events:auto; }
+.back{
+  color:var(--tx2); text-decoration:none; font-size:12px;
+  padding:6px 10px; border:1px solid var(--line); border-radius:8px;
+  background:var(--panel); white-space:nowrap;
+}
+.back:hover{ color:var(--tx); border-color:rgba(255,255,255,.25); }
+h1{
+  font-size:17px; letter-spacing:.06em; font-weight:700;
+  text-shadow:0 2px 10px rgba(0,0,0,.7);
+}
+h1 .mark{ color:var(--acc); }
+#panelToggle{
+  display:none; margin-left:auto;
+  background:var(--panel); color:var(--tx); border:1px solid var(--line);
+  border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer;
+}
+
+/* ---------- 左パネル ---------- */
+#panel{
+  position:fixed; top:56px; left:12px; bottom:118px; z-index:15;
+  width:272px; max-width:calc(100vw - 24px);
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  padding:14px; overflow-y:auto; backdrop-filter:blur(6px);
+  transition:transform .25s ease, opacity .25s ease;
+}
+#panel h2{
+  font-size:11px; color:var(--tx2); letter-spacing:.14em;
+  margin:14px 0 7px; font-weight:600;
+}
+#panel h2:first-child{ margin-top:0; }
+#sceneName{ font-size:15px; font-weight:700; color:var(--acc); margin-bottom:6px; }
+#sceneDesc{ font-size:12.5px; line-height:1.7; color:var(--tx); }
+#sceneCoach{
+  display:block; margin-top:8px; padding:8px 10px; border-radius:8px;
+  background:rgba(240,198,73,.08); border:1px solid rgba(240,198,73,.25);
+  font-size:11.5px; line-height:1.65; color:#f5d87e;
+}
+#sceneCoach:empty{ display:none; }
+.pbtn{
+  display:block; width:100%; text-align:left; margin-bottom:6px;
+  background:var(--panel2); color:var(--tx); border:1px solid var(--line);
+  border-radius:9px; padding:9px 11px; font-size:12.5px; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.pbtn:hover{ border-color:rgba(240,198,73,.5); }
+.pbtn.on{ background:rgba(240,198,73,.14); border-color:var(--acc); color:#ffe9a8; }
+.pbtn .tag{ color:var(--tx2); font-size:10.5px; margin-right:6px; }
+.pbtn.on .tag{ color:var(--acc); }
+#importBtn{
+  width:100%; padding:10px; border-radius:9px; cursor:pointer; font-size:12.5px;
+  background:rgba(62,123,250,.12); color:#9fc0ff; border:1px dashed rgba(62,123,250,.55);
+}
+#importBtn:hover{ background:rgba(62,123,250,.2); }
+.note{ font-size:10.5px; color:var(--tx2); line-height:1.6; margin-top:6px; }
+body.panel-hidden #panel{ transform:translateX(-115%); opacity:0; pointer-events:none; }
+
+/* ---------- 下部コントロールバー ---------- */
+#controls{
+  position:fixed; left:0; right:0; bottom:0; z-index:20;
+  background:linear-gradient(to top, rgba(8,10,16,.96) 70%, rgba(8,10,16,0));
+  padding:10px 14px 6px;
+}
+.ctrlRow{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  max-width:960px; margin:0 auto;
+}
+.ctrlRow + .ctrlRow{ margin-top:8px; }
+.cbtn{
+  background:var(--panel2); color:var(--tx); border:1px solid var(--line);
+  border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer;
+  white-space:nowrap; transition:border-color .15s, background .15s;
+}
+.cbtn:hover{ border-color:rgba(255,255,255,.3); }
+.cbtn.on{ background:rgba(240,198,73,.15); border-color:var(--acc); color:#ffe9a8; }
+.cbtn.big{ font-size:15px; padding:7px 14px; min-width:52px; }
+#seek{
+  flex:1; min-width:120px; accent-color:var(--acc); height:22px; cursor:pointer;
+}
+#timeLbl{
+  font-size:11px; color:var(--tx2); font-variant-numeric:tabular-nums;
+  min-width:76px; text-align:center;
+}
+.grpLbl{ font-size:10px; color:var(--tx2); letter-spacing:.1em; }
+#playerRow{ display:none; }
+#playerRow.show{ display:flex; }
+.plbtn{
+  width:32px; height:32px; border-radius:50%; border:2px solid transparent;
+  color:#fff; font-size:12px; font-weight:700; cursor:pointer;
+}
+.plbtn.atk{ background:var(--red); }
+.plbtn.def{ background:var(--blue); }
+.plbtn.on{ border-color:var(--acc); box-shadow:0 0 8px rgba(240,198,73,.7); }
+footer{
+  text-align:center; font-size:10px; color:var(--tx2);
+  padding:5px 0 7px;
+}
+footer a{ color:var(--tx2); }
+
+/* ---------- ゴール演出 ---------- */
+#goalFx{
+  position:fixed; inset:0; z-index:30; display:none;
+  align-items:center; justify-content:center; pointer-events:none;
+}
+#goalFx.show{ display:flex; }
+#goalFx .txt{
+  font-size:min(13vw, 92px); font-weight:900; letter-spacing:.05em;
+  color:#fff; text-shadow:0 0 24px rgba(240,198,73,.95), 0 4px 18px rgba(0,0,0,.6);
+  animation:goalPop 1.9s ease forwards;
+}
+@keyframes goalPop{
+  0%{ transform:scale(.2) rotate(-8deg); opacity:0; }
+  16%{ transform:scale(1.12) rotate(2deg); opacity:1; }
+  26%{ transform:scale(1); }
+  78%{ transform:scale(1); opacity:1; }
+  100%{ transform:scale(1.15); opacity:0; }
+}
+
+/* ---------- トースト ---------- */
+#toast{
+  position:fixed; left:50%; bottom:132px; transform:translate(-50%, 14px);
+  z-index:40; background:rgba(18,22,34,.95); border:1px solid var(--line);
+  color:var(--tx); font-size:12px; border-radius:10px; padding:9px 16px;
+  opacity:0; transition:.25s; pointer-events:none; max-width:88vw;
+}
+#toast.show{ opacity:1; transform:translate(-50%, 0); }
+#toast.err{ border-color:rgba(229,72,77,.6); color:#ffb3b5; }
+
+/* ---------- フォールバック ---------- */
+#fallback{
+  position:fixed; inset:0; z-index:50; display:none;
+  align-items:center; justify-content:center; background:var(--bg);
+  text-align:center; padding:24px;
+}
+#fallback.show{ display:flex; }
+#fallback .box{ max-width:420px; line-height:1.9; }
+#fallback .big{ font-size:40px; margin-bottom:10px; }
+#fallback a{ color:var(--acc); }
+
+@media (max-width: 760px){
+  #panelToggle{ display:block; }
+  body.panel-auto #panel{ transform:translateX(-115%); opacity:0; pointer-events:none; }
+  body.panel-auto.panel-open #panel{ transform:none; opacity:1; pointer-events:auto; }
+  #panel{ bottom:150px; width:250px; }
+  h1{ font-size:14px; }
+  #toast{ bottom:170px; }
+}
+</style>
+</head>
+<body class="panel-auto">
+
+<div id="stage"></div>
+
+<header>
+  <a class="back" href="index.html">&larr; 実験ラボに戻る</a>
+  <h1><span class="mark">&#127917;</span> 3D戦術シアター</h1>
+  <button id="panelToggle">&#9776; シーン</button>
+</header>
+
+<aside id="panel">
+  <h2>NOW PLAYING</h2>
+  <div id="sceneName">&mdash;</div>
+  <div id="sceneDesc">読み込み中…</div>
+  <span id="sceneCoach"></span>
+  <h2>シーンプリセット</h2>
+  <div id="presetList"></div>
+  <h2>戦術ボード連携</h2>
+  <button id="importBtn">&#11014; 戦術ボードのJSONを読み込む</button>
+  <p class="note">tactics-board.html（セットプレー戦術ボード）の「JSON書出」で保存したファイルを読み込むと、マーカーが3D選手になり、矢印が動きとして再生されます。</p>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+</aside>
+
+<div id="goalFx"><div class="txt">&#9917; ゴール!</div></div>
+<div id="toast"></div>
+
+<div id="controls">
+  <div class="ctrlRow" id="playerRow">
+    <span class="grpLbl">追従する選手:</span>
+    <span id="playerBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></span>
+  </div>
+  <div class="ctrlRow">
+    <span class="grpLbl">カメラ:</span>
+    <button class="cbtn camBtn" data-cam="top">&#128301; 俯瞰</button>
+    <button class="cbtn camBtn on" data-cam="coach">&#127913; 監督視点</button>
+    <button class="cbtn camBtn" data-cam="third">&#127939; 三人称</button>
+    <button class="cbtn camBtn" data-cam="goal">&#129349; ゴール裏</button>
+  </div>
+  <div class="ctrlRow">
+    <button class="cbtn big" id="playBtn">&#9654;</button>
+    <button class="cbtn big" id="replayBtn" title="リプレイ">&#8635;</button>
+    <input type="range" id="seek" min="0" max="1000" value="0">
+    <span id="timeLbl">0.0 / 0.0s</span>
+    <button class="cbtn spdBtn" data-spd="0.5">0.5x</button>
+    <button class="cbtn spdBtn on" data-spd="1">1x</button>
+    <button class="cbtn spdBtn" data-spd="2">2x</button>
+  </div>
+  <footer>&#129514; <a href="index.html">実験ラボ</a> | Built with Claude Fable 5 ・ 3D表示にはネット接続が必要です</footer>
+</div>
+
+<div id="fallback">
+  <div class="box">
+    <div class="big">&#128268;</div>
+    <p><strong>3D表示を開始できませんでした。</strong></p>
+    <p>3D表示にはインターネット接続（Three.jsライブラリの読み込み）と、WebGL対応ブラウザが必要です。接続を確認してから再読み込みしてください。</p>
+    <p style="margin-top:14px;"><a href="index.html">&larr; 実験ラボに戻る</a> / <a href="javascript:location.reload()">再読み込み</a></p>
+  </div>
+</div>
+
+<script>
+/* CDN読込失敗・importmap非対応・WebGL不可のフォールバック監視 */
+window.__T3D_OK = false;
+window.__showFallback = function(){
+  document.getElementById("fallback").classList.add("show");
+};
+setTimeout(function(){
+  if (!window.__T3D_OK) window.__showFallback();
+}, 9000);
+</script>
+
+<script type="module">
+/* ============================================================
+   3D戦術シアター
+   座標系: ピッチ中心が原点。X軸=ピッチ長辺(-34..+34, ゴールはX=±34)、
+           Z軸=短辺(-25..+25)。攻撃(赤)は +X 方向へ攻める。
+============================================================ */
+let THREE, OrbitControls;
+try {
+  THREE = await import("three");
+  ({ OrbitControls } = await import("three/addons/controls/OrbitControls.js"));
+} catch (e) {
+  window.__showFallback();
+  throw e;
+}
+{ /* WebGL チェック */
+  const c = document.createElement("canvas");
+  const gl = c.getContext("webgl2") || c.getContext("webgl");
+  if (!gl){ window.__showFallback(); throw new Error("WebGL unavailable"); }
+}
+
+/* ---------- 定数 ---------- */
+const PITCH_L = 68, PITCH_W = 50;          // 8人制 68x50m
+const HALF_L = PITCH_L / 2, HALF_W = PITCH_W / 2;
+const GOAL_W = 5, GOAL_H = 2.15;           // 少年用ゴール
+const BALL_R = 0.28;
+
+/* ---------- 基本セットアップ ---------- */
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:"high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+
+/* 空: グラデーションCanvasテクスチャ */
+{
+  const c = document.createElement("canvas");
+  c.width = 2; c.height = 256;
+  const g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, "#101830");
+  gr.addColorStop(0.55, "#28406e");
+  gr.addColorStop(0.8, "#5a6f97");
+  gr.addColorStop(1, "#8c9bb8");
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  scene.background = tex;
+}
+scene.fog = new THREE.Fog(0x28406e, 130, 320);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 500);
+camera.position.set(0, 30, 46);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 0, 0);
+controls.maxPolarAngle = 1.48;
+controls.minDistance = 8;
+controls.maxDistance = 140;
+
+/* ---------- ライト ---------- */
+scene.add(new THREE.HemisphereLight(0xbcc8e8, 0x2c5a34, 0.85));
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
+sun.position.set(34, 55, 22);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -46; sun.shadow.camera.right = 46;
+sun.shadow.camera.top = 40;  sun.shadow.camera.bottom = -40;
+sun.shadow.camera.far = 140;
+sun.shadow.bias = -0.002;
+scene.add(sun);
+
+/* ---------- ピッチ (縞芝+白線 Canvasテクスチャ) ---------- */
+function makePitchTexture(){
+  const PPM = 14, MG = 3;                       // px/m, 外周芝マージン(m)
+  const W = (PITCH_L + MG * 2) * PPM, H = (PITCH_W + MG * 2) * PPM;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const mx = m => (m + HALF_L + MG) * PPM;      // worldX -> px
+  const mz = m => (m + HALF_W + MG) * PPM;      // worldZ -> px
+  /* 縞芝 (長辺方向に8本) */
+  g.fillStyle = "#2c8a45"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#25763b";
+  const stripes = 8, sw = PITCH_L * PPM / stripes;
+  for (let i = 0; i < stripes; i += 2)
+    g.fillRect(mx(-HALF_L) + i * sw, 0, sw, H);
+  /* 白線 */
+  g.strokeStyle = "rgba(255,255,255,.92)";
+  g.lineWidth = Math.max(2, PPM * 0.13);
+  g.lineCap = "round";
+  const rect = (x, z, w, h) => g.strokeRect(mx(x), mz(z), w * PPM, h * PPM);
+  const line = (x1, z1, x2, z2) => { g.beginPath(); g.moveTo(mx(x1), mz(z1)); g.lineTo(mx(x2), mz(z2)); g.stroke(); };
+  rect(-HALF_L, -HALF_W, PITCH_L, PITCH_W);                    // 外周
+  line(0, -HALF_W, 0, HALF_W);                                 // ハーフウェー
+  g.beginPath(); g.arc(mx(0), mz(0), 7 * PPM, 0, Math.PI * 2); g.stroke();  // センターサークル
+  g.fillStyle = "rgba(255,255,255,.92)";
+  g.beginPath(); g.arc(mx(0), mz(0), PPM * 0.28, 0, Math.PI * 2); g.fill(); // センタースポット
+  for (const s of [-1, 1]){                                    // 両ゴール前
+    const gx = s * HALF_L;
+    rect(Math.min(gx, gx - s * 12), -12, 12, 24);              // PA 12m x 24m
+    rect(Math.min(gx, gx - s * 4), -5, 4, 10);                 // GA 4m x 10m
+    g.beginPath(); g.arc(mx(gx - s * 8), mz(0), PPM * 0.28, 0, Math.PI * 2); g.fill(); // PKスポット
+    g.beginPath();                                             // コーナーアーク
+    g.arc(mx(gx), mz(-HALF_W), PPM, 0, Math.PI * 2); g.stroke();
+    g.beginPath();
+    g.arc(mx(gx), mz(HALF_W), PPM, 0, Math.PI * 2); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return { tex, size:[PITCH_L + 6, PITCH_W + 6] };
+}
+{
+  const { tex, size } = makePitchTexture();
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(size[0], size[1]),
+    new THREE.MeshLambertMaterial({ map: tex })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  /* 外周アプロン */
+  const apron = new THREE.Mesh(
+    new THREE.PlaneGeometry(320, 320),
+    new THREE.MeshLambertMaterial({ color: 0x1c4f2c })
+  );
+  apron.rotation.x = -Math.PI / 2;
+  apron.position.y = -0.02;
+  scene.add(apron);
+}
+
+/* ---------- スタンド(シアター風の暗い観客席) ---------- */
+{
+  const mat = new THREE.MeshLambertMaterial({ color: 0x171d2c });
+  const mk = (w, d, x, z) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 3.2, d), mat);
+    m.position.set(x, 1.6, z);
+    scene.add(m);
+  };
+  mk(PITCH_L + 16, 6, 0, -(HALF_W + 8));
+  mk(PITCH_L + 16, 6, 0,  (HALF_W + 8));
+  mk(6, PITCH_W + 4, -(HALF_L + 8), 0);
+  mk(6, PITCH_W + 4,  (HALF_L + 8), 0);
+}
+
+/* ---------- ゴール2基 ---------- */
+function makeGoal(sign){
+  const grp = new THREE.Group();
+  const postMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const r = 0.07;
+  const post = new THREE.CylinderGeometry(r, r, GOAL_H, 8);
+  for (const z of [-GOAL_W / 2, GOAL_W / 2]){
+    const p = new THREE.Mesh(post, postMat);
+    p.position.set(0, GOAL_H / 2, z);
+    p.castShadow = true;
+    grp.add(p);
+  }
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(r, r, GOAL_W + r * 2, 8), postMat);
+  bar.rotation.x = Math.PI / 2;
+  bar.position.set(0, GOAL_H, 0);
+  bar.castShadow = true;
+  grp.add(bar);
+  /* 簡易ネット (ワイヤーフレーム面) */
+  const netMat = new THREE.MeshBasicMaterial({ color: 0xdddddd, wireframe: true, transparent: true, opacity: 0.3 });
+  const depth = 1.7;
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_W, GOAL_H, 10, 5), netMat);
+  back.rotation.y = Math.PI / 2;
+  back.position.set(depth, GOAL_H / 2, 0);
+  grp.add(back);
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(depth, GOAL_W, 4, 10), netMat);
+  top.rotation.z = Math.PI / 2; top.rotation.y = Math.PI / 2;
+  top.position.set(depth / 2, GOAL_H, 0);
+  grp.add(top);
+  for (const z of [-GOAL_W / 2, GOAL_W / 2]){
+    const side = new THREE.Mesh(new THREE.PlaneGeometry(depth, GOAL_H, 4, 5), netMat);
+    side.position.set(depth / 2, GOAL_H / 2, z);
+    grp.add(side);
+  }
+  grp.position.x = sign * HALF_L;
+  grp.rotation.y = sign > 0 ? 0 : Math.PI;
+  scene.add(grp);
+}
+makeGoal(1); makeGoal(-1);
+
+/* ---------- ボール ---------- */
+function makeBallTexture(){
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d");
+  g.fillStyle = "#f4f4f4"; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = "#1a1a1a";
+  const spots = [[20,26],[64,14],[108,30],[38,64],[86,66],[16,96],[62,108],[106,98]];
+  for (const [x, y] of spots){
+    g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const ball = new THREE.Mesh(
+  new THREE.SphereGeometry(BALL_R, 16, 12),
+  new THREE.MeshLambertMaterial({ map: makeBallTexture() })
+);
+ball.castShadow = true;
+scene.add(ball);
+
+/* ---------- 選手 ---------- */
+const bodyGeo = new THREE.CapsuleGeometry(0.32, 0.72, 4, 10);
+const headGeo = new THREE.SphereGeometry(0.235, 12, 10);
+const teamMat = {
+  atk: new THREE.MeshLambertMaterial({ color: 0xe5484d }),
+  def: new THREE.MeshLambertMaterial({ color: 0x3e7bfa })
+};
+const headMat = new THREE.MeshLambertMaterial({ color: 0xf0c8a0 });
+const ringGeo = new THREE.RingGeometry(0.55, 0.75, 24);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xf0c649, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+
+function makeNumberSprite(num, team){
+  const c = document.createElement("canvas");
+  c.width = c.height = 96;
+  const g = c.getContext("2d");
+  g.beginPath(); g.arc(48, 48, 42, 0, Math.PI * 2);
+  g.fillStyle = team === "atk" ? "rgba(180,30,36,.92)" : "rgba(30,80,200,.92)";
+  g.fill();
+  g.lineWidth = 5; g.strokeStyle = "rgba(255,255,255,.9)"; g.stroke();
+  g.fillStyle = "#fff";
+  g.font = "700 46px sans-serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(String(num), 48, 51);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  sp.scale.set(0.95, 0.95, 1);
+  sp.position.y = 2.35;
+  return sp;
+}
+
+let playerObjs = [];   // { def, grp, ring, rotY }
+function clearPlayers(){
+  for (const p of playerObjs){
+    scene.remove(p.grp);
+    p.grp.traverse(o => {
+      if (o.isSprite){ o.material.map.dispose(); o.material.dispose(); }
+    });
+  }
+  playerObjs = [];
+}
+function buildPlayers(defs){
+  clearPlayers();
+  for (const d of defs){
+    const grp = new THREE.Group();
+    const body = new THREE.Mesh(bodyGeo, teamMat[d.team]);
+    body.position.y = 0.72;
+    body.castShadow = true;
+    grp.add(body);
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 1.6;
+    head.castShadow = true;
+    grp.add(head);
+    grp.add(makeNumberSprite(d.num, d.team));
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.03;
+    ring.visible = false;
+    grp.add(ring);
+    scene.add(grp);
+    playerObjs.push({ def: d, grp, ring, rotY: d.team === "atk" ? Math.PI / 2 : -Math.PI / 2 });
+  }
+}
+
+/* ============================================================
+   waypoint 補間
+   選手: {t,x,z}[]  ボール: {t,x,z,h?,y?}[] (hは放物線の頂点高さ)
+============================================================ */
+function samplePlayer(wp, t){
+  if (t <= wp[0].t) return { x: wp[0].x, z: wp[0].z };
+  const last = wp[wp.length - 1];
+  if (t >= last.t) return { x: last.x, z: last.z };
+  for (let i = 0; i < wp.length - 1; i++){
+    const a = wp[i], b = wp[i + 1];
+    if (t >= a.t && t <= b.t){
+      let u = (t - a.t) / Math.max(b.t - a.t, 1e-6);
+      u = u * u * (3 - 2 * u);   // smoothstep
+      return { x: a.x + (b.x - a.x) * u, z: a.z + (b.z - a.z) * u };
+    }
+  }
+  return { x: last.x, z: last.z };
+}
+function sampleBall(wp, t){
+  const yOf = p => (p.y !== undefined ? p.y : BALL_R);
+  if (t <= wp[0].t) return { x: wp[0].x, z: wp[0].z, y: yOf(wp[0]) };
+  const last = wp[wp.length - 1];
+  if (t >= last.t) return { x: last.x, z: last.z, y: yOf(last) };
+  for (let i = 0; i < wp.length - 1; i++){
+    const a = wp[i], b = wp[i + 1];
+    if (t >= a.t && t <= b.t){
+      const u = (t - a.t) / Math.max(b.t - a.t, 1e-6);   // 等速(飛行)
+      const h = b.h || 0;
+      return {
+        x: a.x + (b.x - a.x) * u,
+        z: a.z + (b.z - a.z) * u,
+        y: yOf(a) + (yOf(b) - yOf(a)) * u + 4 * h * u * (1 - u)
+      };
+    }
+  }
+  return { x: last.x, z: last.z, y: yOf(last) };
+}
+
+/* ============================================================
+   プリセットシーン定義 (5種)
+============================================================ */
+const PRESETS = [
+{
+  name: "CK ニアゾーンアタック",
+  tag: "セットプレー",
+  desc: "コーナーキックからニアポスト前の「ニアゾーン」に3人が時間差で走り込み、インスイングのボールをワンタッチで合わせる定番の得点パターン。GKと守備ラインの中間に落ちるボールは、触るだけで枠に飛ぶ。",
+  coach: "コーチングポイント：キッカーの助走開始が全員のスタート合図。最初に入る選手は「すらす」だけでOK。後続の2人がこぼれ球とファーへの流れを狙う。",
+  duration: 6, goalAt: 2.75,
+  ball: [
+    { t:0,    x:33.4, z:24.4 },
+    { t:1.05, x:33.4, z:24.4 },
+    { t:2.2,  x:29.5, z:3.2,  h:6.5 },
+    { t:2.75, x:33.6, z:-0.9, h:1.4, y:0.5 },
+    { t:3.1,  x:35.2, z:-1.2, h:0.2 }
+  ],
+  players: [
+    { team:"atk", num:7,  wp:[{t:0,x:31.4,z:22.4},{t:1.0,x:33.0,z:23.8},{t:6,x:33.0,z:23.8}] },
+    { team:"atk", num:9,  wp:[{t:0,x:24,z:-3},{t:0.9,x:24.2,z:-2.6},{t:2.2,x:29.2,z:2.8},{t:3.0,x:31,z:1.2},{t:4.4,x:27,z:4},{t:6,x:27,z:4}] },
+    { team:"atk", num:10, wp:[{t:0,x:23,z:5},{t:1.15,x:23.4,z:5},{t:2.6,x:27.8,z:4.6},{t:6,x:27.8,z:4.6}] },
+    { team:"atk", num:11, wp:[{t:0,x:21,z:0},{t:1.3,x:21.4,z:0},{t:2.8,x:26,z:-1.4},{t:6,x:26,z:-1.4}] },
+    { team:"atk", num:8,  wp:[{t:0,x:18,z:2},{t:6,x:18.5,z:2}] },
+    { team:"def", num:1,  wp:[{t:0,x:33.2,z:0},{t:2.2,x:32.9,z:1.0},{t:2.75,x:33.3,z:-0.6},{t:3.1,x:33.5,z:-1.6},{t:6,x:33.5,z:-1.6}] },
+    { team:"def", num:2,  wp:[{t:0,x:32.4,z:2.6},{t:2.2,x:31.6,z:3.0},{t:6,x:31.6,z:3.0}] },
+    { team:"def", num:3,  wp:[{t:0,x:31.6,z:-2.4},{t:2.4,x:31.2,z:-1.6},{t:6,x:31.2,z:-1.6}] },
+    { team:"def", num:4,  wp:[{t:0,x:30.2,z:0.6},{t:2.3,x:29.7,z:1.8},{t:6,x:29.7,z:1.8}] },
+    { team:"def", num:5,  wp:[{t:0,x:29.4,z:4.4},{t:2.2,x:29.8,z:3.4},{t:6,x:29.8,z:3.4}] },
+    { team:"def", num:6,  wp:[{t:0,x:25,z:1},{t:6,x:24.6,z:1.4}] }
+  ]
+},
+{
+  name: "パントキック対応",
+  tag: "守備の基本",
+  desc: "相手GKのパントキックに対する守備の基本。ボールが蹴られた瞬間にDFラインが一度下がって落下点を見極め、落下点の後ろから前向きに入ってヘディングでクリアする。下がらずに待つと頭の上を越される。",
+  coach: "コーチングポイント：蹴られた瞬間に全員で「下がれ！」の声掛け。クリアは「高く・遠く・外へ」。セカンドボールの回収役(アンカー)を必ず用意する。",
+  duration: 6.5,
+  ball: [
+    { t:0,   x:-32.4, z:0,  y:0.9 },
+    { t:0.9, x:-32.4, z:0,  y:0.9 },
+    { t:2.9, x:7,     z:3,  h:13, y:1.75 },
+    { t:4.3, x:-8,    z:11, h:8 },
+    { t:5.6, x:-9.6,  z:11.9, h:0.4 }
+  ],
+  players: [
+    { team:"atk", num:1,  wp:[{t:0,x:-33.4,z:0},{t:0.9,x:-32.2,z:0},{t:6.5,x:-32.6,z:0.3}] },
+    { team:"atk", num:9,  wp:[{t:0,x:1,z:-3},{t:1.0,x:1.2,z:-2.6},{t:2.9,x:6.4,z:1.2},{t:4.0,x:8,z:2.4},{t:6.5,x:8,z:2.4}] },
+    { team:"atk", num:10, wp:[{t:0,x:-1,z:7},{t:1.0,x:-0.6,z:7},{t:2.9,x:5,z:6},{t:4.5,x:6,z:7.4},{t:6.5,x:6,z:7.4}] },
+    { team:"atk", num:8,  wp:[{t:0,x:-8,z:-10},{t:3,x:-2,z:-8.4},{t:5,x:0,z:-7.4},{t:6.5,x:0,z:-7.4}] },
+    { team:"atk", num:7,  wp:[{t:0,x:-10,z:12},{t:3,x:-5,z:11},{t:5.4,x:-7.4,z:11.4},{t:6.5,x:-7.4,z:11.4}] },
+    { team:"def", num:2,  wp:[{t:0,x:5,z:-12},{t:1.1,x:5,z:-12},{t:2.2,x:11,z:-10},{t:3.0,x:9.4,z:-9},{t:6.5,x:9.4,z:-9}] },
+    { team:"def", num:3,  wp:[{t:0,x:5,z:-4},{t:1.1,x:5,z:-4},{t:2.2,x:10.5,z:-3},{t:3.0,x:9,z:-2.4},{t:6.5,x:9,z:-2.4}] },
+    { team:"def", num:4,  wp:[{t:0,x:5,z:2},{t:1.05,x:5,z:2},{t:2.1,x:10.5,z:3.2},{t:2.55,x:8.6,z:3.1},{t:2.9,x:7.1,z:3.0},{t:3.5,x:6.4,z:3.7},{t:6.5,x:6.4,z:3.7}] },
+    { team:"def", num:5,  wp:[{t:0,x:5,z:10},{t:1.1,x:5,z:10},{t:2.2,x:11,z:11},{t:3.0,x:10,z:10.2},{t:6.5,x:10,z:10.2}] },
+    { team:"def", num:6,  wp:[{t:0,x:-3,z:7},{t:1.6,x:-3,z:7},{t:3.2,x:-4,z:8.6},{t:4.4,x:-7.4,z:10.6},{t:5.6,x:-9.2,z:11.7},{t:6.5,x:-9.2,z:11.7}] },
+    { team:"def", num:1,  wp:[{t:0,x:32.7,z:0},{t:6.5,x:32.7,z:0}] }
+  ]
+},
+{
+  name: "スローイン サードマン",
+  tag: "セットプレー",
+  desc: "マークされている選手へ一度投げて、ワンタッチで足元へ「落とし」、フリーの3人目が前を向いてスペースへ抜け出すコンビネーション。密集しやすいスローインでは「3人目の動き」が最も効果的な崩し方。",
+  coach: "コーチングポイント：受け手は投げる瞬間にマークを一歩外す(チェックの動き)。落としはワンタッチ、3人目は落とす前に走り出しておく。",
+  duration: 6,
+  ball: [
+    { t:0,    x:3.4, z:24.7, y:1.9 },
+    { t:0.85, x:3.4, z:24.7, y:1.9 },
+    { t:1.5,  x:5.5, z:20.7, h:1.0, y:0.4 },
+    { t:1.85, x:5.5, z:20.6 },
+    { t:2.45, x:1.9, z:19.6, h:0.2 },
+    { t:2.95, x:1.9, z:19.6 },
+    { t:3.9,  x:8.6, z:16.0, h:0.9 },
+    { t:5.2,  x:13.8, z:15.0 }
+  ],
+  players: [
+    { team:"atk", num:2,  wp:[{t:0,x:2.4,z:25.6},{t:1.4,x:2.4,z:25.6},{t:3.4,x:4,z:22},{t:6,x:4.6,z:21}] },
+    { team:"atk", num:9,  wp:[{t:0,x:6.6,z:19.4},{t:0.8,x:5.7,z:20.6},{t:1.9,x:5.5,z:20.4},{t:2.8,x:6.6,z:19.2},{t:6,x:6.6,z:19.2}] },
+    { team:"atk", num:8,  wp:[{t:0,x:0,z:18.6},{t:1.4,x:0.7,z:19.2},{t:2.45,x:1.8,z:19.4},{t:3.4,x:2.6,z:18.6},{t:4.6,x:4.4,z:17.6},{t:6,x:4.4,z:17.6}] },
+    { team:"atk", num:10, wp:[{t:0,x:-2,z:13.5},{t:2.3,x:-1.4,z:13.8},{t:3.9,x:8.4,z:16.1},{t:5.2,x:13.5,z:15.1},{t:6,x:14.6,z:15}] },
+    { team:"def", num:4,  wp:[{t:0,x:6.8,z:18.3},{t:0.9,x:6.1,z:19.6},{t:1.9,x:5.9,z:19.4},{t:2.8,x:6.5,z:18.4},{t:6,x:6.5,z:18.4}] },
+    { team:"def", num:6,  wp:[{t:0,x:1.5,z:16.6},{t:2.5,x:1.8,z:18.2},{t:3.4,x:2.8,z:17.2},{t:6,x:2.8,z:17.2}] },
+    { team:"def", num:3,  wp:[{t:0,x:9,z:11.5},{t:3.9,x:9.5,z:12.5},{t:5.2,x:12.4,z:13.6},{t:6,x:13,z:13.8}] },
+    { team:"def", num:5,  wp:[{t:0,x:3.5,z:22},{t:1.2,x:4.2,z:21.6},{t:6,x:4.2,z:21.6}] }
+  ]
+},
+{
+  name: "8人制ビルドアップ 2-3-2",
+  tag: "ポゼッション",
+  desc: "8人制の王道フォーメーション2-3-2でのビルドアップ。GKからDF→アンカー→サイドMFと相手プレスの逆を取りながら前進し、最後はライン間で待つFWへ縦パスを打ち込む。GKも「9人目のフィールドプレーヤー」。",
+  coach: "コーチングポイント：相手FWのプレスの矢印(走る方向)を見て、その逆側から運ぶ。アンカーは常に半身で「前を向ける体の向き」を作っておく。",
+  duration: 8,
+  ball: [
+    { t:0,   x:-32.2, z:0 },
+    { t:0.8, x:-32.2, z:0 },
+    { t:1.6, x:-24.6, z:-11.4, h:0.5 },
+    { t:2.3, x:-24.6, z:-11.4 },
+    { t:3.1, x:-17.6, z:-3.2, h:0.4 },
+    { t:3.9, x:-17.6, z:-3.2 },
+    { t:5.0, x:-5.6,  z:-17.4, h:1.6 },
+    { t:5.2, x:-5.6,  z:-17.4 },
+    { t:6.4, x:2.4,   z:-15.6 },
+    { t:7.2, x:6.4,   z:-6.2, h:0.5 },
+    { t:8,   x:6.6,   z:-6 }
+  ],
+  players: [
+    { team:"atk", num:1,  wp:[{t:0,x:-32.6,z:0},{t:0.8,x:-32.3,z:0},{t:2.2,x:-33,z:0.6},{t:8,x:-33,z:0.6}] },
+    { team:"atk", num:2,  wp:[{t:0,x:-25,z:-10},{t:1.6,x:-24.8,z:-11.2},{t:2.5,x:-24.6,z:-11.2},{t:4,x:-22,z:-9},{t:8,x:-21.5,z:-9}] },
+    { team:"atk", num:3,  wp:[{t:0,x:-25,z:10},{t:2.5,x:-23,z:7},{t:8,x:-22.5,z:7}] },
+    { team:"atk", num:6,  wp:[{t:0,x:-15,z:0},{t:1.2,x:-15.4,z:-0.6},{t:2.4,x:-17.8,z:-3.4},{t:3.2,x:-17.6,z:-3},{t:4.4,x:-14,z:-4},{t:5.8,x:-11.5,z:-4.4},{t:8,x:-10,z:-4.4}] },
+    { team:"atk", num:7,  wp:[{t:0,x:-13,z:-16},{t:3.5,x:-7.6,z:-17.4},{t:5.0,x:-5.8,z:-17.2},{t:6.4,x:2.2,z:-15.8},{t:7.4,x:3.6,z:-14},{t:8,x:4.4,z:-13}] },
+    { team:"atk", num:8,  wp:[{t:0,x:-13,z:16},{t:4,x:-8,z:14},{t:8,x:-4,z:12}] },
+    { team:"atk", num:9,  wp:[{t:0,x:-2,z:-6},{t:5.4,x:1,z:-7},{t:6.6,x:4.6,z:-6.8},{t:7.2,x:6.2,z:-6.2},{t:8,x:7.6,z:-5.2}] },
+    { team:"atk", num:10, wp:[{t:0,x:-2,z:6},{t:5,x:2,z:4},{t:8,x:5,z:2}] },
+    { team:"def", num:9,  wp:[{t:0,x:-24,z:4},{t:0.9,x:-27,z:2},{t:1.8,x:-28.4,z:-3},{t:3.4,x:-22,z:-6},{t:8,x:-20,z:-5}] },
+    { team:"def", num:10, wp:[{t:0,x:-20,z:-8},{t:1.6,x:-22.4,z:-10.4},{t:2.6,x:-21.4,z:-9.4},{t:4,x:-18,z:-7},{t:8,x:-17,z:-6}] },
+    { team:"def", num:7,  wp:[{t:0,x:-8,z:-15},{t:4.5,x:-7,z:-16.4},{t:5.6,x:-3,z:-16},{t:6.6,x:1,z:-14.6},{t:8,x:3,z:-13.6}] },
+    { team:"def", num:6,  wp:[{t:0,x:-9,z:0},{t:4,x:-11,z:-3},{t:6,x:-6,z:-6},{t:7.4,x:3,z:-6},{t:8,x:4.4,z:-5.8}] },
+    { team:"def", num:8,  wp:[{t:0,x:-8,z:13},{t:5,x:-6,z:10},{t:8,x:-3,z:8}] },
+    { team:"def", num:2,  wp:[{t:0,x:8,z:-8},{t:6,x:6,z:-9},{t:8,x:4.4,z:-8.4}] },
+    { team:"def", num:3,  wp:[{t:0,x:8,z:8},{t:6,x:6,z:6},{t:8,x:4.4,z:5}] },
+    { team:"def", num:1,  wp:[{t:0,x:32.6,z:0},{t:8,x:32.6,z:0}] }
+  ]
+},
+{
+  name: "カウンター攻撃",
+  tag: "トランジション",
+  desc: "自陣でのボール奪取から、わずか3本のパスで仕留める速攻。奪った瞬間に前線の選手が一斉にスプリントし、相手の帰陣が間に合う前にフィニッシュまで持ち込む。「奪って3秒」が勝負。",
+  coach: "コーチングポイント：奪った選手は最初の縦パスを最速で。追い越す選手(3人目)がシュートコースを作る。攻め切れない時は無理せずキープに切り替える判断も大事。",
+  duration: 6.5, goalAt: 5.3,
+  ball: [
+    { t:0,    x:-12,   z:8 },
+    { t:0.6,  x:-6.4,  z:4.6, h:0.2 },
+    { t:1.1,  x:-6.4,  z:4.6 },
+    { t:1.9,  x:3.8,   z:0.8, h:0.8 },
+    { t:2.0,  x:3.8,   z:0.8 },
+    { t:3.6,  x:17.8,  z:2.0 },
+    { t:4.3,  x:23.8,  z:-6.8, h:0.9 },
+    { t:4.8,  x:23.8,  z:-6.8 },
+    { t:5.3,  x:34.4,  z:-1.4, h:0.5 },
+    { t:5.6,  x:35.3,  z:-1.6 }
+  ],
+  players: [
+    { team:"atk", num:6,  wp:[{t:0,x:-7.6,z:3},{t:0.6,x:-6.6,z:4.4},{t:1.2,x:-6.4,z:4.4},{t:2.6,x:-2,z:3},{t:6.5,x:0,z:3}] },
+    { team:"atk", num:9,  wp:[{t:0,x:1.5,z:-1},{t:1.0,x:2.2,z:-0.2},{t:1.9,x:3.9,z:0.7},{t:3.6,x:17.6,z:1.9},{t:4.6,x:20,z:3.4},{t:6.5,x:20,z:3.4}] },
+    { team:"atk", num:10, wp:[{t:0,x:7,z:-14},{t:1.6,x:10,z:-13},{t:3.6,x:21.4,z:-8},{t:4.3,x:23.9,z:-6.9},{t:4.8,x:24.3,z:-6.7},{t:5.4,x:26,z:-5.4},{t:6.0,x:28,z:-4.4},{t:6.5,x:28,z:-4.4}] },
+    { team:"atk", num:7,  wp:[{t:0,x:-4,z:-6},{t:2.5,x:4,z:-9},{t:4.5,x:12,z:-11},{t:6.5,x:14,z:-11}] },
+    { team:"atk", num:8,  wp:[{t:0,x:-12,z:-2},{t:3,x:-4,z:-1},{t:6.5,x:0,z:0}] },
+    { team:"def", num:2,  wp:[{t:0,x:1,z:10},{t:1.5,x:4,z:7},{t:3.6,x:14,z:3},{t:5,x:20,z:0},{t:6.5,x:21,z:0}] },
+    { team:"def", num:3,  wp:[{t:0,x:-1,z:-4},{t:2,x:6,z:-4},{t:3.8,x:14,z:-4.4},{t:5,x:19,z:-4},{t:6.5,x:20,z:-4}] },
+    { team:"def", num:4,  wp:[{t:0,x:-9,z:-11},{t:2.5,x:0,z:-11},{t:4.5,x:10,z:-10},{t:6.5,x:12,z:-10}] },
+    { team:"def", num:5,  wp:[{t:0,x:-13,z:9},{t:1.5,x:-8,z:7},{t:4,x:0,z:5},{t:6.5,x:2,z:4}] },
+    { team:"def", num:1,  wp:[{t:0,x:32.6,z:0},{t:4.3,x:31.6,z:-0.6},{t:4.9,x:31.2,z:-1.4},{t:5.3,x:32.4,z:-2.6},{t:6.5,x:32.6,z:-2.8}] }
+  ]
+}
+];
+
+/* ============================================================
+   戦術ボードJSON → シーン変換
+   tactics-board.html の書出形式:
+   { app:"tactics-board", version:1, activeView,
+     boards:{ corner|throwin|eight: { players:[{team,x,y,num}], arrows:[{kind,x1,y1,x2,y2}] } } }
+============================================================ */
+const VIEW_LABEL = { corner:"コーナーキック", throwin:"スローイン", eight:"8人制" };
+const CONV = {
+  /* corner: ゴールライン=y0, ゴール中心=x22, フィールド56x34 → +Xゴール前に配置 */
+  corner: (x, y) => { const s = 25 / 34; return { x: HALF_L - y * s, z: (x - 22) * s }; },
+  /* throwin: タッチライン=y0, 52.5x46 → 右タッチライン(Z=-25)沿い */
+  throwin: (x, y) => ({ x: x - 26.25, z: y - 25 }),
+  /* eight: 68x50 フルピッチそのまま */
+  eight: (x, y) => ({ x: x - HALF_L, z: y - HALF_W })
+};
+const clampPitch = p => ({
+  x: Math.max(-HALF_L - 1.5, Math.min(HALF_L + 1.5, p.x)),
+  z: Math.max(-HALF_W - 1.5, Math.min(HALF_W + 1.5, p.z))
+});
+const dist2 = (a, b) => { const dx = a.x - b.x, dz = a.z - b.z; return dx * dx + dz * dz; };
+
+function buildImportedScene(d){
+  if (!d || typeof d !== "object" || !d.boards) throw new Error("boards missing");
+  const keys = ["corner", "throwin", "eight"];
+  const hasContent = k => {
+    const b = d.boards[k];
+    return b && Array.isArray(b.players) && b.players.some(p => ["atk","def","ball"].includes(p.team));
+  };
+  let key = (keys.includes(d.activeView) && hasContent(d.activeView)) ? d.activeView : keys.find(hasContent);
+  if (!key) throw new Error("no markers");
+  const b = d.boards[key];
+  const conv = CONV[key];
+  const valid = v => typeof v === "number" && isFinite(v);
+
+  const rawPlayers = (b.players || []).filter(p =>
+    ["atk","def","ball"].includes(p.team) && valid(+p.x) && valid(+p.y));
+  const rawArrows = (b.arrows || []).filter(a =>
+    ["move","pass","dribble"].includes(a.kind) &&
+    [a.x1,a.y1,a.x2,a.y2].every(v => valid(+v)));
+
+  const arrows = rawArrows.map(a => ({
+    kind: a.kind,
+    s: clampPitch(conv(+a.x1, +a.y1)),
+    e: clampPitch(conv(+a.x2, +a.y2)),
+    used: false
+  }));
+
+  /* 選手: 起点が近い move/dribble 矢印に沿って移動 */
+  const players = [];
+  const counters = { atk:0, def:0 };
+  const T_MOVE_START = 0.7, T_MOVE_END = 3.6;
+  for (const p of rawPlayers){
+    if (p.team === "ball") continue;
+    const pos = clampPitch(conv(+p.x, +p.y));
+    counters[p.team]++;
+    const num = (+p.num > 0 && +p.num < 100) ? +p.num : counters[p.team];
+    let best = null, bd = 16; /* 4m以内 */
+    for (const a of arrows){
+      if (a.used || a.kind === "pass") continue;
+      const dd = dist2(a.s, pos);
+      if (dd < bd){ bd = dd; best = a; }
+    }
+    const wp = [{ t:0, x:pos.x, z:pos.z }];
+    if (best){
+      best.used = true;
+      wp.push({ t:T_MOVE_START, x:pos.x, z:pos.z });
+      wp.push({ t:T_MOVE_END, x:best.e.x, z:best.e.z });
+    }
+    players.push({ team:p.team, num, wp });
+  }
+  if (!players.length) throw new Error("no players");
+
+  /* ボール: 起点が近い pass/dribble 矢印をチェーンでたどる */
+  const ballMarker = rawPlayers.find(p => p.team === "ball");
+  let ballWp, lastT = 0, goalAt;
+  if (ballMarker){
+    let cur = clampPitch(conv(+ballMarker.x, +ballMarker.y));
+    ballWp = [{ t:0, x:cur.x, z:cur.z }];
+    let t = 0.9;
+    ballWp.push({ t, x:cur.x, z:cur.z });
+    for (let i = 0; i < 12; i++){
+      let best = null, bd = 36; /* 6m以内 */
+      for (const a of arrows){
+        if (a.used && a.kind === "pass") continue;
+        if (a.kind === "move") continue;
+        const dd = dist2(a.s, cur);
+        if (dd < bd){ bd = dd; best = a; }
+      }
+      if (!best) break;
+      best.used = true;
+      const d0 = Math.sqrt(dist2(best.s, best.e));
+      const dt = Math.max(0.5, Math.min(1.6, d0 / 12));
+      t += dt;
+      const h = best.kind === "pass" ? Math.max(0.25, Math.min(5, d0 * 0.15)) : 0;
+      ballWp.push({ t, x:best.e.x, z:best.e.z, h });
+      t += 0.25;
+      ballWp.push({ t, x:best.e.x, z:best.e.z });
+      cur = best.e;
+    }
+    lastT = t;
+    /* ゴール判定: 最終位置がゴールマウス内 */
+    if (Math.abs(cur.x) > HALF_L - 1 && Math.abs(cur.z) < GOAL_W / 2 + 0.6){
+      goalAt = lastT - 0.25;
+    }
+  } else {
+    ballWp = [{ t:0, x:0, z:0 }];
+  }
+
+  const duration = Math.max(4.5, T_MOVE_END + 0.9, lastT + 1.2);
+  return {
+    name: "インポート戦術（" + VIEW_LABEL[key] + "）",
+    tag: "戦術ボード",
+    desc: "tactics-board.html から読み込んだ配置です。マーカー" + players.length +
+          "人・矢印" + arrows.length + "本を3Dシーンに変換しました。移動/ドリブル矢印は選手の走行、パス矢印はボールの飛行として再生されます。",
+    coach: "",
+    duration, goalAt,
+    ball: ballWp,
+    players
+  };
+}
+
+/* ============================================================
+   再生エンジン
+============================================================ */
+const state = {
+  scene: null, t: 0, playing: false, speed: 1,
+  camMode: "coach", followIdx: 0, goalShownAt: -1
+};
+
+const $ = id => document.getElementById(id);
+const playBtn = $("playBtn"), seekEl = $("seek"), timeLbl = $("timeLbl");
+
+function loadScene(sc, autoplay = true){
+  state.scene = sc;
+  state.t = 0;
+  state.goalShownAt = -1;
+  buildPlayers(sc.players);
+  $("sceneName").textContent = sc.name;
+  $("sceneDesc").textContent = sc.desc;
+  $("sceneCoach").textContent = sc.coach || "";
+  buildPlayerButtons();
+  if (state.followIdx >= sc.players.length) state.followIdx = 0;
+  /* 攻撃側の先頭選手をデフォルト追従に */
+  const atkIdx = sc.players.findIndex(p => p.team === "atk");
+  state.followIdx = atkIdx >= 0 ? atkIdx : 0;
+  syncPlayerButtons();
+  state.playing = autoplay;
+  playBtn.innerHTML = state.playing ? "&#10074;&#10074;" : "&#9654;";
+  updateWorld(0);
+}
+
+function updateWorld(t){
+  const sc = state.scene;
+  if (!sc) return;
+  const bp = sampleBall(sc.ball, t);
+  ball.position.set(bp.x, Math.max(bp.y, BALL_R), bp.z);
+
+  for (let i = 0; i < playerObjs.length; i++){
+    const po = playerObjs[i];
+    const p = samplePlayer(po.def.wp, t);
+    po.grp.position.set(p.x, 0, p.z);
+    /* 向き: 移動中は進行方向 / 停止中はボール方向 */
+    const p2 = samplePlayer(po.def.wp, t + 0.12);
+    const dx = p2.x - p.x, dz = p2.z - p.z;
+    let target;
+    if (dx * dx + dz * dz > 0.0004){
+      target = Math.atan2(dx, dz);
+    } else {
+      target = Math.atan2(bp.x - p.x, bp.z - p.z);
+    }
+    let diff = target - po.rotY;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    po.rotY += diff * 0.14;
+    po.grp.rotation.y = po.rotY;
+    po.ring.visible = (state.camMode === "third" && i === state.followIdx);
+  }
+  /* ボール回転(雰囲気) */
+  ball.rotation.x -= 0.15;
+  ball.rotation.z += 0.02;
+}
+
+/* ---------- ゴール演出 ---------- */
+const goalFx = $("goalFx");
+let goalTimer = null;
+function fireGoal(){
+  goalFx.classList.remove("show");
+  void goalFx.offsetWidth;          // アニメ再スタート
+  goalFx.classList.add("show");
+  clearTimeout(goalTimer);
+  goalTimer = setTimeout(() => goalFx.classList.remove("show"), 2000);
+}
+
+/* ---------- カメラ ---------- */
+const camVec = new THREE.Vector3();
+const lookVec = new THREE.Vector3();
+function applyCamera(dt){
+  const sc = state.scene;
+  controls.enabled = state.camMode === "coach";
+  if (state.camMode === "coach"){
+    controls.update();
+    return;
+  }
+  const k = 1 - Math.pow(0.0018, dt);      // フレームレート非依存の追従係数
+  if (state.camMode === "top"){
+    camVec.set(0, 88, 0.1);
+    camera.position.lerp(camVec, k);
+    camera.lookAt(0, 0, 0);
+  } else if (state.camMode === "goal"){
+    /* ボールに近い側のゴール裏 */
+    const side = ball.position.x >= 0 ? 1 : -1;
+    camVec.set(side * (HALF_L + 9), 6.5, 0);
+    camera.position.lerp(camVec, k);
+    camera.lookAt(ball.position.x * 0.4, 1, ball.position.z * 0.4);
+  } else if (state.camMode === "third"){
+    const po = playerObjs[state.followIdx];
+    if (!po) return;
+    const rot = po.rotY;
+    const fx = Math.sin(rot), fz = Math.cos(rot);
+    camVec.set(po.grp.position.x - fx * 7.5, 4.6, po.grp.position.z - fz * 7.5);
+    camera.position.lerp(camVec, k);
+    lookVec.set(po.grp.position.x + fx * 7, 1.2, po.grp.position.z + fz * 7);
+    camera.lookAt(lookVec);
+  }
+}
+
+/* ---------- メインループ ---------- */
+let prevMs = performance.now();
+function loop(ms){
+  requestAnimationFrame(loop);
+  const dt = Math.min((ms - prevMs) / 1000, 0.06);
+  prevMs = ms;
+  const sc = state.scene;
+  if (sc){
+    if (state.playing){
+      const prevT = state.t;
+      state.t += dt * state.speed;
+      if (sc.goalAt !== undefined && prevT < sc.goalAt && state.t >= sc.goalAt && state.goalShownAt !== sc.goalAt){
+        state.goalShownAt = sc.goalAt;
+        fireGoal();
+      }
+      if (state.t >= sc.duration){
+        state.t = sc.duration;
+        state.playing = false;
+        playBtn.innerHTML = "&#9654;";
+      }
+    }
+    updateWorld(state.t);
+    seekEl.value = Math.round(state.t / sc.duration * 1000);
+    timeLbl.textContent = state.t.toFixed(1) + " / " + sc.duration.toFixed(1) + "s";
+  }
+  applyCamera(dt);
+  renderer.render(scene, camera);
+}
+
+/* ============================================================
+   UI 配線
+============================================================ */
+function toast(msg, isErr){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.toggle("err", !!isErr);
+  t.classList.add("show");
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+/* プリセット一覧 */
+const presetList = $("presetList");
+let activePresetBtn = null;
+function addPresetButton(sc, label){
+  const btn = document.createElement("button");
+  btn.className = "pbtn";
+  btn.innerHTML = '<span class="tag">' + label + "</span>" + sc.name;
+  btn.addEventListener("click", () => {
+    loadScene(sc, true);
+    if (activePresetBtn) activePresetBtn.classList.remove("on");
+    activePresetBtn = btn;
+    btn.classList.add("on");
+    if (innerWidth <= 760) document.body.classList.remove("panel-open");
+  });
+  presetList.appendChild(btn);
+  return btn;
+}
+PRESETS.forEach((sc, i) => {
+  const b = addPresetButton(sc, sc.tag);
+  if (i === 0){ activePresetBtn = b; b.classList.add("on"); }
+});
+
+/* 再生コントロール */
+playBtn.addEventListener("click", () => {
+  if (!state.scene) return;
+  if (!state.playing && state.t >= state.scene.duration) state.t = 0;
+  state.playing = !state.playing;
+  playBtn.innerHTML = state.playing ? "&#10074;&#10074;" : "&#9654;";
+});
+$("replayBtn").addEventListener("click", () => {
+  if (!state.scene) return;
+  state.t = 0;
+  state.goalShownAt = -1;
+  state.playing = true;
+  playBtn.innerHTML = "&#10074;&#10074;";
+});
+seekEl.addEventListener("input", () => {
+  if (!state.scene) return;
+  state.t = seekEl.value / 1000 * state.scene.duration;
+  state.goalShownAt = -1;
+  updateWorld(state.t);
+});
+document.querySelectorAll(".spdBtn").forEach(b => {
+  b.addEventListener("click", () => {
+    state.speed = parseFloat(b.dataset.spd);
+    document.querySelectorAll(".spdBtn").forEach(x => x.classList.toggle("on", x === b));
+  });
+});
+
+/* カメラモード */
+document.querySelectorAll(".camBtn").forEach(b => {
+  b.addEventListener("click", () => {
+    state.camMode = b.dataset.cam;
+    document.querySelectorAll(".camBtn").forEach(x => x.classList.toggle("on", x === b));
+    $("playerRow").classList.toggle("show", state.camMode === "third");
+    if (state.camMode === "coach"){
+      controls.target.set(0, 0, 0);
+      camera.position.set(0, 30, 46);
+    }
+  });
+});
+
+/* 三人称: 選手選択 */
+function buildPlayerButtons(){
+  const box = $("playerBtns");
+  box.innerHTML = "";
+  state.scene.players.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.className = "plbtn " + p.team;
+    b.textContent = p.num;
+    b.title = (p.team === "atk" ? "攻撃" : "守備") + " #" + p.num;
+    b.addEventListener("click", () => {
+      state.followIdx = i;
+      syncPlayerButtons();
+      if (state.camMode !== "third"){
+        state.camMode = "third";
+        document.querySelectorAll(".camBtn").forEach(x => x.classList.toggle("on", x.dataset.cam === "third"));
+        $("playerRow").classList.add("show");
+      }
+    });
+    box.appendChild(b);
+  });
+}
+function syncPlayerButtons(){
+  const btns = $("playerBtns").children;
+  for (let i = 0; i < btns.length; i++)
+    btns[i].classList.toggle("on", i === state.followIdx);
+}
+
+/* パネル開閉(モバイル) */
+$("panelToggle").addEventListener("click", () => {
+  document.body.classList.toggle("panel-open");
+});
+
+/* JSONインポート */
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      const sc = buildImportedScene(d);
+      /* 既存のインポートボタンを差し替え */
+      const old = presetList.querySelector(".pbtn.imported");
+      if (old) old.remove();
+      const btn = addPresetButton(sc, "読込");
+      btn.classList.add("imported");
+      btn.click();
+      toast("戦術ボードのJSONを読み込みました");
+    } catch (err){
+      let msg = "読み込みに失敗しました：";
+      if (err instanceof SyntaxError) msg += "JSONとして解析できません。";
+      else if (err.message === "boards missing") msg += "戦術ボードの書出ファイルではないようです（boardsがありません）。";
+      else if (err.message === "no markers" || err.message === "no players") msg += "選手マーカーが1つも含まれていません。";
+      else msg += "形式が不正です。";
+      msg += " tactics-board.htmlの「JSON書出」で保存したファイルを選んでください。";
+      toast(msg, true);
+    }
+    e.target.value = "";
+  };
+  r.onerror = () => toast("ファイルを読み取れませんでした。", true);
+  r.readAsText(f);
+});
+
+/* リサイズ */
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ---------- 起動 ---------- */
+loadScene(PRESETS[0], true);
+requestAnimationFrame(loop);
+window.__T3D_OK = true;
+</script>
+</body>
+</html>
