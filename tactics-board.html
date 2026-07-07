@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>セットプレー戦術ボード</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%93%8B</text></svg>">
+<meta name="description" content="コーナーやFKの配置と動きをドラッグで描けるサッカー戦術ボード。プリセット再生・PNG保存・JSON共有に対応。">
+<meta property="og:title" content="セットプレー戦術ボード">
+<meta property="og:description" content="コーナーやFKの配置と動きをドラッグで描けるサッカー戦術ボード。プリセット再生・PNG保存・JSON共有に対応。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/tactics-board.html">
+<meta name="twitter:card" content="summary">
 <style>
   :root{
     --bg:#0f1318; --panel:#1a212a; --panel2:#222b36; --line:#2e3a47;
@@ -63,6 +70,8 @@
     .wrap{flex-direction:column;}
     .side{width:100%;}
   }
+  footer{text-align:center;font-size:12px;color:var(--sub);padding:6px 12px 22px;}
+  footer a{color:inherit;}
 </style>
 </head>
 <body>
@@ -130,6 +139,9 @@
     </div>
   </div>
 </div>
+<footer>
+  🧪 <a href="index.html">実験ラボ</a> | Built with Claude Fable 5
+</footer>
 <div id="toast"></div>
 <div id="flash"></div>
 <div id="golazo">&#9917; ゴラッソ!!</div>

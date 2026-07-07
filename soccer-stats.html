@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>セットプレー相関ラボ</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9A%BD</text></svg>">
+<meta name="description" content="身長とCKヘディング得点率の相関を散布図と回帰分析で探る、サッカー好きのための統計ダッシュボード。">
+<meta property="og:title" content="セットプレー相関ラボ">
+<meta property="og:description" content="身長とCKヘディング得点率の相関を散布図と回帰分析で探る、サッカー好きのための統計ダッシュボード。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/soccer-stats.html">
+<meta name="twitter:card" content="summary">
 <style>
   :root {
     --bg: #0d1512;
@@ -104,6 +111,8 @@
     color: var(--muted); font-size: 0.88rem;
   }
   .note b { color: var(--gk); }
+  footer { text-align: center; font-size: 0.78rem; color: var(--muted); padding: 6px 12px 26px; }
+  footer a { color: inherit; }
   #csvMsg { font-size: 0.85rem; margin-top: 8px; min-height: 1.2em; }
   #csvMsg.ok { color: var(--pitch); }
   #csvMsg.err { color: var(--fw); }
@@ -236,6 +245,10 @@
     矢印の向きは、散布図ではなくピッチの上で確かめましょう。
   </div>
 </div>
+
+<footer>
+  🧪 <a href="index.html">実験ラボ</a> | Built with Claude Fable 5
+</footer>
 
 <div id="modalBack">
   <div class="scout" id="scoutCard">

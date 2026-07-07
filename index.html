@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>実験ラボ | Fable 5 Playground</title>
+<meta name="description" content="Fable 5 と作った、遊び心のあるシミュレーション&可視化アプリ集。スポーツ分析から宴会芸、確率シミュレーション、家計分析まで12本の実験アプリを収蔵。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AA%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="実験ラボ">
+<meta property="og:description" content="Fable 5 と作った、遊び心のあるシミュレーション&可視化アプリ集。くだらないは、正義。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/">
+<meta property="og:site_name" content="実験ラボ">
+<meta name="twitter:card" content="summary">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -41,7 +49,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 18px;
     padding: 28px 24px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, opacity 0.3s ease, border-color 0.3s ease;
     backdrop-filter: blur(6px);
   }
   a.card:hover {
@@ -96,6 +104,96 @@
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.08); }
   }
+  /* ⭐ お気に入り */
+  .fav-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 6px;
+    cursor: pointer;
+    color: #ffd86f;
+    opacity: 0.65;
+    z-index: 2;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    font-family: inherit;
+  }
+  .fav-btn:hover { transform: scale(1.3); opacity: 1; }
+  a.card.fav {
+    border-color: rgba(255, 216, 111, 0.75);
+    box-shadow: 0 0 14px rgba(255, 216, 111, 0.18);
+  }
+  /* 訪問済みバッジ */
+  .visited-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    font-size: 0.66rem;
+    color: #8884aa;
+    border: 1px solid rgba(136, 132, 170, 0.4);
+    border-radius: 999px;
+    padding: 2px 9px;
+    pointer-events: none;
+  }
+  /* カテゴリフィルタ */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 1080px;
+    margin-bottom: 28px;
+  }
+  .chip {
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: #c5c2da;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .chip:hover { background: rgba(255, 255, 255, 0.14); }
+  .chip.active {
+    background: #ffd86f;
+    border-color: #ffd86f;
+    color: #1b1840;
+    font-weight: bold;
+  }
+  a.card.hide {
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none;
+  }
+  /* 🎲 ランダムボタン */
+  #random-btn {
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #1b1840;
+    background: linear-gradient(135deg, #ffd86f, #ffb36f);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 26px;
+    cursor: pointer;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 18px rgba(255, 216, 111, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  #random-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255, 216, 111, 0.45); }
+  #random-btn:disabled { cursor: wait; opacity: 0.75; transform: none; }
+  a.card.roulette-pick {
+    outline: 3px solid #ffd86f;
+    outline-offset: -1px;
+    box-shadow: 0 0 26px rgba(255, 216, 111, 0.6);
+    transform: scale(1.03);
+  }
   #subtitle { transition: opacity 0.4s ease; min-height: 1.5em; }
   .lab-count { color: #b8b5d0; font-size: 0.85rem; margin-top: 8px; }
   footer { margin-top: 56px; color: #8884aa; font-size: 0.8rem; text-align: center; }
@@ -107,6 +205,18 @@
     <p id="subtitle">Fable 5 と作った、遊び心のあるシミュレーション&amp;可視化アプリ集</p>
     <p class="lab-count" id="lab-count"></p>
   </header>
+
+  <button id="random-btn" type="button">🎲 ランダムで遊ぶ</button>
+
+  <div class="filters" id="filters">
+    <button class="chip active" type="button" data-cat="すべて">すべて</button>
+    <button class="chip" type="button" data-cat="スポーツ">スポーツ</button>
+    <button class="chip" type="button" data-cat="診断">診断</button>
+    <button class="chip" type="button" data-cat="宴会">宴会</button>
+    <button class="chip" type="button" data-cat="実務">実務</button>
+    <button class="chip" type="button" data-cat="シミュレーション">シミュレーション</button>
+    <button class="chip" type="button" data-cat="データ・雑学">データ・雑学</button>
+  </div>
 
   <div class="cards">
     <a class="card" href="ranking-japan.html">
@@ -235,6 +345,125 @@
       '雑学: 実験ラボの消費電力は、ほぼあなたの好奇心です。'
     ];
     document.getElementById('fun-fact').textContent = facts[seed % facts.length];
+
+    // ===== カテゴリ定義(複数所属可) =====
+    const CATS = {
+      'ranking-japan.html':   ['データ・雑学'],
+      'soccer-stats.html':    ['スポーツ'],
+      'poker-assist.html':    ['シミュレーション'],
+      'tactics-board.html':   ['スポーツ'],
+      'trivia-lab.html':      ['データ・雑学'],
+      'enkai-lab.html':       ['宴会'],
+      'golf-shindan.html':    ['診断', 'スポーツ'],
+      'golf-type16.html':     ['診断', 'スポーツ'],
+      'jihanki-sim.html':     ['シミュレーション'],
+      'gaichu-cost.html':     ['実務'],
+      'alcohol-counter.html': ['宴会'],
+      'setsuyaku-maker.html': ['実務']
+    };
+
+    const LS_FAV = 'jikkenlab-favorites';
+    const LS_VISITED = 'jikkenlab-visited';
+    const loadSet = k => {
+      try { return new Set(JSON.parse(localStorage.getItem(k)) || []); }
+      catch (e) { return new Set(); }
+    };
+    const saveSet = (k, s) => { try { localStorage.setItem(k, JSON.stringify([...s])); } catch (e) {} };
+    const favs = loadSet(LS_FAV);
+    const visited = loadSet(LS_VISITED);
+
+    // ===== ⭐ お気に入り & 訪問済みマーク =====
+    function applyFav(card, key) {
+      const on = favs.has(key);
+      card.classList.toggle('fav', on);
+      card.querySelector('.fav-btn').textContent = on ? '⭐' : '☆';
+      card.style.order = on ? 0 : 1; // お気に入りはグリッド先頭へ
+    }
+
+    cards.forEach(card => {
+      const key = card.getAttribute('href');
+
+      const btn = document.createElement('button');
+      btn.className = 'fav-btn';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'お気に入りに追加/解除');
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        favs.has(key) ? favs.delete(key) : favs.add(key);
+        saveSet(LS_FAV, favs);
+        applyFav(card, key);
+      });
+      card.appendChild(btn);
+      applyFav(card, key);
+
+      if (visited.has(key)) {
+        const v = document.createElement('span');
+        v.className = 'visited-badge';
+        v.textContent = '✓ 遊んだことあり';
+        card.appendChild(v);
+      }
+      card.addEventListener('click', () => {
+        visited.add(key);
+        saveSet(LS_VISITED, visited);
+      });
+    });
+
+    // ===== カテゴリフィルタ =====
+    const hideTimers = new Map();
+    function setCardVisible(card, show) {
+      clearTimeout(hideTimers.get(card));
+      if (show) {
+        card.style.display = '';
+        requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove('hide')));
+      } else {
+        card.classList.add('hide');
+        hideTimers.set(card, setTimeout(() => { card.style.display = 'none'; }, 320));
+      }
+    }
+    document.getElementById('filters').addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const cat = chip.dataset.cat;
+      document.querySelectorAll('#filters .chip').forEach(c => c.classList.toggle('active', c === chip));
+      cards.forEach(card => {
+        const cs = CATS[card.getAttribute('href')] || [];
+        setCardVisible(card, cat === 'すべて' || cs.includes(cat));
+      });
+    });
+
+    // ===== 🎲 ランダムで遊ぶ(ルーレット演出つき) =====
+    const randomBtn = document.getElementById('random-btn');
+    let rolling = false;
+    randomBtn.addEventListener('click', () => {
+      if (rolling) return;
+      const pool = [...cards].filter(c => c.style.display !== 'none');
+      if (!pool.length) return;
+      rolling = true;
+      randomBtn.disabled = true;
+      randomBtn.textContent = '🎲 抽選中…';
+      const targetIdx = Math.floor(Math.random() * pool.length);
+      const total = pool.length + targetIdx; // 1周まわってターゲットで停止
+      let i = 0, delay = 55;
+      (function spin() {
+        pool.forEach(c => c.classList.remove('roulette-pick'));
+        const c = pool[i % pool.length];
+        c.classList.add('roulette-pick');
+        if (i >= total) {
+          randomBtn.textContent = '🎯 決定!';
+          setTimeout(() => {
+            const href = c.getAttribute('href');
+            visited.add(href);
+            saveSet(LS_VISITED, visited);
+            window.location.href = href;
+          }, 650);
+          return;
+        }
+        i++;
+        delay = Math.min(delay * 1.12, 230); // だんだん減速
+        setTimeout(spin, delay);
+      })();
+    });
 
     // タイトル連打の隠し演出
     let clicks = 0, timer = null;
