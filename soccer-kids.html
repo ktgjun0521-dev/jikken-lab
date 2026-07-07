@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>こどもサッカーきょうしつ</title>
-<meta name="description" content="小学生（しょうがくせい）のためのサッカーがくしゅうアプリ。オフサイドたいけん・はんだんクイズ・うごきかたクイズで、8人制サッカーのルールとかしこいプレーをたのしくまなべる！">
+<meta name="description" content="小学生（しょうがくせい）のためのサッカーがくしゅうアプリ。オフサイドたいけん・はんだんクイズ・うごきかたクイズ・ポジショニングどうじょうで、8人制サッカーのルールとかしこいプレーをたのしくまなべる！">
 <meta property="og:title" content="こどもサッカーきょうしつ ⚽">
-<meta property="og:description" content="オフサイドたいけん・はんだんクイズ・うごきかたクイズ！ルールとかしこいうごきをゲームでまなぼう。">
+<meta property="og:description" content="オフサイドたいけん・はんだんクイズ・うごきかたクイズ・ポジショニングどうじょう！ルールとかしこいうごきをゲームでまなぼう。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ktgjun0521-dev.github.io/jikken-lab/soccer-kids.html">
 <meta property="og:site_name" content="実験ラボ">
@@ -50,7 +50,8 @@ h1.title{
 .coach .name{font-size:.72rem;color:#e07f00;display:block;margin-bottom:2px;}
 
 /* タブ */
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+@media(max-width:560px){.tabs{grid-template-columns:repeat(2,1fr);}}
 .tab{
   border:none;border-radius:20px;padding:12px 4px 10px;font-size:.95rem;font-weight:bold;cursor:pointer;
   color:#fff;box-shadow:0 5px 0 #00000030;transition:transform .1s;font-family:inherit;line-height:1.3;
@@ -60,6 +61,7 @@ h1.title{
 .tab[data-t="a"]{background:linear-gradient(180deg,#ff9e40,#f4711f);}
 .tab[data-t="b"]{background:linear-gradient(180deg,#42a5f5,#1976d2);}
 .tab[data-t="c"]{background:linear-gradient(180deg,#ab7bf0,#7b3fd4);}
+.tab[data-t="d"]{background:linear-gradient(180deg,#f0628f,#c2185b);}
 .tab.on{outline:4px solid #fff;transform:scale(1.03);}
 
 /* パネル */
@@ -147,6 +149,27 @@ canvas{width:100%;height:auto;display:block;border-radius:14px;touch-action:none
 .zonebtn[data-z="2"]{background:linear-gradient(180deg,#aed581,#689f38);}
 .zonebtn:disabled{opacity:.55;cursor:default;}
 
+/* 【D】ポジショニングどうじょう */
+.dfilters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+.dfilter{
+  border:none;border-radius:999px;padding:8px 14px;font-weight:bold;font-family:inherit;cursor:pointer;
+  background:#eceff1;color:#456;box-shadow:0 3px 0 #b0bec5;font-size:.9rem;
+}
+.dfilter:active{transform:translateY(2px);box-shadow:0 1px 0 #b0bec5;}
+.dfilter.on{background:linear-gradient(180deg,#f0628f,#c2185b);color:#fff;box-shadow:0 3px 0 #8e0038;}
+.poschip{display:inline-block;background:#c2185b;color:#fff;border-radius:8px;padding:2px 8px;margin-right:6px;font-size:.85rem;}
+.catchip{display:inline-block;background:#00897b;color:#fff;border-radius:8px;padding:2px 8px;margin-right:6px;font-size:.8rem;}
+.dmap-title{font-weight:bold;text-align:center;margin-top:12px;color:#7a5200;font-size:.95rem;}
+.dmap{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0;}
+@media(max-width:560px){.dmap{grid-template-columns:repeat(4,1fr);}}
+.dcell{
+  border:none;border-radius:12px;background:#fff;box-shadow:0 3px 0 #b0bec5;font-family:inherit;
+  font-weight:bold;padding:6px 2px;cursor:pointer;font-size:.8rem;color:#456;line-height:1.3;
+}
+.dcell:active{transform:translateY(2px);box-shadow:0 1px 0 #b0bec5;}
+.dcell .em{display:block;font-size:1.15rem;}
+.dcell.cur{outline:3px solid #c2185b;}
+
 .star-fly{position:fixed;left:0;top:0;pointer-events:none;font-size:30px;z-index:999;animation:starfly 1.1s ease-out forwards;}
 @keyframes starfly{
   0%{transform:translate(var(--x),var(--y)) scale(.4) rotate(0deg);opacity:1;}
@@ -173,6 +196,7 @@ footer{text-align:center;margin-top:26px;color:#fff;font-weight:bold;text-shadow
     <button class="tab on" data-t="a"><span class="em">🚦</span>オフサイド<br>たいけん</button>
     <button class="tab" data-t="b"><span class="em">🧠</span>はんだん<br>クイズ</button>
     <button class="tab" data-t="c"><span class="em">🏃</span>うごきかた<br>クイズ</button>
+    <button class="tab" data-t="d"><span class="em">🎯</span>ポジショ<br>ニング</button>
   </div>
 
   <!-- A: オフサイド -->
@@ -233,6 +257,34 @@ footer{text-align:center;margin-top:26px;color:#fff;font-weight:bold;text-shadow
     <div class="finish" id="cFinish"></div>
   </section>
 
+  <!-- D: ポジショニングどうじょう -->
+  <section class="panel" id="panel-d">
+    <h2>🎯 ポジショニングどうじょう</h2>
+    <div class="qhead">
+      <span class="qnum" id="dNum">もんだい 1/12</span>
+      <span class="status" id="statusD">⭐0 みならい🌱</span>
+    </div>
+    <div class="dfilters">
+      <button class="dfilter on" data-f="all">ぜんぶ</button>
+      <button class="dfilter" data-f="d">🛡️まもり</button>
+      <button class="dfilter" data-f="o">⚔️こうげき</button>
+      <button class="dfilter" data-f="t">⚡きりかえ</button>
+    </div>
+    <canvas id="cvD" width="700" height="440"></canvas>
+    <p class="hint">★（きみ）を ドラッグして「ここだ！」という ばしょに おこう</p>
+    <div class="qtext" id="dQ"></div>
+    <div class="btnrow">
+      <button class="bigbtn play" id="dCheck">📍 ここで どう？</button>
+      <button class="bigbtn reset" id="dReset">🔄 いちを もどす</button>
+      <button class="bigbtn next" id="dNext" style="display:none">つぎへ ▶</button>
+    </div>
+    <div class="verdict" id="dVerdict"></div>
+    <div class="explain" id="dExp"></div>
+    <div class="dmap-title">📋 せいせきマップ（ぜんぶ 🌟で マスター！）</div>
+    <div class="dmap" id="dMap"></div>
+    <div class="finish" id="dFinish"></div>
+  </section>
+
   <footer>🧪 実験ラボ | Built with Claude Fable 5</footer>
 </div>
 
@@ -244,7 +296,7 @@ const W = 700, H = 440;
 const px = v => v/100*W, py = v => v/100*H;
 
 /* --- セーブデータ --- */
-let state = {stars:0, b:[], c:[], mute:false};
+let state = {stars:0, b:[], c:[], d:[], dm:false, mute:false};
 try{
   const s = localStorage.getItem('soccerKids_v1');
   if(s) state = Object.assign(state, JSON.parse(s));
@@ -256,7 +308,7 @@ function rankName(s){
 }
 function updateStatus(){
   const t = '⭐'+state.stars+' '+rankName(state.stars);
-  $('statusB').textContent = t; $('statusC').textContent = t;
+  $('statusB').textContent = t; $('statusC').textContent = t; $('statusD').textContent = t;
 }
 function awardStar(){
   const before = rankName(state.stars);
@@ -327,7 +379,8 @@ let activeTab = 'a';
 const coachMsg = {
   a:'あおの ★せんしゅを ドラッグして うごかそう！オレンジの せんより まえは オフサイドだよ。▶で パス！',
   b:'しあいで よくある ばめんだよ。きみなら どうする？よ〜く かんがえてね！',
-  c:'★が きみだよ！ひかっている A・B・C から、いちばん いい うごきを えらぼう！'
+  c:'★が きみだよ！ひかっている A・B・C から、いちばん いい うごきを えらぼう！',
+  d:'ばめんを よんで、★（きみ）を いちばん いい ばしょに ドラッグ！「ここで どう？」で こたえあわせだよ！'
 };
 document.querySelectorAll('.tab').forEach(b=>{
   b.addEventListener('click',()=>{
@@ -340,6 +393,7 @@ document.querySelectorAll('.tab').forEach(b=>{
     popSound();
     if(activeTab==='b') renderB();
     if(activeTab==='c') renderC();
+    if(activeTab==='d') renderD();
   });
 });
 
@@ -919,14 +973,400 @@ function showFinishC(){
   $('cRetry').addEventListener('click', ()=>{ cIdx = 0; popSound(); renderC(); });
 }
 
+/* ============ 【D】ポジショニングどうじょう ============ */
+/*
+ 各シナリオ:
+  cat: 'd'=まもり 'o'=こうげき 't'=きりかえ / pos: きみのポジション
+  players: [x%,y%,'b'|'r'] （きみは ふくまない） / ball: [x%,y%]
+  you: スタートいち / ideal: りそうのいち / rad: [🌟,⭕,😅] はんてい半径(px)
+  geo: せんじょう条件 {a,b,perp,hint} / hint: もういちど用ヒント / exp: かいせつ
+  anim: せいこうプレー {ball:[…waypoints], you:[…waypoints], movers:[[idx,tx,ty]], text}
+  ※ぜんシナリオ：じぶんのゴールは ひだり、こうげきは みぎむき
+*/
+const dQuiz = [
+{ cat:'d', pos:'DF',
+  q:'あいての GKが ボールを もって、大きく パントキックを けるよ！ボールは あたまの うえを こえて とんでくる。どこで まつ？',
+  players:[[92,48,'r'],[32,38,'r'],[20,32,'b'],[20,68,'b'],[45,60,'b']],
+  ball:[90,47], arrows:[[90,47,35,48]],
+  you:[48,55], ideal:[24,50],
+  hint:'とんでくる ボールの「おちてくる ところより うしろ」で まつと、まえむきで ヘディングできるよ！',
+  exp:'パントキックは とお〜くまで とぶ！まえに のこっていると、ボールが あたまを こえて だいピンチ。ラインを さげて おちてくる ところより うしろで まてば、まえむきで ヘディングクリアできるよ。',
+  anim:{ball:[[90,47],[26,50],[52,28]], you:[[26,50],[24,49]], movers:[[1,30,44]], text:'✅ ラインを さげて ヘディングクリア せいこう！'}
+},
+{ cat:'d', pos:'DF',
+  q:'あいての スローイン！きみは ちかくの あいて（あかい せんしゅ）を マークするよ。きみの ゴールは ひだり。どこに 立つ？',
+  players:[[35,3,'r'],[30,24,'r'],[45,40,'r'],[20,50,'b'],[6,50,'b']],
+  ball:[35,2],
+  you:[45,38], ideal:[24,30],
+  geo:{a:[30,24], b:[5,48], perp:70, hint:'マークする あいてと じぶんの ゴールの「あいだ」に 立とう！'},
+  hint:'ボールと マークする あいて、りょうほうが 見えて、じぶんの ゴールがわに 立つのが マークの きほんだよ！',
+  exp:'マークの きほんは「あいてと ゴールの あいだ」＋「ボールと あいてが りょうほう 見える」こと。これなら パスが きても すぐ まもれるし、うらに はしられても ついていけるよ。',
+  anim:{ball:[[35,2],[29,25],[18,48]], you:[[27,26],[27,26]], text:'✅ ゴールがわで マーク！じゆうに させなかった！'}
+},
+{ cat:'o', pos:'FW',
+  q:'みかたの コーナーキック（みぎうえから）！ニア（ちかいほうの ポスト）へ はしりこむ「スタートの いち」に つこう。どこ？',
+  players:[[97,4,'b'],[80,48,'b'],[85,40,'r'],[87,55,'r'],[93,50,'r']],
+  ball:[97,3],
+  you:[60,55], ideal:[79,27],
+  hint:'ゴールから すこし はなれた ところから、スピードを つけて ニアに とびこむんだ！',
+  exp:'ニアへの とびこみは、すこし はなれた ところから スピードに のって はしりこむのが コツ。とまって まっているより、うごきながらの ほうが ずっと あわせやすい！',
+  anim:{ball:[[97,3],[88,38],[95,47]], you:[[88,38],[90,41]], text:'✅ ニアに とびこんで ヘディングシュート！'}
+},
+{ cat:'d', pos:'DF',
+  q:'あいての コーナーキック（ひだりうえから）！きみは「ニアポストの カバー」を まかされたよ。どこに 立つ？',
+  players:[[3,4,'r'],[15,42,'r'],[18,56,'r'],[14,44,'b'],[17,57,'b'],[6,52,'b']],
+  ball:[3,3],
+  you:[30,30], ideal:[7,40],
+  hint:'ニアポスト（ボールに ちかい ゴールポスト）の よこは、はやい ボールが とびこむ キケンな ばしょだよ！',
+  exp:'ニアポストの よこは、はやい ボールが とびこむ いちばん キケンな ばしょ。ここに 1人 立って カバーするだけで、ゴールは ぐっと まもりやすくなるんだ。',
+  anim:{ball:[[3,3],[8,41],[30,18]], you:[[8,41],[11,38]], text:'✅ ニアポストで クリア！ゴールを まもった！'}
+},
+{ cat:'o', pos:'MF',
+  q:'みかたの サイドバックが したの サイドを ドリブルで ぐんぐん まえに！ななめまえの パスコースで サポートしよう。どこに うごく？',
+  players:[[55,80,'b'],[63,78,'r'],[70,50,'r'],[93,50,'r'],[50,35,'b']],
+  ball:[57,80], arrows:[[52,80,63,80]],
+  you:[48,60], ideal:[70,62],
+  hint:'ドリブルする みかたの「ななめまえ」に いると、パスを もらって すぐ ゴールに むかえるよ！',
+  exp:'ドリブルする みかたの「ななめまえ」は、パスを もらって すぐ まえを むける まほうの いち。あいての DFは 2人を どうじに 見られなくて おおこまりだ！',
+  anim:{ball:[[57,80],[70,62],[82,52]], you:[[70,62],[82,52]], movers:[[0,60,75]], text:'✅ ななめまえで うけて チャンス！'}
+},
+{ cat:'o', pos:'FW',
+  q:'みかたが シュートを うつよ！GKが はじくかも…。「こぼれだま」を ねらう いちは どこ？',
+  players:[[72,62,'b'],[93,50,'r'],[84,38,'r'],[65,30,'b']],
+  ball:[74,61], arrows:[[74,60,90,52]],
+  you:[60,40], ideal:[85,47],
+  hint:'シュートの あと、GKが はじいた ボールを いちばん はやく さわれる ゴールの まえだよ！',
+  exp:'シュートは GKが はじくことが おおい。ゴールの まえに つめておけば、こぼれだまを おしこむだけで ゴール！「シュートで おわらず つめる」が とくてんの ひみつ。',
+  anim:{ball:[[74,61],[91,50],[85,46],[95,49]], you:[[85,47],[85,46],[88,47]], movers:[[1,92,54]], text:'✅ つめていたから こぼれだまで ゴール！'}
+},
+{ cat:'t', pos:'DF',
+  q:'あいてが カウンターで ドリブル！みかたの DFが 1人で おくらせているよ。きみは もうひとりの DF。きみの ゴールは ひだり。どこに うごく？',
+  players:[[45,52,'r'],[35,50,'b'],[50,25,'r'],[6,50,'b']],
+  ball:[43,52], arrows:[[45,52,35,52]],
+  you:[45,15], ideal:[27,44],
+  hint:'ボールに よせた みかたの「ななめ うしろ」が カバーの いち。ぬかれても きみが とめられる！',
+  exp:'よせる みかたが「チャレンジ」、きみが「カバー」。ななめうしろに いれば、みかたが ぬかれた しゅんかんに すぐ とめられる。2人で 1つの ドアに カギを 2こ かけるんだ！',
+  anim:{ball:[[43,52],[31,57],[45,35]], you:[[31,56],[35,50]], movers:[[0,32,58]], text:'✅ カバーせいこう！2つめの カギが きいた！'}
+},
+{ cat:'o', pos:'DF',
+  q:'みかたの GKが ボールを もったよ。マイボールだ！ビルドアップの あいことばは「ひろがる」。どこで パスを もらう？',
+  players:[[7,50,'b'],[20,25,'b'],[28,45,'r'],[40,60,'r'],[40,40,'b']],
+  ball:[9,50],
+  you:[18,40], ideal:[20,82],
+  hint:'コートを ひろ〜く つかおう！サイドいっぱいに ひろがれば、あいてから とおい ばしょで もらえるよ。',
+  exp:'マイボールに なったら「ひろがる」！サイドいっぱいに ひろがれば、あいてから とおくで あんぜんに パスを うけられて、こうげきの スタートが きれるよ。',
+  anim:{ball:[[9,50],[21,81],[38,78]], you:[[21,81],[38,78]], text:'✅ ひろがって うけた！ビルドアップ せいこう！'}
+},
+{ cat:'o', pos:'FW',
+  q:'ぎゃくサイド（うえのほう）で みかたが 1たい1を しかけているよ！クロスに そなえて、きみは どこに はしりこむ？',
+  players:[[78,14,'b'],[83,18,'r'],[85,45,'r'],[93,50,'r'],[70,35,'b']],
+  ball:[79,15],
+  you:[65,50], ideal:[88,60],
+  hint:'みんなの あたまの うえを こえた ボールが おちてくる「ファーポスト（とおいほうの ポスト）」が ねらいめ！',
+  exp:'クロスは ニアだけじゃない！みんなの あたまを こえた ボールが おちてくる ファーポストは、どフリーに なりやすい ゴールへの ちかみちだよ。',
+  anim:{ball:[[79,15],[89,58],[95,52]], you:[[89,58],[91,55]], movers:[[0,82,20]], text:'✅ ファーポストで どんぴしゃ！ゴール！'}
+},
+{ cat:'t', pos:'MF',
+  q:'あいてが たてパスを ねらっている！パスカット（インターセプト）できる いちに つこう。きみの ゴールは ひだりだよ。どこ？',
+  players:[[60,30,'r'],[35,30,'r'],[55,60,'r'],[30,55,'b']],
+  ball:[58,30], arrows:[[56,30,38,30]],
+  you:[50,58], ideal:[44,30],
+  geo:{a:[56,30], b:[37,30], perp:60, hint:'パスの とおりみち（ボールと あいてを むすぶ せん）の うえに 立とう！'},
+  hint:'あいてが パスを したい「みち」を よそくして、その とちゅうで まちぶせだ！',
+  exp:'パスカットの コツは、あいてが けりたい「パスの みち」の うえで まちぶせすること。とった しゅんかんに こうげきに きりかわる、いちばん おいしい まもりだ！',
+  anim:{ball:[[58,30],[44,30],[60,18]], you:[[44,30],[52,24]], text:'✅ インターセプト！こうげきに きりかえだ！'}
+},
+{ cat:'t', pos:'MF',
+  q:'みかたが ドリブルで ボールを とられた しゅんかん！きみは いちばん ちかくの MF。5びょうが しょうぶ！どこに いく？',
+  players:[[62,55,'r'],[57,58,'b'],[50,30,'r'],[40,60,'b']],
+  ball:[61,55],
+  you:[38,30], ideal:[56,51],
+  hint:'とられた しゅんかん、あいては まだ じゅんびが できていない！すぐ ちかよって プレッシャーだ！',
+  exp:'ボールを とられた あとの 5びょうは、あいても まだ じゅんびが できていない。いちばん ちかい ひとが すぐ プレスに いけば、とりかえせる チャンスが おおきいよ。',
+  anim:{ball:[[61,55],[59,53],[45,40]], you:[[60,54],[56,50]], movers:[[3,44,45]], text:'✅ すぐプレスで とりかえした！ナイスきりかえ！'}
+},
+{ cat:'d', pos:'MF',
+  q:'あいての フリーキック！みかたが かべを つくっているよ。かべの よこで「セカンドボール」を ひろう いちに つこう。きみの ゴールは ひだり。',
+  players:[[30,42,'r'],[21,44,'b'],[21,49,'b'],[21,54,'b'],[6,54,'b'],[26,68,'r'],[28,25,'r']],
+  ball:[29,42],
+  you:[13,25], ideal:[16,62],
+  hint:'シュートは かべや GKに はじかれることが おおい。はねかえりが おちてきそうな かべの よこで まとう！',
+  exp:'フリーキックの シュートは かべや GKに はねかえって「セカンドボール」に なりやすい。かべの よこで まっていれば、いちばんに ひろって ピンチを だっしゅつできる！',
+  anim:{ball:[[29,42],[8,48],[16,61],[36,75]], you:[[16,61],[16,61],[20,68]], movers:[[4,7,50]], text:'✅ セカンドボールを かいしゅう！ピンチ だっしゅつ！'}
+}
+];
+const dCatName = {d:'🛡️まもり', o:'⚔️こうげき', t:'⚡きりかえ'};
+const D = {
+  order: dQuiz.map((q,i)=>i), ptr:0, filter:'all',
+  you:{x:0,y:0}, drag:false, phase:'place', attempts:0, reveal:null
+};
+const cvD = $('cvD'), ctxD = cvD.getContext('2d');
+const dRad = q => q.rad || [40,75,125];
+
+function easeOutD(t){ return 1-(1-t)*(1-t); }
+function pathPosD(pts, t){
+  const segs = pts.length-1;
+  if(segs<=0) return {x:pts[0].x, y:pts[0].y, st:0};
+  const ft = Math.min(0.99999, Math.max(0,t))*segs;
+  const i = Math.floor(ft), st = ft-i;
+  return {x:pts[i].x+(pts[i+1].x-pts[i].x)*st, y:pts[i].y+(pts[i+1].y-pts[i].y)*st, st:st};
+}
+function nearLineD(p, geo){
+  const a = {x:px(geo.a[0]), y:py(geo.a[1])}, b = {x:px(geo.b[0]), y:py(geo.b[1])};
+  const abx = b.x-a.x, aby = b.y-a.y;
+  const t = ((p.x-a.x)*abx+(p.y-a.y)*aby)/(abx*abx+aby*aby);
+  if(t<0 || t>1) return false;
+  return Math.hypot(p.x-(a.x+abx*t), p.y-(a.y+aby*t)) <= geo.perp;
+}
+/* ほうこうヒント（りそうの いちとの そうたい位置から じどう生成） */
+function dirHintD(q, ideal){
+  const you = D.you, atk = q.cat==='o';
+  const goal = {x:px(atk?97:3), y:py(50)};
+  const ball = {x:px(q.ball[0]), y:py(q.ball[1])};
+  const gYou = Math.hypot(you.x-goal.x, you.y-goal.y), gId = Math.hypot(ideal.x-goal.x, ideal.y-goal.y);
+  const bYou = Math.hypot(you.x-ball.x, you.y-ball.y), bId = Math.hypot(ideal.x-ball.x, ideal.y-ball.y);
+  const gname = atk ? 'あいての ゴール' : 'じぶんの ゴール';
+  if(gId < gYou-40) return 'もうすこし '+gname+'の ちかくだよ！';
+  if(gId > gYou+40) return gname+'から すこし はなれてみよう！';
+  if(bId < bYou-40) return 'もっと ボールに よろう！';
+  if(bId > bYou+40) return 'ボールから すこし はなれてみよう！';
+  const dx = ideal.x-you.x, dy = ideal.y-you.y;
+  if(Math.abs(dx) >= Math.abs(dy)) return dx>0 ? 'もうすこし みぎの ほうだよ！' : 'もうすこし ひだりの ほうだよ！';
+  return dy>0 ? 'もうすこし したの ほうだよ！' : 'もうすこし うえの ほうだよ！';
+}
+function setFilterD(f){
+  D.filter = f;
+  document.querySelectorAll('.dfilter').forEach(b=>b.classList.toggle('on', b.dataset.f===f));
+  D.order = dQuiz.map((q,i)=>i).filter(i=>f==='all' || dQuiz[i].cat===f);
+  D.ptr = 0;
+  renderD();
+}
+function renderDMap(){
+  const box = $('dMap'); box.innerHTML = '';
+  dQuiz.forEach((q,i)=>{
+    const btn = document.createElement('button');
+    const cur = D.ptr < D.order.length && D.order[D.ptr]===i;
+    btn.className = 'dcell'+(cur?' cur':'');
+    const g = state.d[i]||0;
+    btn.innerHTML = '<span class="em">'+(g>=3?'🌟':g===2?'⭕':g===1?'😅':'⬜')+'</span>'+(i+1)+'. '+dCatName[q.cat].slice(0,2);
+    btn.title = q.pos;
+    btn.addEventListener('click', ()=>jumpD(i));
+    box.appendChild(btn);
+  });
+}
+function jumpD(i){
+  if(D.reveal && !D.reveal.done) return;
+  if(D.order.indexOf(i)===-1){
+    D.filter = 'all';
+    document.querySelectorAll('.dfilter').forEach(b=>b.classList.toggle('on', b.dataset.f==='all'));
+    D.order = dQuiz.map((q,idx)=>idx);
+  }
+  D.ptr = D.order.indexOf(i);
+  popSound(); renderD();
+}
+function renderD(){
+  if(D.ptr >= D.order.length){ showFinishD(); return; }
+  $('dFinish').classList.remove('on');
+  const q = dQuiz[D.order[D.ptr]];
+  $('dNum').textContent = 'もんだい '+(D.ptr+1)+'/'+D.order.length;
+  $('dQ').innerHTML = '<span class="poschip">きみは '+q.pos+'</span><span class="catchip">'+dCatName[q.cat]+'</span>'+q.q;
+  $('dVerdict').textContent = ''; $('dVerdict').className = 'verdict';
+  $('dExp').classList.remove('on'); $('dExp').textContent = '';
+  $('dNext').style.display = 'none';
+  $('dCheck').style.display = 'inline-block'; $('dCheck').disabled = false;
+  $('dReset').style.display = 'inline-block';
+  D.you = {x:px(q.you[0]), y:py(q.you[1])};
+  D.phase = 'place'; D.attempts = 0; D.reveal = null; D.drag = false;
+  if(activeTab==='d') coachSay('きみは '+q.pos+'！'+q.q+' ★を うごかして きめよう！');
+  renderDMap(); updateStatus();
+}
+function drawD(){
+  if(D.ptr >= D.order.length) return;
+  const q = dQuiz[D.order[D.ptr]];
+  const now = performance.now();
+  const idealX = px(q.ideal[0]), idealY = py(q.ideal[1]);
+  let ballPos = {x:px(q.ball[0]), y:py(q.ball[1])};
+  let youPos = {x:D.you.x, y:D.you.y};
+  const players = q.players.map(p=>p.slice());
+  let circT = 0;
+  if(D.reveal){
+    const el = now - D.reveal.start;
+    circT = Math.min(1, el/700);
+    const animT = Math.max(0, Math.min(1, (el-900)/1700));
+    if(el >= 2750 && !D.reveal.done){ D.reveal.done = true; finishRevealD(q); }
+    if(animT > 0){
+      const bp = q.anim.ball.map(w=>({x:px(w[0]), y:py(w[1])}));
+      const b = pathPosD(bp, animT);
+      ballPos = {x:b.x, y:b.y - Math.sin(b.st*Math.PI)*24};
+      const yp = [D.reveal.youStart].concat(q.anim.you.map(w=>({x:px(w[0]), y:py(w[1])})));
+      const yy = pathPosD(yp, animT);
+      youPos = {x:yy.x, y:yy.y};
+      (q.anim.movers||[]).forEach(m=>{
+        players[m[0]][0] += (m[1]-players[m[0]][0])*animT;
+        players[m[0]][1] += (m[2]-players[m[0]][1])*animT;
+      });
+    }
+  }
+  drawScene(ctxD, {players:players, arrows:q.arrows});
+  // ほうこうラベル
+  ctxD.save();
+  ctxD.font = 'bold 16px sans-serif'; ctxD.fillStyle = '#ffffff88';
+  if(q.cat==='o'){ ctxD.textAlign = 'right'; ctxD.fillText('こうげき →', W-34, 48); }
+  else{ ctxD.textAlign = 'left'; ctxD.fillText('← まもる ゴール', 34, 48); }
+  ctxD.restore();
+  // 2かいめ以降の ガイド（せいかい圏が うっすら ひかる）
+  if(D.phase==='place' && D.attempts>0){
+    const gp = 0.5+0.5*Math.sin(now/300);
+    ctxD.save();
+    ctxD.globalAlpha = 0.10+0.16*gp;
+    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRad(q)[1], 0, Math.PI*2);
+    ctxD.fillStyle = '#fff176'; ctxD.fill();
+    ctxD.globalAlpha = 0.25+0.3*gp;
+    ctxD.setLineDash([8,8]); ctxD.strokeStyle = '#fff176'; ctxD.lineWidth = 3; ctxD.stroke();
+    ctxD.restore();
+  }
+  // せいかい発表の ⭕と 円
+  if(D.reveal){
+    const e2 = easeOutD(circT);
+    ctxD.save();
+    ctxD.globalAlpha = 0.85*circT;
+    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRad(q)[1]*e2, 0, Math.PI*2);
+    ctxD.fillStyle = '#ffd60030'; ctxD.fill();
+    ctxD.lineWidth = 4; ctxD.strokeStyle = '#ffd600'; ctxD.stroke();
+    ctxD.font = '28px sans-serif'; ctxD.textAlign = 'center'; ctxD.textBaseline = 'middle';
+    ctxD.fillText('⭕', idealX, idealY - dRad(q)[1]*e2 - 18);
+    ctxD.restore();
+  }
+  drawBall(ctxD, ballPos.x, ballPos.y);
+  drawPlayer(ctxD, youPos.x, youPos.y, 'b', true);
+  if(D.phase==='place'){
+    ctxD.fillStyle = '#fff'; ctxD.font = 'bold 12px sans-serif'; ctxD.textAlign = 'center';
+    ctxD.fillText('きみ（ドラッグ してね）', youPos.x, youPos.y+34);
+  }
+}
+function finishRevealD(q){
+  D.phase = 'done';
+  $('dExp').textContent = '📖 かいせつ： '+q.exp;
+  $('dExp').classList.add('on');
+  $('dNext').style.display = 'inline-block';
+  coachSay(q.anim.text+' その ばしょが せいかいだ！');
+  popSound();
+}
+/* ドラッグ（タッチたいおう） */
+function posD(e){
+  const r = cvD.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height};
+}
+cvD.addEventListener('pointerdown', e=>{
+  if(D.phase!=='place' || D.ptr>=D.order.length) return;
+  const p = posD(e);
+  if(Math.hypot(p.x-D.you.x, p.y-D.you.y) < 48){
+    D.drag = true;
+    try{ cvD.setPointerCapture(e.pointerId); }catch(err){}
+  }
+  e.preventDefault();
+});
+cvD.addEventListener('pointermove', e=>{
+  if(!D.drag) return;
+  const p = posD(e);
+  D.you.x = Math.max(35, Math.min(W-35, p.x));
+  D.you.y = Math.max(35, Math.min(H-35, p.y));
+  e.preventDefault();
+});
+['pointerup','pointercancel'].forEach(ev=>cvD.addEventListener(ev, ()=>{ D.drag = false; }));
+
+$('dReset').addEventListener('click', ()=>{
+  if(D.phase!=='place' || D.ptr>=D.order.length) return;
+  const q = dQuiz[D.order[D.ptr]];
+  D.you = {x:px(q.you[0]), y:py(q.you[1])};
+  popSound();
+});
+/* こたえあわせ */
+$('dCheck').addEventListener('click', ()=>{
+  if(D.phase!=='place' || D.ptr>=D.order.length) return;
+  audio();
+  const gi = D.order[D.ptr], q = dQuiz[gi];
+  const ideal = {x:px(q.ideal[0]), y:py(q.ideal[1])};
+  const dist = Math.hypot(D.you.x-ideal.x, D.you.y-ideal.y);
+  const rad = dRad(q);
+  let grade;
+  if(q.geo && !nearLineD(D.you, q.geo)) grade = -1;
+  else grade = dist<=rad[0] ? 3 : dist<=rad[1] ? 2 : dist<=rad[2] ? 1 : 0;
+  const v = $('dVerdict');
+  if(grade >= 2){
+    const prev = state.d[gi]||0;
+    state.d[gi] = Math.max(prev, grade); save();
+    v.textContent = grade===3 ? '🌟 だいせいかい！かんぺきな ポジション！' : '⭕ せいかい！いい ばしょだ！';
+    v.className = 'verdict good';
+    D.phase = 'reveal';
+    D.reveal = {start:performance.now(), grade:grade, youStart:{x:D.you.x, y:D.you.y}, done:false};
+    $('dCheck').disabled = true;
+    fanfare(); starsFromEl(v);
+    if(prev < 2) awardStar();
+    if(!state.dm && dQuiz.every((qq,i)=>(state.d[i]||0)>=3)){
+      state.dm = true; save(); masterPartyD();
+    }
+    renderDMap();
+  }else{
+    D.attempts++;
+    if(grade===1){
+      state.d[gi] = Math.max(state.d[gi]||0, 1); save(); renderDMap();
+      v.textContent = '😅 おしい！あと ちょっと！';
+      v.className = 'verdict bad';
+      coachSay('💡 '+dirHintD(q, ideal)+' ★を おきなおして、もういちど ためそう！');
+    }else{
+      v.textContent = '🤔 もういちど！';
+      v.className = 'verdict bad';
+      coachSay('💡 '+(grade===-1 ? q.geo.hint : q.hint)+' ★を うごかして さいちょうせんだ！');
+    }
+    sadSound();
+  }
+});
+$('dNext').addEventListener('click', ()=>{ D.ptr++; popSound(); renderD(); });
+document.querySelectorAll('.dfilter').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if(D.reveal && !D.reveal.done) return;
+    popSound(); setFilterD(b.dataset.f);
+  });
+});
+function masterPartyD(){
+  fanfare(); setTimeout(fanfare, 600);
+  for(let k=0;k<6;k++){
+    setTimeout(()=>spawnStars(Math.random()*innerWidth, innerHeight*0.25+Math.random()*innerHeight*0.4, 14), k*250);
+  }
+}
+function showFinishD(){
+  $('dQ').innerHTML = ''; $('dVerdict').textContent = '';
+  $('dExp').classList.remove('on'); $('dNext').style.display = 'none';
+  $('dCheck').style.display = 'none'; $('dReset').style.display = 'none';
+  $('dNum').textContent = 'クリア！';
+  const master = dQuiz.every((q,i)=>(state.d[i]||0)>=3);
+  const f = $('dFinish');
+  f.innerHTML = '<div class="big">'+(master?'👑 ポジショニングマスター！':'🏆 ぜんぶ おわったよ！')+'</div>'
+    +(master?'ぜんもん 🌟 だいせいかい！きみは ほんものの マスターだ！<br>':'マップの ⬜や 😅を タップして、🌟を そろえよう！<br>')
+    +'⭐ あつめた ほし： '+state.stars+' こ<br>いまの ランク： <span class="big">'+rankName(state.stars)+'</span><br>'
+    +'<button class="bigbtn next" id="dRetry">🔄 もういちど ちょうせん</button>';
+  f.classList.add('on');
+  drawScene(ctxD, {players:[[50,50,'b','you']], ball:[54,50]});
+  if(master){
+    masterPartyD();
+    coachSay('👑 ぜんぶ 🌟！きみは ほんものの ポジショニングマスターだ！おめでとう！');
+  }else{
+    coachSay('おつかれさま！いい ポジションは チームを たすけるよ。🌟を めざして もういちど！');
+  }
+  $('dRetry').addEventListener('click', ()=>{ D.ptr = 0; popSound(); renderD(); });
+  renderDMap();
+}
+
 /* ============ メインループ ============ */
 function tick(ts){
   if(activeTab === 'a') drawA();
   else if(activeTab === 'c' && cIdx < cQuiz.length) drawC(ts);
+  else if(activeTab === 'd') drawD();
   requestAnimationFrame(tick);
 }
 updateStatus();
-renderB(); renderC();
+renderB(); renderC(); renderD();
 requestAnimationFrame(tick);
 </script>
 </body>
