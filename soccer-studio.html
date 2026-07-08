@@ -76,6 +76,7 @@
   .tbtn{background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:7px 11px;
     border-radius:8px;cursor:pointer;font-size:13px;line-height:1;transition:background .15s;}
   .tbtn:hover{background:var(--panel2);}
+  .tbtn:disabled{opacity:.4;cursor:default;pointer-events:none;}
   .tbtn.active{background:#0e3b23;border-color:var(--accent);color:var(--accent);font-weight:700;}
   .tbtn.warn{color:#ff9d9d;}
   .tbtn.play{color:var(--gold);}
@@ -568,6 +569,9 @@
         <button class="tbtn anno" data-tool="comment" title="タップでコメントを置く">&#128172; コメント</button>
         <label id="annoToggleWrap" title="注釈レイヤーの表示ON/OFF"><input type="checkbox" id="annoToggle" checked>注釈表示</label>
         <div class="sep"></div>
+        <button class="tbtn" id="undoBtn" title="元に戻す (Ctrl+Z)" disabled>&#8630; 元に戻す</button>
+        <button class="tbtn" id="redoBtn" title="やり直す (Ctrl+Y)" disabled>&#8631; やり直す</button>
+        <div class="sep"></div>
         <button class="tbtn warn" id="clearBtn">&#128465; 全消去</button>
         <button class="tbtn play" id="playBtn2d">&#9654; 再生</button>
         <button class="tbtn hero" id="to3dBtn">&#127916; この盤面を3Dで見る</button>
@@ -1032,6 +1036,101 @@ let equipKindCurrent = "cone", equipColorCurrent = "red";
 let equipStyleCurrent = "solid", equipThickCurrent = "medium";
 const board = () => boards[view];
 const V = () => VIEWS[view];
+
+/* ============================================================
+   Undo / Redo(元に戻す / やり直す)
+   方式: 全ビュー分のボード状態(players/arrows/annotations/equipment)＋
+         view / currentPhase をディープコピーしたスナップショットを積む。
+   ・_undoBaseline は「直近に確定した状態」を常に保持する(=編集直前の状態)。
+   ・pushUndo() は編集が確定した直後に呼ぶ。baseline を undo スタックへ積み、
+     redo をクリアし、baseline を現在状態へ更新する。1操作=1エントリ。
+   ・ドラッグは baseline が常に「移動前の状態」に一致するため、移動が確定
+     (moved=true)したときだけ pushUndo() すればよい(別途退避不要)。
+   ・大きな読み込み(loadBoardData/共有/初期化)後は resetHistoryBaseline() で
+     baseline のみ現在状態に更新(その状態が新たな基点)。undo可否は
+     呼び出し側で選択(通常の編集読み込みは pushUndo で undo 可能にする)。
+   ・スナップショットは JSON.parse(JSON.stringify)。盤面データは純データ配列で
+     オブジェクト参照(循環)を持たない(trigger は文字列id)ため安全。
+============================================================ */
+const HISTORY_LIMIT = 50;
+let undoStack = [];
+let redoStack = [];
+let _undoBaseline = null;   // 直近に確定した状態のスナップショット
+function _snapState(){
+  return { boards: snapshotBoards(), view, currentPhase };
+}
+/* スナップショットを現在のボードへ復元。UI状態(選択/ポップ/再生キャッシュ)も整える */
+function _restoreState(snap){
+  if (!snap) return;
+  // 編集中ポップ・選択・一時ドラッグ状態をすべてクリア(復元と競合させない)
+  if (typeof closeArrowProp === "function") closeArrowProp();
+  if (typeof closeZonePop === "function") closeZonePop();
+  if (typeof closeCmtPop === "function") closeCmtPop();
+  if (typeof closeEquipPop === "function") closeEquipPop();
+  selectedArrow = null; selectedAnno = null; selectedEquip = null;
+  dragP = null; dragAnno = null; dragEquip = null; dragSeg = null;
+  tempArrow = null; tempZone = null; tempSeg = null;
+  if (_cmtBoxes && _cmtBoxes.clear) _cmtBoxes.clear();
+  // ボード本体を差し替え(ディープコピーで独立させる)
+  for (const k of ["eight", "corner", "throwin"]){
+    const src = snap.boards[k];
+    boards[k] = src ? JSON.parse(JSON.stringify(src)) : { players:[], arrows:[], annotations:[], equipment:[] };
+    // 後方互換の保険(配列欠落対策)
+    if (!Array.isArray(boards[k].players)) boards[k].players = [];
+    if (!Array.isArray(boards[k].arrows)) boards[k].arrows = [];
+    if (!Array.isArray(boards[k].annotations)) boards[k].annotations = [];
+    if (!Array.isArray(boards[k].equipment)) boards[k].equipment = [];
+  }
+  currentPhase = (snap.currentPhase >= 1) ? snap.currentPhase : 1;
+  // ビューが異なる場合は表示も合わせる
+  const viewChanged = snap.view && VIEWS[snap.view] && snap.view !== view;
+  if (snap.view && VIEWS[snap.view]) view = snap.view;
+  document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x.dataset.view === view));
+  clearPresetSel();
+  // 再生モデルキャッシュを必ず無効化(復元後の再生は現在配置から再構築)
+  tlState.model = null; _tl2dBackup = null;
+  buildPresetList();
+  renderPhaseChips();
+  refreshTimeline();
+  if (viewChanged) resizeBoard(); else drawBoard();
+}
+function _updateHistoryUI(){
+  const u = $("undoBtn"), r = $("redoBtn");
+  if (u) u.disabled = animating || undoStack.length === 0;
+  if (r) r.disabled = animating || redoStack.length === 0;
+}
+/* 編集確定後に呼ぶ: 直前状態を undo に積み、redo をクリア、baseline を更新 */
+function pushUndo(){
+  if (_undoBaseline == null){ _undoBaseline = _snapState(); }
+  undoStack.push(_undoBaseline);
+  if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack = [];
+  _undoBaseline = _snapState();
+  _updateHistoryUI();
+}
+/* 大きな読み込み後などに baseline を現在状態へ同期(スタックは触らない) */
+function resetHistoryBaseline(){
+  _undoBaseline = _snapState();
+  _updateHistoryUI();
+}
+function doUndo(){
+  if (animating || undoStack.length === 0) return;
+  redoStack.push(_snapState());
+  const snap = undoStack.pop();
+  _restoreState(snap);
+  _undoBaseline = _snapState();
+  _updateHistoryUI();
+  if (typeof toast === "function") toast("元に戻しました");
+}
+function doRedo(){
+  if (animating || redoStack.length === 0) return;
+  undoStack.push(_snapState());
+  const snap = redoStack.pop();
+  _restoreState(snap);
+  _undoBaseline = _snapState();
+  _updateHistoryUI();
+  if (typeof toast === "function") toast("やり直しました");
+}
 
 function m2x(x){ return (V().ml + x) * scaleB; }
 function m2y(y){ return (V().mt + y) * scaleB; }
@@ -1824,18 +1923,18 @@ function hitArrow(mx, my){
 function nextNum(team){ let n = 0; for (const p of board().players) if (p.team === team && p.num > n) n = p.num; return n + 1; }
 function eraseAt(mx, my){
   const p = hitPlayer(mx, my);
-  if (p){ board().players.splice(board().players.indexOf(p), 1); tlState.model = null; _tl2dBackup = null; drawBoard(); return; }
+  if (p){ board().players.splice(board().players.indexOf(p), 1); tlState.model = null; _tl2dBackup = null; _eraseDirty = true; drawBoard(); return; }
   const a = hitArrow(mx, my);
-  if (a){ removeArrow(a); return; }
+  if (a){ removeArrow(a); _eraseDirty = true; return; }
   // 備品も消しゴム対象
   const eq = hitEquip(mx, my);
-  if (eq){ removeEquip(eq); return; }
+  if (eq){ removeEquip(eq); _eraseDirty = true; return; }
   // 注釈も消しゴム対象(コメント→ゾーンの順で優先。表示中のみ)
   if (annotationsOn){
     const c = hitComment(mx, my);
-    if (c){ removeAnno(c.a); return; }
+    if (c){ removeAnno(c.a); _eraseDirty = true; return; }
     const z = hitZone(mx, my);
-    if (z){ removeAnno(z); return; }
+    if (z){ removeAnno(z); _eraseDirty = true; return; }
   }
 }
 /* 矢印を削除し、それをトリガーにしていた矢印の参照を外す */
@@ -1852,10 +1951,15 @@ function deletePlayerAt(mx, my){
   if (p){ board().players.splice(board().players.indexOf(p), 1); clearPresetSel(); tlState.model = null; _tl2dBackup = null; drawBoard(); }
 }
 let lastTap = { t:0, x:0, y:0 };
+/* ドラッグ操作でこのセッション中に消しゴム削除/新規追加が起きたかの記録(pointerUpで1回だけ確定) */
+let _eraseDirty = false;   // 消しゴムで1つ以上削除した
+let _addPending = false;   // 駒/ボール/備品を新規追加した(移動有無に関わらず1操作として確定)
+let _dragPMoved = false;   // 既存の駒/ボールをドラッグで動かした
 function pointerDown(e){
   if (animating) return;
+  _addPending = false; _dragPMoved = false;
   const m = evPos(e);
-  if (tool === "erase"){ eraseAt(m.x, m.y); dragP = "erasing"; return; }
+  if (tool === "erase"){ _eraseDirty = false; eraseAt(m.x, m.y); dragP = "erasing"; return; }
   // ゾーンツール: ドラッグで矩形/楕円ゾーンを描く
   if (tool === "zone"){
     closeArrowProp(); closeZonePop(); closeCmtPop();
@@ -1898,7 +2002,7 @@ function pointerDown(e){
     const et = equipType(equipKindCurrent);
     const it = { type: equipKindCurrent, color: et.hasColor ? equipColorCurrent : "red",
       x:m.x, y:m.y, rot:0, id:newEquipId() };
-    equips().push(it); selectedEquip = it;
+    equips().push(it); selectedEquip = it; _addPending = true;
     dragEquip = { it, ox:it.x, oy:it.y, mx:m.x, my:m.y, moved:false };
     clearPresetSel(); syncEquipPop(); drawBoard(); return;
   }
@@ -1908,10 +2012,10 @@ function pointerDown(e){
     // ボールは常に最大1個。既存ボールがあれば新規追加せずその位置へ移動する。
     if (tool === "ball"){
       const existBall = board().players.find(pl => pl.team === "ball");
-      if (existBall){ existBall.x = m.x; existBall.y = m.y; dragP = existBall; clearPresetSel(); tlState.model = null; _tl2dBackup = null; drawBoard(); return; }
+      if (existBall){ existBall.x = m.x; existBall.y = m.y; dragP = existBall; _dragPMoved = true; clearPresetSel(); tlState.model = null; _tl2dBackup = null; drawBoard(); return; }
     }
     const p = { team:tool, x:m.x, y:m.y, num: tool === "ball" ? 0 : nextNum(tool), name:"" };
-    board().players.push(p); dragP = p; clearPresetSel(); drawBoard(); return;
+    board().players.push(p); dragP = p; _addPending = true; clearPresetSel(); drawBoard(); return;
   }
   // 選択ツール: 矢印→コメント→ゾーンの順でタップ対象を判定
   if (tool === "select"){
@@ -1986,6 +2090,7 @@ function pointerMove(e){
     drawBoard(); return;
   }
   if (dragP){
+    _dragPMoved = true;
     dragP.x = Math.max(-V().ml, Math.min(V().fw + V().mr, m.x));
     dragP.y = Math.max(-V().mt, Math.min(V().fh + V().mb, m.y));
     drawBoard();
@@ -1998,7 +2103,9 @@ function pointerUp(e){
     if (w < 0){ x += w; w = -w; } if (h < 0){ y += h; h = -h; }
     if (w > 0.8 && h > 0.8){
       const z = { type:"zone", id:newAnnoId(), shape: zoneShapeCurrent, x, y, w, h, color: zoneColorCurrent, label:"" };
-      annos().push(z); clearPresetSel(); selectedAnno = z; tempZone = null; drawBoard();
+      annos().push(z); clearPresetSel(); selectedAnno = z; tempZone = null;
+      pushUndo();   // ゾーン新規作成を1操作として確定(ラベルはこの後の編集で別途)
+      drawBoard();
       openZonePop(z, e);
     } else { tempZone = null; drawBoard(); }
     return;
@@ -2009,6 +2116,7 @@ function pointerUp(e){
       tempArrow.step = currentPhase; tempArrow.delay = 0; tempArrow.trigger = null;
       normalizeArrow(tempArrow);
       board().arrows.push(tempArrow); clearPresetSel(); refreshTimeline();
+      pushUndo();   // 矢印追加を確定
     }
     tempArrow = null; drawBoard();
   }
@@ -2018,6 +2126,8 @@ function pointerUp(e){
     if (!da.moved){
       if (da.a.type === "zone") openZonePop(da.a, e ? { clientX: (e.changedTouches ? e.changedTouches[0].clientX : e.clientX), clientY: (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) } : null);
       else openCmtPop(da.a, e ? { clientX: (e.changedTouches ? e.changedTouches[0].clientX : e.clientX), clientY: (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) } : null);
+    } else {
+      pushUndo();   // 注釈(ゾーン/コメント)の移動を確定
     }
     drawBoard();
   }
@@ -2030,16 +2140,28 @@ function pointerUp(e){
     if (ok){
       seg.id = newEquipId();
       equips().push(seg); selectedEquip = seg; clearPresetSel(); syncEquipPop();
+      pushUndo();   // ライン/枠の新規作成を確定
     }
     drawBoard();
     return;
   }
-  if (dragSeg){ dragSeg = null; drawBoard(); }
-  if (dragEquip){ dragEquip = null; drawBoard(); }
+  if (dragSeg){
+    const moved = dragSeg.moved; dragSeg = null;
+    if (moved) pushUndo();   // ライン/枠の端点/本体移動を確定
+    drawBoard();
+  }
+  if (dragEquip){
+    const changed = dragEquip.moved || _addPending; dragEquip = null;
+    if (changed) pushUndo();   // 備品の追加/移動を確定
+    drawBoard();
+  }
   // 選手/オブジェクトのドラッグ確定で位置が変わったら、再生モデルのキャッシュを無効化。
   // 次回再生/スクラブ時に現在位置から再構築させ、ドラッグ結果が旧バックアップで上書き破棄されるのを防ぐ。
   if (dragP && dragP !== "erasing"){ tlState.model = null; _tl2dBackup = null; }
-  dragP = null;
+  // 消しゴム/駒・ボールの追加・移動を1操作として確定
+  if (dragP === "erasing"){ if (_eraseDirty){ _eraseDirty = false; pushUndo(); } }
+  else if (dragP && (_dragPMoved || _addPending)){ pushUndo(); }
+  dragP = null; _addPending = false; _dragPMoved = false;
 }
 cv.addEventListener("mousedown", pointerDown);
 window.addEventListener("mousemove", e => { if ((dragP || tempArrow || tempZone || dragAnno || dragEquip || tempSeg || dragSeg) && currentScreen === "board") pointerMove(e); });
@@ -2049,7 +2171,7 @@ cv.addEventListener("dblclick", e => {
   const m = evPos(e);
   if (!hitPlayer(m.x, m.y)){
     const eq = hitEquip(m.x, m.y);
-    if (eq){ removeEquip(eq); toast("備品を削除しました"); return; }
+    if (eq){ removeEquip(eq); pushUndo(); toast("備品を削除しました"); return; }
   }
   openNamePopAt(m.x, m.y, e);
 });
@@ -2062,7 +2184,7 @@ cv.addEventListener("touchstart", e => {
     lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; tempZone = null; dragAnno = null; dragEquip = null; tempSeg = null; dragSeg = null;
     if (!hitPlayer(m.x, m.y)){
       const eq = hitEquip(m.x, m.y);
-      if (eq){ removeEquip(eq); toast("備品を削除しました"); return; }
+      if (eq){ removeEquip(eq); pushUndo(); toast("備品を削除しました"); return; }
     }
     openNamePopAt(m.x, m.y, { clientX: t.clientX, clientY: t.clientY });
     return;
@@ -2097,11 +2219,16 @@ function openNamePopAt(mx, my, ev){
 }
 function closeNamePop(){ namePop.classList.remove("on"); namePopTarget = null; }
 function commitNamePop(){
-  if (namePopTarget){ namePopTarget.name = (npInput.value || "").trim().slice(0, 14); drawBoard(); }
+  if (namePopTarget){
+    const prev = namePopTarget.name || "";
+    const next = (npInput.value || "").trim().slice(0, 14);
+    namePopTarget.name = next; drawBoard();
+    if (next !== prev) pushUndo();   // 選手名編集を確定
+  }
   closeNamePop();
 }
 $("npOk").addEventListener("click", commitNamePop);
-$("npClear").addEventListener("click", () => { npInput.value = ""; if (namePopTarget){ namePopTarget.name = ""; drawBoard(); } closeNamePop(); });
+$("npClear").addEventListener("click", () => { npInput.value = ""; if (namePopTarget){ const prev = namePopTarget.name || ""; namePopTarget.name = ""; drawBoard(); if (prev !== "") pushUndo(); } closeNamePop(); });
 npInput.addEventListener("keydown", e => {
   if (e.key === "Enter"){ e.preventDefault(); commitNamePop(); }
   else if (e.key === "Escape"){ e.preventDefault(); closeNamePop(); }
@@ -2158,16 +2285,27 @@ zonePop.querySelectorAll(".zp-shape").forEach(b => b.addEventListener("click", (
   zonePopTarget.shape = b.dataset.shape === "ellipse" ? "ellipse" : "rect";
   zoneShapeCurrent = zonePopTarget.shape; renderZpShapes(); drawBoard();
 }));
+let _zoneEditSnap = null;   // ゾーン編集ポップを開いた時点の {label,color,shape}(差分検出用)
+function _zoneSig(z){ return z ? JSON.stringify({ l:z.label || "", c:z.color, s:z.shape }) : null; }
 function openZonePop(z, ev){
   if (animating) return;
   closeCmtPop(); closeArrowProp();
   zonePopTarget = z; selectedAnno = z;
+  _zoneEditSnap = _zoneSig(z);
   zpLabel.value = z.label || "";
   renderZpColors(); renderZpShapes();
   placePopInBoard(zonePop, ev, { x: m2x(z.x), y: m2y(z.y) });
   setTimeout(() => { zpLabel.focus(); }, 0);
 }
-function closeZonePop(){ zonePop.classList.remove("on"); zonePopTarget = null; }
+function closeZonePop(){
+  // 編集で内容が変わっていれば1操作としてundoに積む(対象がまだ盤面にある時のみ)
+  const t = zonePopTarget;
+  if (t && _zoneEditSnap != null && annos().indexOf(t) >= 0 && _zoneSig(t) !== _zoneEditSnap && typeof pushUndo === "function"){
+    pushUndo();
+  }
+  _zoneEditSnap = null;
+  zonePop.classList.remove("on"); zonePopTarget = null;
+}
 function commitZonePop(){
   if (zonePopTarget){ zonePopTarget.label = (zpLabel.value || "").trim().slice(0, 24); drawBoard(); }
   closeZonePop();
@@ -2178,38 +2316,52 @@ zpLabel.addEventListener("keydown", e => {
   else if (e.key === "Escape"){ e.preventDefault(); closeZonePop(); drawBoard(); }
 });
 $("zpOk").addEventListener("click", commitZonePop);
-$("zpDel").addEventListener("click", () => { if (zonePopTarget) removeAnno(zonePopTarget); });
+$("zpDel").addEventListener("click", () => { if (zonePopTarget){ _zoneEditSnap = null; const t = zonePopTarget; zonePopTarget = null; removeAnno(t); pushUndo(); } });
 
 /* --- コメント編集ポップオーバー --- */
 const cmtPop = $("cmtPop"), cpText = $("cpText");
 let cmtPopTarget = null;
+let _cmtEditSnap = null;   // コメント編集ポップを開いた時点の text(差分検出用)
 function openCmtPop(c, ev){
   if (animating) return;
   closeZonePop(); closeArrowProp();
   cmtPopTarget = c; selectedAnno = c;
+  _cmtEditSnap = c.text || "";
   cpText.value = c.text || "";
   placePopInBoard(cmtPop, ev, { x: m2x(c.x), y: m2y(c.y) });
   setTimeout(() => { cpText.focus(); }, 0);
 }
 function closeCmtPop(){
+  const t = cmtPopTarget;
   // 空コメントはキャンセル時に自動削除(付箋の残骸を残さない)
-  if (cmtPopTarget && !(cmtPopTarget.text || "").trim()){
-    const list = annos(), i = list.indexOf(cmtPopTarget);
+  if (t && !(t.text || "").trim()){
+    const list = annos(), i = list.indexOf(t);
     if (i >= 0) list.splice(i, 1);
-    if (selectedAnno === cmtPopTarget) selectedAnno = null;
+    if (selectedAnno === t) selectedAnno = null;
+    _cmtEditSnap = null;
+    cmtPop.classList.remove("on"); cmtPopTarget = null;
+    return;
   }
+  // テキストが変わっていれば1操作としてundoに積む(対象がまだ盤面にある時のみ)
+  if (t && _cmtEditSnap != null && annos().indexOf(t) >= 0 && (t.text || "") !== _cmtEditSnap && typeof pushUndo === "function"){
+    pushUndo();
+  }
+  _cmtEditSnap = null;
   cmtPop.classList.remove("on"); cmtPopTarget = null;
 }
 cpText.addEventListener("input", () => { if (cmtPopTarget){ cmtPopTarget.text = cpText.value.slice(0, 140); drawBoard(); } });
 cpText.addEventListener("keydown", e => { if (e.key === "Escape"){ e.preventDefault(); closeCmtPop(); drawBoard(); } });
 $("cpOk").addEventListener("click", () => { commitCmtPop(); });
-$("cpDel").addEventListener("click", () => { if (cmtPopTarget){ const t = cmtPopTarget; cmtPopTarget = null; removeAnno(t); } });
+$("cpDel").addEventListener("click", () => { if (cmtPopTarget){ _cmtEditSnap = null; const t = cmtPopTarget; cmtPopTarget = null; removeAnno(t); pushUndo(); } });
 function commitCmtPop(){
   if (cmtPopTarget){ cmtPopTarget.text = (cpText.value || "").trim().slice(0, 140); }
   const empty = cmtPopTarget && !(cmtPopTarget.text || "").trim();
   const t = cmtPopTarget;
+  const changed = t && _cmtEditSnap != null && (t.text || "") !== _cmtEditSnap;
+  _cmtEditSnap = null;
   cmtPop.classList.remove("on"); cmtPopTarget = null;
   if (empty && t){ const list = annos(), i = list.indexOf(t); if (i >= 0) list.splice(i, 1); if (selectedAnno === t) selectedAnno = null; }
+  else if (changed && t && typeof pushUndo === "function"){ pushUndo(); }   // コメント確定を1操作として積む
   drawBoard();
 }
 // ポップオーバー外クリックで確定して閉じる
@@ -2330,6 +2482,7 @@ $("apPhase").addEventListener("change", e => {
   selectedArrow.step = Math.max(1, +e.target.value || 1);
   // フェーズ指定時はトリガーと排他(トリガーは維持しつつ、フェーズは基準になる)
   renderPhaseChips(); updateArrowPropHint(); refreshTimeline(); drawBoard();
+  pushUndo();   // 矢印のフェーズ変更を確定
 });
 $("apTrigger").addEventListener("change", e => {
   if (!selectedArrow) return;
@@ -2338,6 +2491,7 @@ $("apTrigger").addEventListener("change", e => {
   if (val && wouldCycle(selectedArrow.id, val)){ toast("その連動は循環するため設定できません", true); e.target.value = selectedArrow.trigger || ""; return; }
   selectedArrow.trigger = val;
   updateArrowPropHint(); refreshTimeline(); drawBoard();
+  pushUndo();   // 矢印のトリガー変更を確定
 });
 $("apDelay").addEventListener("input", e => {
   if (!selectedArrow) return;
@@ -2345,7 +2499,9 @@ $("apDelay").addEventListener("input", e => {
   selectedArrow.delay = v;
   updateArrowPropHint(); refreshTimeline();
 });
-$("apDel").addEventListener("click", () => { if (selectedArrow) removeArrow(selectedArrow); });
+/* 遅延は change(確定)時に1操作としてundoへ(inputは連続発火のため積まない) */
+$("apDelay").addEventListener("change", () => { if (selectedArrow) pushUndo(); });
+$("apDel").addEventListener("click", () => { if (selectedArrow){ const a = selectedArrow; removeArrow(a); pushUndo(); } });
 $("apClose").addEventListener("click", closeArrowProp);
 function closeArrowProp(){ arrowProp.classList.remove("on"); if (selectedArrow){ selectedArrow = null; drawBoard(); } }
 /* トリガー循環検出: srcId が tgId を(直接/間接に)トリガーしていれば循環 */
@@ -2551,6 +2707,7 @@ function tlPlay(){
   if (restart || !tlState.model){ tlState.t = 0; tlBuildModelFromOrigin(); }
   tlState.playing = true; $("tlPlay").innerHTML = "&#10074;&#10074;";
   animating = true; $("playBtn2d").disabled = true;
+  if (typeof _updateHistoryUI === "function") _updateHistoryUI();
   playCheer(1.6, 0.14); spawnCheers(6);
   tlState.prevMs = performance.now();
   cancelAnimationFrame(tlState.raf); tlState.raf = requestAnimationFrame(tlFrame);
@@ -2559,6 +2716,7 @@ function tlPause(){
   tlState.playing = false; $("tlPlay").innerHTML = "&#9654;";
   cancelAnimationFrame(tlState.raf);
   animating = false; $("playBtn2d").disabled = false;
+  if (typeof _updateHistoryUI === "function") _updateHistoryUI();
 }
 function tlStop(){ tlPause(); }
 function tlFrame(ms){
@@ -2569,6 +2727,7 @@ function tlFrame(ms){
     tlState.playing = false; $("tlPlay").innerHTML = "&#9654;";
     if (ballInGoal()) golazo();
     animating = false; $("playBtn2d").disabled = false;
+    if (typeof _updateHistoryUI === "function") _updateHistoryUI();
     // 少し見せてから元配置に戻す(編集状態を保つ)
     setTimeout(() => { if (!tlState.playing){ tlRestore2d(); tlState.t = 0; positionPlayhead(); } }, 1000);
     return;
@@ -2607,6 +2766,38 @@ $("clearBtn").addEventListener("click", () => {
   renderPhaseChips(); refreshTimeline();
   setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
   drawBoard();
+  pushUndo();   // 全消去を1操作として確定(undoで元に戻せる)
+});
+/* ---------- Undo / Redo ボタン & キーボード ---------- */
+$("undoBtn").addEventListener("click", doUndo);
+$("redoBtn").addEventListener("click", doRedo);
+/* 入力欄フォーカス中やモーダル表示中は無効化。ボード画面のみ対象。再生中は無効。 */
+function _historyBlockedByFocus(){
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
+function _anyModalOpen(){
+  const bm = $("bulkMask"), mm = $("miMask");
+  return (bm && bm.classList.contains("on")) || (mm && mm.classList.contains("on"));
+}
+function _boardPopupOpen(){
+  // ボード上の編集ポップ(名前/ゾーン/コメント/矢印)が開いている時はショートカット無効
+  return (namePop && namePop.classList.contains("on")) ||
+         (zonePop && zonePop.classList.contains("on")) ||
+         (cmtPop && cmtPop.classList.contains("on")) ||
+         (arrowProp && arrowProp.classList.contains("on"));
+}
+window.addEventListener("keydown", e => {
+  if (currentScreen !== "board") return;         // ボード編集画面のみ対象(ドリル/3Dは対象外)
+  if (animating) return;                         // 再生中は無効
+  if (_historyBlockedByFocus() || _anyModalOpen() || _boardPopupOpen()) return;
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (!ctrl) return;
+  const k = (e.key || "").toLowerCase();
+  if (k === "z" && !e.shiftKey){ e.preventDefault(); doUndo(); }
+  else if ((k === "y") || (k === "z" && e.shiftKey)){ e.preventDefault(); doRedo(); }
 });
 document.querySelectorAll("#bViews .vtab").forEach(t => {
   t.addEventListener("click", () => {
@@ -2624,6 +2815,8 @@ document.querySelectorAll("#bViews .vtab").forEach(t => {
     renderPhaseChips(); refreshTimeline();
     setDesc("", "プリセットを選ぶと配置と動きが再現されます。");
     resizeBoard();
+    // ビュー切替はundo対象外だが、基点を現在のビュー/状態へ同期しておく(次の編集のundoが正しいビューへ戻るように)
+    if (typeof resetHistoryBaseline === "function") resetHistoryBaseline();
   });
 });
 
@@ -2644,7 +2837,7 @@ const equipPop = $("equipPop");
       equipColorCurrent = k;
       document.querySelectorAll("#eqColors .eq-sw").forEach(x => x.classList.toggle("on", x === sw));
       // 選択中の備品にも即反映(色を持つ種類のみ。ライン/枠も含む)
-      if (selectedEquip && equipType(selectedEquip.type).hasColor){ selectedEquip.color = k; drawBoard(); }
+      if (selectedEquip && equipType(selectedEquip.type).hasColor){ selectedEquip.color = k; drawBoard(); pushUndo(); }
     });
     box.appendChild(sw);
   }
@@ -2663,7 +2856,7 @@ document.querySelectorAll("#eqStyles .eq-style").forEach(b => {
   b.addEventListener("click", () => {
     equipStyleCurrent = b.dataset.estyle;
     document.querySelectorAll("#eqStyles .eq-style").forEach(x => x.classList.toggle("on", x === b));
-    if (selectedEquip && isSegmentType(selectedEquip.type)){ selectedEquip.style = equipStyleCurrent; drawBoard(); }
+    if (selectedEquip && isSegmentType(selectedEquip.type)){ selectedEquip.style = equipStyleCurrent; drawBoard(); pushUndo(); }
   });
 });
 /* 線の太さボタン */
@@ -2671,7 +2864,7 @@ document.querySelectorAll("#eqThicks .eq-thick").forEach(b => {
   b.addEventListener("click", () => {
     equipThickCurrent = b.dataset.ethick;
     document.querySelectorAll("#eqThicks .eq-thick").forEach(x => x.classList.toggle("on", x === b));
-    if (selectedEquip && isSegmentType(selectedEquip.type)){ selectedEquip.thickness = equipThickCurrent; drawBoard(); }
+    if (selectedEquip && isSegmentType(selectedEquip.type)){ selectedEquip.thickness = equipThickCurrent; drawBoard(); pushUndo(); }
   });
 });
 /* 種類に応じて色/回転/スタイルフィールドの表示を切替 */
@@ -2702,7 +2895,7 @@ function syncEquipPop(){
 function rotateSelectedEquip(deg){
   if (selectedEquip && equipType(selectedEquip.type).canRotate){
     selectedEquip.rot = (((selectedEquip.rot || 0) + deg) % 360 + 360) % 360;
-    drawBoard();
+    drawBoard(); pushUndo();
   } else {
     toast("回転できるのはミニゴール・ラダーです。備品を選んでから回してください");
   }
@@ -3002,6 +3195,7 @@ function applyPreset(i, btn){
   renderPhaseChips(); refreshTimeline();
   setDesc(p.name, p.desc, p.coach);
   drawBoard();
+  pushUndo();   // プリセット適用を1操作として確定(undoで直前の盤面へ戻せる)
   toast("プリセット「" + p.name + "」を配置しました");
 }
 
@@ -3178,6 +3372,9 @@ function loadBoardData(d, switchView){
   }
   clearPresetSel(); currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
   selectedAnno = null; selectedEquip = null; tempSeg = null; dragSeg = null; _cmtBoxes.clear(); renderPhaseChips(); refreshTimeline(); resizeBoard();
+  // 大きな読み込み: 履歴が初期化済みなら読み込み前状態を積み、読み込み後を新たな基点にする。
+  // (起動時ハッシュ復元など、履歴未初期化のうちは基点設定を初期化処理に委ねる)
+  if (typeof pushUndo === "function" && _undoBaseline != null) pushUndo();
 }
 
 /* ---------- マイ戦術ライブラリ (localStorage) ---------- */
@@ -3324,12 +3521,15 @@ function openBulkModal(){
 }
 function closeBulkModal(){ bulkMask.classList.remove("on"); }
 function applyBulk(){
+  let changed = false;
   bulkMask.querySelectorAll("input[data-num]").forEach(inp => {
     const team = inp.dataset.team, num = +inp.dataset.num;
     const p = board().players.find(pp => pp.team === team && pp.num === num);
-    if (p) p.name = (inp.value || "").trim().slice(0, 14);
+    if (p){ const next = (inp.value || "").trim().slice(0, 14); if (next !== (p.name || "")) changed = true; p.name = next; }
   });
-  drawBoard(); closeBulkModal(); toast("選手名を反映しました");
+  drawBoard(); closeBulkModal();
+  if (changed) pushUndo();   // 一括名前入力を1操作として確定
+  toast("選手名を反映しました");
 }
 $("bulkNameBtn").addEventListener("click", openBulkModal);
 $("bkCancel").addEventListener("click", closeBulkModal);
@@ -3797,6 +3997,8 @@ renderMenu();
 tryLoadFromHash();
 renderPhaseChips();
 refreshTimeline();
+/* Undo/Redo: ページ読込直後の状態(空盤面 or 共有復元後)を最初の基点として確定 */
+resetHistoryBaseline();
 /* レイアウト確定前だとcanvasが既定サイズ(300x150)に取り残されるため、
    実サイズになるまで数回リトライして確実にフィットさせる */
 (function ensureBoardSized(tries){
