@@ -925,6 +925,8 @@ function toast(msg, isErr){
 
 let currentScreen = "board";
 function showScreen(name){
+  // ボード以外へ移る際、再生中なら停止(rAFリーク・animating残留でボード編集不能になるのを防ぐ)
+  if (name !== "board" && typeof tlState !== "undefined" && tlState.playing) tlPause();
   currentScreen = name;
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === "screen-" + name));
   document.querySelectorAll(".step").forEach(s => s.classList.toggle("active", s.dataset.screen === name));
@@ -1421,6 +1423,7 @@ function hitComment(mx, my){
 function removeAnno(a){
   const list = annos(), i = list.indexOf(a);
   if (i >= 0) list.splice(i, 1);
+  if (a && a.id) _cmtBoxes.delete(a.id);
   if (selectedAnno === a) selectedAnno = null;
   closeZonePop(); closeCmtPop(); drawBoard();
 }
@@ -1643,7 +1646,7 @@ function hitArrow(mx, my){
 function nextNum(team){ let n = 0; for (const p of board().players) if (p.team === team && p.num > n) n = p.num; return n + 1; }
 function eraseAt(mx, my){
   const p = hitPlayer(mx, my);
-  if (p){ board().players.splice(board().players.indexOf(p), 1); drawBoard(); return; }
+  if (p){ board().players.splice(board().players.indexOf(p), 1); tlState.model = null; _tl2dBackup = null; drawBoard(); return; }
   const a = hitArrow(mx, my);
   if (a){ removeArrow(a); return; }
   // 備品も消しゴム対象
@@ -1668,7 +1671,7 @@ function removeArrow(a){
 }
 function deletePlayerAt(mx, my){
   const p = hitPlayer(mx, my);
-  if (p){ board().players.splice(board().players.indexOf(p), 1); clearPresetSel(); drawBoard(); }
+  if (p){ board().players.splice(board().players.indexOf(p), 1); clearPresetSel(); tlState.model = null; _tl2dBackup = null; drawBoard(); }
 }
 let lastTap = { t:0, x:0, y:0 };
 function pointerDown(e){
@@ -1708,6 +1711,11 @@ function pointerDown(e){
   const hit = hitPlayer(m.x, m.y);
   if (hit){ dragP = hit; closeArrowProp(); return; }
   if (tool === "atk" || tool === "def" || tool === "ball"){
+    // ボールは常に最大1個。既存ボールがあれば新規追加せずその位置へ移動する。
+    if (tool === "ball"){
+      const existBall = board().players.find(pl => pl.team === "ball");
+      if (existBall){ existBall.x = m.x; existBall.y = m.y; dragP = existBall; clearPresetSel(); tlState.model = null; _tl2dBackup = null; drawBoard(); return; }
+    }
     const p = { team:tool, x:m.x, y:m.y, num: tool === "ball" ? 0 : nextNum(tool), name:"" };
     board().players.push(p); dragP = p; clearPresetSel(); drawBoard(); return;
   }
@@ -1784,6 +1792,9 @@ function pointerUp(e){
     drawBoard();
   }
   if (dragEquip){ dragEquip = null; drawBoard(); }
+  // 選手/オブジェクトのドラッグ確定で位置が変わったら、再生モデルのキャッシュを無効化。
+  // 次回再生/スクラブ時に現在位置から再構築させ、ドラッグ結果が旧バックアップで上書き破棄されるのを防ぐ。
+  if (dragP && dragP !== "erasing"){ tlState.model = null; _tl2dBackup = null; }
   dragP = null;
 }
 cv.addEventListener("mousedown", pointerDown);
@@ -2348,7 +2359,7 @@ $("clearBtn").addEventListener("click", () => {
   if (animating) return;
   board().players = []; board().arrows = []; board().annotations = []; board().equipment = []; clearPresetSel();
   currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
-  selectedAnno = null; selectedEquip = null;
+  selectedAnno = null; selectedEquip = null; _cmtBoxes.clear();
   renderPhaseChips(); refreshTimeline();
   setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
   drawBoard();
@@ -2356,10 +2367,14 @@ $("clearBtn").addEventListener("click", () => {
 document.querySelectorAll("#bViews .vtab").forEach(t => {
   t.addEventListener("click", () => {
     if (animating) return;
+    // ビューを変える前に注釈ポップを閉じ・選択解除する。
+    // (空コメント自動削除などが新ビューでなく旧ビューを対象にするよう順序を保つ)
+    closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null; selectedEquip = null;
+    _cmtBoxes.clear();
     view = t.dataset.view;
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x === t));
     buildPresetList(); clearPresetSel();
-    currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null; selectedEquip = null;
+    currentPhase = 1;
     normalizeBoardArrows(board()); normalizeAnnotations(board()); normalizeEquipment(board());
     renderPhaseChips(); refreshTimeline();
     setDesc("", "プリセットを選ぶと配置と動きが再現されます。");
@@ -2893,13 +2908,13 @@ function loadBoardData(d, switchView){
     buildPresetList();
   }
   clearPresetSel(); currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
-  selectedAnno = null; selectedEquip = null; renderPhaseChips(); refreshTimeline(); resizeBoard();
+  selectedAnno = null; selectedEquip = null; _cmtBoxes.clear(); renderPhaseChips(); refreshTimeline(); resizeBoard();
 }
 
 /* ---------- マイ戦術ライブラリ (localStorage) ---------- */
 const LIB_KEY = "soccerStudio_lib_v1";
 function loadLib(){ try { return JSON.parse(localStorage.getItem(LIB_KEY)) || []; } catch(e){ return []; } }
-function saveLib(arr){ try { localStorage.setItem(LIB_KEY, JSON.stringify(arr)); } catch(e){} }
+function saveLib(arr){ try { localStorage.setItem(LIB_KEY, JSON.stringify(arr)); return true; } catch(e){ return false; } }
 function renderLib(){
   const box = $("libList"), arr = loadLib();
   box.innerHTML = "";
@@ -2920,7 +2935,8 @@ $("libSaveBtn").addEventListener("click", () => {
   const snapshot = { corner:JSON.parse(JSON.stringify(boards.corner)), throwin:JSON.parse(JSON.stringify(boards.throwin)), eight:JSON.parse(JSON.stringify(boards.eight)) };
   const arr = loadLib();
   arr.unshift({ name, activeView:view, boards:snapshot, ts:Date.now() });
-  saveLib(arr); nameEl.value = ""; renderLib(); toast("「" + name + "」を保存しました");
+  if (!saveLib(arr)){ toast("保存できませんでした（容量不足の可能性）", true); return; }
+  nameEl.value = ""; renderLib(); toast("「" + name + "」を保存しました");
 });
 function loadFromLib(i){
   const item = loadLib()[i]; if (!item) return;
@@ -3054,7 +3070,7 @@ bulkMask.addEventListener("mousedown", e => { if (e.target === bulkMask) closeBu
 /* 名前テンプレ (localStorage) */
 const NAMETPL_KEY = "soccerStudio_nameTpl_v1";
 function loadTpls(){ try { return JSON.parse(localStorage.getItem(NAMETPL_KEY)) || []; } catch(e){ return []; } }
-function saveTpls(a){ try { localStorage.setItem(NAMETPL_KEY, JSON.stringify(a)); } catch(e){} }
+function saveTpls(a){ try { localStorage.setItem(NAMETPL_KEY, JSON.stringify(a)); return true; } catch(e){ return false; } }
 function refreshTplSelect(){
   const sel = $("bkTplSel"), a = loadTpls();
   sel.innerHTML = '<option value="">よく使う名前セットを呼び出す…</option>';
@@ -3067,7 +3083,9 @@ $("bkTplSave").addEventListener("click", () => {
   if (!atk.some(Boolean) && !def.some(Boolean)){ toast("保存する名前がありません", true); return; }
   const name = (prompt("名前セットの名称（例：Aチーム）") || "").trim();
   if (!name) return;
-  const a = loadTpls(); a.unshift({ name, atk, def }); saveTpls(a); refreshTplSelect();
+  const a = loadTpls(); a.unshift({ name, atk, def });
+  if (!saveTpls(a)){ toast("保存できませんでした（容量不足の可能性）", true); return; }
+  refreshTplSelect();
   toast("名前セット「" + name + "」を保存しました");
 });
 $("bkTplSel").addEventListener("change", e => {
@@ -3122,9 +3140,9 @@ function boardsSummary(bs){
 
 /* ---------- メニューの読み書き ---------- */
 function loadMenus(){ try { const a = JSON.parse(localStorage.getItem(MENU_KEY)); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
-function saveMenus(a){ try { localStorage.setItem(MENU_KEY, JSON.stringify(a)); } catch(e){} }
+function saveMenus(a){ try { localStorage.setItem(MENU_KEY, JSON.stringify(a)); return true; } catch(e){ return false; } }
 function getCurIdx(){ let i = parseInt(localStorage.getItem(MENU_CUR_KEY), 10); if (!(i >= 0)) i = 0; return i; }
-function setCurIdx(i){ try { localStorage.setItem(MENU_CUR_KEY, String(i)); } catch(e){} }
+function setCurIdx(i){ try { localStorage.setItem(MENU_CUR_KEY, String(i)); return true; } catch(e){ return false; } }
 /* 空メニューの雛形 */
 function blankMenu(name){ return { app:"soccer-studio-menu", version:1, name: name || "新しい練習メニュー", items:[] }; }
 /* 常に最低1つのメニューが存在するよう保証し、選択中メニューを返す */
@@ -3135,7 +3153,7 @@ function ensureMenus(){
   return { menus, idx };
 }
 function curMenu(){ const { menus, idx } = ensureMenus(); return menus[idx]; }
-function commitCurMenu(menu){ const { menus, idx } = ensureMenus(); menus[idx] = menu; saveMenus(menus); }
+function commitCurMenu(menu){ const { menus, idx } = ensureMenus(); menus[idx] = menu; return saveMenus(menus); }
 
 /* 項目を検証・正規化(壊れた読み込みデータでもクラッシュしない) */
 function normalizeMenuItem(it){
@@ -3323,8 +3341,9 @@ function saveItemModal(){
   } else {
     const item = { title: title || (VIEWS[view].label + " 盤面"), kind, minutes: mins,
       coachingPoints, equipment, activeView: view, boards: miPendingBoards || snapshotBoards() };
-    menu.items.push(item); commitCurMenu(menu); renderMenu(); closeItemModal();
-    toast("「" + item.title + "」をメニューに追加しました");
+    menu.items.push(item);
+    const ok = commitCurMenu(menu); renderMenu(); closeItemModal();
+    toast(ok ? ("「" + item.title + "」をメニューに追加しました") : "保存できませんでした（容量不足の可能性）", !ok);
   }
 }
 $("menuAddBtn").addEventListener("click", () => openItemModal(-1));
@@ -3339,7 +3358,8 @@ $("menuNewBtn").addEventListener("click", () => {
   const nm = (prompt("新しい練習メニューの名前", "練習メニュー " + (menus.length + 1)) || "").trim();
   if (nm === null) return;
   menus.push(blankMenu(nm || ("練習メニュー " + (menus.length + 1))));
-  saveMenus(menus); setCurIdx(menus.length - 1); renderMenu(); toast("練習メニューを作成しました");
+  if (!saveMenus(menus)){ toast("保存できませんでした（容量不足の可能性）", true); return; }
+  setCurIdx(menus.length - 1); renderMenu(); toast("練習メニューを作成しました");
 });
 $("menuName").addEventListener("input", () => {
   const menu = curMenu(); menu.name = ($("menuName").value || "").slice(0, 48); commitCurMenu(menu); renderMenuSelect();
@@ -3373,8 +3393,21 @@ const SHARE_DICT = [
   ['"rot"','"§r"'],
   ['"cone"','"§Kc"'],['"marker"','"§Km"'],['"minigoal"','"§Kg"'],['"ladder"','"§Kl"'],['"pole"','"§Kp"']
 ];
-function dictPack(json){ let s = json; for (const [a, b] of SHARE_DICT) s = s.split(a).join(b); return s; }
-function dictUnpack(s){ let json = s; for (const [a, b] of SHARE_DICT) json = json.split(b).join(a); return json; }
+/* 辞書トークンはすべて "§" を先頭記号に使う。ユーザー入力に "§" が含まれると
+   往復で辞書トークンと衝突し破損するため、パック前に生JSON中の "§" を
+   センチネル(制御文字 。JSON.stringify出力には生の制御文字は現れない)へ退避し、
+   アンパック後に復元することで任意入力の往復ロスレスを保証する。 */
+const DICT_SENTINEL = "";
+function dictPack(json){
+  let s = json.split("§").join(DICT_SENTINEL);          // ユーザー由来の § を退避
+  for (const [a, b] of SHARE_DICT) s = s.split(a).join(b); // 辞書トークン(§付き)を導入
+  return s;
+}
+function dictUnpack(s){
+  let json = s;
+  for (const [a, b] of SHARE_DICT) json = json.split(b).join(a); // 辞書トークンを復元
+  return json.split(DICT_SENTINEL).join("§");            // 退避した § を復元
+}
 /* UTF-8 → base64url */
 function b64urlEncode(str){
   const b64 = btoa(unescape(encodeURIComponent(str)));
@@ -3508,7 +3541,7 @@ const dpx = v => v / 100 * DW, dpy = v => v / 100 * DH;
 /* セーブデータ(★・成績) */
 let dState = { stars:0, d:[] };
 try { const s = localStorage.getItem("soccerStudio_drill_v1"); if (s) dState = Object.assign(dState, JSON.parse(s)); } catch(e){}
-function dSave(){ try { localStorage.setItem("soccerStudio_drill_v1", JSON.stringify(dState)); } catch(e){} }
+function dSave(){ try { localStorage.setItem("soccerStudio_drill_v1", JSON.stringify(dState)); return true; } catch(e){ return false; } }
 function drankName(s){ return s>=18?"レジェンド 👑":s>=14?"エース 🔥":s>=9?"キャプテン 🎖️":s>=4?"レギュラー ⚽":"ルーキー 🌱"; }
 function dUpdateStatus(){ $("statusD").textContent = "⭐" + dState.stars + " " + drankName(dState.stars); }
 function dAwardStar(){ dState.stars++; dSave(); dUpdateStatus(); }
@@ -4322,7 +4355,8 @@ function buildImportedScene(d){
     let t = 0.9; ballWp.push({ t, x:cur.x, z:cur.z });
     for (let i = 0; i < 12; i++){
       let best = null, bd = 36;
-      for (const a of arrows){ if (a.used && a.kind === "pass") continue; if (a.kind === "move") continue; const dd = dist2(a.s, cur); if (dd < bd){ bd = dd; best = a; } }
+      // 2D(buildAnim2dModel)に合わせ、ボールはパス矢印のみ辿る。使用済み矢印(選手のドリブル等)は全除外。
+      for (const a of arrows){ if (a.used) continue; if (a.kind !== "pass") continue; const dd = dist2(a.s, cur); if (dd < bd){ bd = dd; best = a; } }
       if (!best) break;
       best.used = true;
       const d0 = Math.sqrt(dist2(best.s, best.e));
