@@ -1032,6 +1032,7 @@ let tempZone = null, selectedAnno = null, dragAnno = null;
 let selectedEquip = null, dragEquip = null;
 let tempSeg = null;              // ライン/枠のドラッグ描画中の一時オブジェクト
 let dragSeg = null;              // ライン/枠の端点/全体ドラッグ状態
+let dragArrow = null;            // 曲線ハンドル(中点)のドラッグ状態 { a, moved }
 let equipKindCurrent = "cone", equipColorCurrent = "red";
 let equipStyleCurrent = "solid", equipThickCurrent = "medium";
 const board = () => boards[view];
@@ -1237,7 +1238,90 @@ function normalizeArrow(a){
   a.step = Math.max(1, Math.round(a.step));
   if (typeof a.delay !== "number" || !isFinite(a.delay) || a.delay < 0) a.delay = 0;
   if (a.trigger === undefined) a.trigger = null;
+  // 曲線: mid={x,y}(1つの制御点=quadratic bezier)。不正値は破棄=直線に戻す。後方互換。
+  if (a.mid){
+    if (typeof a.mid === "object" && isFinite(+a.mid.x) && isFinite(+a.mid.y)) a.mid = { x:+a.mid.x, y:+a.mid.y };
+    else delete a.mid;
+  }
   return a;
+}
+/* ============================================================
+   曲線矢印ヘルパー(メートル座標)
+   mid が有れば quadratic bezier: B(t)=(1-t)^2 P0 + 2(1-t)t Pm + t^2 P2
+   ・制御点 Pm は「見た目上の曲線が通る中点(近似)」ではなく生の制御点。
+     ユーザーが掴むハンドルは曲線上の中点(t=0.5)を提示し、そこから Pm を逆算する。
+   mid が無ければ従来の直線として扱う(後方互換)。
+============================================================ */
+/* この矢印は曲がっているか(mid が直線から十分離れている) */
+function arrowIsCurved(a){
+  if (!a || !a.mid) return false;
+  const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
+  return Math.hypot(a.mid.x - mx, a.mid.y - my) > 0.15; // 0.15m 未満は実質直線
+}
+/* パラメータ t(0..1)での曲線上座標(メートル) */
+function curvePtAt(a, t){
+  if (!arrowIsCurved(a)){
+    return { x: a.x1 + (a.x2 - a.x1) * t, y: a.y1 + (a.y2 - a.y1) * t };
+  }
+  const u = 1 - t, w0 = u * u, w1 = 2 * u * t, w2 = t * t;
+  return { x: w0 * a.x1 + w1 * a.mid.x + w2 * a.x2, y: w0 * a.y1 + w1 * a.mid.y + w2 * a.y2 };
+}
+/* パラメータ t での接線(方向, 正規化不要) */
+function curveTangentAt(a, t){
+  if (!arrowIsCurved(a)) return { x: a.x2 - a.x1, y: a.y2 - a.y1 };
+  const u = 1 - t;
+  // dB/dt = 2(1-t)(Pm-P0) + 2t(P2-Pm)
+  return {
+    x: 2 * u * (a.mid.x - a.x1) + 2 * t * (a.x2 - a.mid.x),
+    y: 2 * u * (a.mid.y - a.y1) + 2 * t * (a.y2 - a.mid.y)
+  };
+}
+/* 曲線をポリラインにサンプリング(メートル)。直線なら2点。 */
+function sampleCurvePts(a, n){
+  if (!arrowIsCurved(a)) return [{ x:a.x1, y:a.y1 }, { x:a.x2, y:a.y2 }];
+  n = Math.max(6, n || 20);
+  const out = [];
+  for (let i = 0; i <= n; i++) out.push(curvePtAt(a, i / n));
+  return out;
+}
+/* 曲線上でハンドルを掴む点(t=0.5 の曲線上座標)。直線なら中点。 */
+function curveHandlePt(a){
+  if (!arrowIsCurved(a)) return { x:(a.x1 + a.x2) / 2, y:(a.y1 + a.y2) / 2 };
+  return curvePtAt(a, 0.5);
+}
+/* ユーザーが「曲線上の中点」を hx,hy に動かしたときの制御点 mid を逆算。
+   B(0.5)=0.25 P0 + 0.5 Pm + 0.25 P2 = H  → Pm = 2H - (P0+P2)/2 */
+function setCurveByHandle(a, hx, hy){
+  const mx = (a.x1 + a.x2) / 2, my = (a.y1 + a.y2) / 2;
+  const pmx = 2 * hx - mx, pmy = 2 * hy - my;
+  if (Math.hypot(hx - mx, hy - my) < 0.2){ delete a.mid; }  // ほぼ直線に戻したら直線化
+  else a.mid = { x:pmx, y:pmy };
+}
+/* 弧長で等分割した t 配列(near 等速補間用)。直線なら null(線形でよい)。 */
+function curveArcTable(a, seg){
+  if (!arrowIsCurved(a)) return null;
+  seg = Math.max(12, seg || 24);
+  const ts = [0], ls = [0]; let prev = curvePtAt(a, 0), acc = 0;
+  for (let i = 1; i <= seg; i++){
+    const t = i / seg, p = curvePtAt(a, t);
+    acc += Math.hypot(p.x - prev.x, p.y - prev.y); prev = p;
+    ts.push(t); ls.push(acc);
+  }
+  return { ts, ls, total: acc || 1e-6 };
+}
+/* 進捗 f(0..1, 弧長基準)に対応する曲線上座標。tbl は curveArcTable の返り値。 */
+function curvePtByArc(a, f, tbl){
+  if (!arrowIsCurved(a)) return { x: a.x1 + (a.x2 - a.x1) * f, y: a.y1 + (a.y2 - a.y1) * f };
+  if (!tbl) tbl = curveArcTable(a);
+  const target = Math.max(0, Math.min(1, f)) * tbl.total, ls = tbl.ls, ts = tbl.ts;
+  for (let i = 1; i < ls.length; i++){
+    if (target <= ls[i]){
+      const seg = ls[i] - ls[i - 1] || 1e-6, k = (target - ls[i - 1]) / seg;
+      const t = ts[i - 1] + (ts[i] - ts[i - 1]) * k;
+      return curvePtAt(a, t);
+    }
+  }
+  return curvePtAt(a, 1);
 }
 /* 盤面の全矢印を正規化し、id重複やid採番を安定させる */
 function normalizeBoardArrows(b){
@@ -1254,9 +1338,14 @@ function normalizeBoardArrows(b){
 }
 /* このビューで使われている最大フェーズ番号 */
 function maxPhase(){ let mx = 1; for (const a of board().arrows) if (a.step > mx) mx = a.step; return Math.max(mx, currentPhase); }
+/* 矢印の実効長(メートル)。曲線は弧長、直線は端点間距離。 */
+function arrowLen(a){
+  if (arrowIsCurved(a)){ const t = curveArcTable(a); return t ? t.total : Math.hypot(a.x2 - a.x1, a.y2 - a.y1); }
+  return Math.hypot(a.x2 - a.x1, a.y2 - a.y1);
+}
 /* 矢印の想定所要時間(秒)。長さ由来。パスは速く、ドリブルはやや遅く */
 function arrowDur(a){
-  const len = Math.hypot(a.x2 - a.x1, a.y2 - a.y1);
+  const len = arrowLen(a);
   const spd = a.kind === "pass" ? 16 : (a.kind === "dribble" ? 6 : 8); // m/s目安
   return Math.max(0.45, Math.min(3.2, len / spd));
 }
@@ -1324,7 +1413,7 @@ function drawArrowB(a, ghost){
   const x1 = m2x(a.x1), y1 = m2y(a.y1), x2 = m2x(a.x2), y2 = m2y(a.y2);
   const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
   if (len < 4) return;
-  const ang = Math.atan2(dy, dx);
+  const curved = arrowIsCurved(a);
   const step = a.step >= 1 ? a.step : 1;
   const isSel = !ghost && selectedArrow === a;
   ctx.save();
@@ -1335,18 +1424,47 @@ function drawArrowB(a, ghost){
   ctx.lineWidth = Math.max(2.2, scaleB * 0.22); ctx.lineCap = "round";
   if (isSel){ ctx.shadowColor = "rgba(255,255,255,.9)"; ctx.shadowBlur = 10; ctx.lineWidth = Math.max(3, scaleB * 0.3); }
   const head = Math.max(9, scaleB * 0.9);
+  // 終点の接線角(曲線は末端の接線, 直線は端点方向)
+  const endTan = curveTangentAt(a, 1);
+  const ang = Math.atan2(endTan.y, endTan.x);
+  // 矢じり手前(終点から接線方向に少し戻した点)。曲線ではピクセル座標で扱う。
   const ex = x2 - Math.cos(ang) * head * 0.75, ey = y2 - Math.sin(ang) * head * 0.75;
+  // 曲線用: 弧長換算の実効ピクセル長(波線周期/分割数の目安)
+  const arcLenPx = curved ? (arrowLen(a) * scaleB) : len;
   ctx.setLineDash(st.dash);
+  // 曲線パス上の点(t が終端側は矢じりぶん手前で止める)を返す。ピクセル座標。
+  // 終点手前で止めるため、パラメータ t を「終点少し手前」に収める倍率 tEnd を使う。
+  const backFrac = curved ? Math.min(0.35, (head * 0.75) / Math.max(arcLenPx, 1)) : 0;
+  const pathPx = t => {
+    const tt = t * (1 - backFrac);
+    const p = curvePtAt(a, tt);
+    return { x: m2x(p.x), y: m2y(p.y) };
+  };
   if (a.kind === "dribble"){
     ctx.beginPath();
     const amp = Math.max(3, scaleB * 0.35), wl = Math.max(11, scaleB * 1.1);
-    const n = Math.max(8, Math.floor(len / 3));
+    const n = Math.max(8, Math.floor(arcLenPx / 3));
     for (let i = 0; i <= n; i++){
-      const t = i / n, bx = x1 + (ex - x1) * t, by = y1 + (ey - y1) * t;
-      const off = Math.sin(t * len / wl * Math.PI * 2) * amp;
-      const px = bx + Math.cos(ang + Math.PI / 2) * off, py = by + Math.sin(ang + Math.PI / 2) * off;
+      const t = i / n;
+      let bx, by, nx, ny;
+      if (curved){
+        const p = pathPx(t); bx = p.x; by = p.y;
+        const tg = curveTangentAt(a, t * (1 - backFrac));
+        const ta = Math.atan2(tg.y, tg.x);
+        nx = Math.cos(ta + Math.PI / 2); ny = Math.sin(ta + Math.PI / 2);
+      } else {
+        bx = x1 + (ex - x1) * t; by = y1 + (ey - y1) * t;
+        nx = Math.cos(ang + Math.PI / 2); ny = Math.sin(ang + Math.PI / 2);
+      }
+      const off = Math.sin(t * arcLenPx / wl * Math.PI * 2) * amp;
+      const px = bx + nx * off, py = by + ny * off;
       i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
     }
+    ctx.stroke();
+  } else if (curved){
+    ctx.beginPath();
+    const n = Math.max(10, Math.floor(arcLenPx / 6));
+    for (let i = 0; i <= n; i++){ const p = pathPx(i / n); i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); }
     ctx.stroke();
   } else { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(ex, ey); ctx.stroke(); }
   ctx.setLineDash([]); ctx.shadowColor = "transparent";
@@ -1354,11 +1472,20 @@ function drawArrowB(a, ghost){
   ctx.lineTo(x2 - Math.cos(ang - 0.42) * head, y2 - Math.sin(ang - 0.42) * head);
   ctx.lineTo(x2 - Math.cos(ang + 0.42) * head, y2 - Math.sin(ang + 0.42) * head);
   ctx.closePath(); ctx.fill();
+  // 選択時: 曲線ハンドル(中点)を表示。ドラッグで湾曲/直線化。
+  if (isSel){
+    const h = curveHandlePt(a), hx = m2x(h.x), hy = m2y(h.y);
+    const hr = Math.max(6, scaleB * 0.5);
+    ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+    ctx.fillStyle = curved ? "#7ce0a0" : "rgba(255,255,255,.92)";
+    ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#0a0e14"; ctx.stroke();
+    // ハンドルの中に「曲げる」を示す小さな弧
+    ctx.beginPath(); ctx.strokeStyle = "#0a0e14"; ctx.lineWidth = 1.6;
+    ctx.arc(hx, hy, hr * 0.5, Math.PI * 0.15, Math.PI * 0.95); ctx.stroke();
+  }
   // フェーズ番号ラベル(起点付近の丸バッジ)。トリガー付きは⚡マーク
   if (!ghost){
     ctx.globalAlpha = 1;
-    const bx = x1 + Math.cos(ang) * head * 0.9 + Math.cos(ang + Math.PI / 2) * 0;
-    const by = y1 + Math.sin(ang) * head * 0.9;
     const br = Math.max(7.5, scaleB * 0.62);
     ctx.beginPath(); ctx.arc(x1, y1, br, 0, Math.PI * 2);
     ctx.fillStyle = a.trigger ? "#a77bf0" : (isSel ? "#fff" : "rgba(10,14,20,.9)");
@@ -1909,16 +2036,35 @@ function hitPlayer(mx, my){
   for (let i = ps.length - 1; i >= 0; i--) if (Math.hypot(ps[i].x - mx, ps[i].y - my) < hr) return ps[i];
   return null;
 }
-function distToSeg(px, py, a){
-  const dx = a.x2 - a.x1, dy = a.y2 - a.y1, L2 = dx * dx + dy * dy;
-  let t = L2 ? ((px - a.x1) * dx + (py - a.y1) * dy) / L2 : 0;
+/* 点(px,py)と線分P1P2の距離(メートル) */
+function distToLineSeg(px, py, x1, y1, x2, y2){
+  const dx = x2 - x1, dy = y2 - y1, L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - x1) * dx + (py - y1) * dy) / L2 : 0;
   t = Math.max(0, Math.min(1, t));
-  return Math.hypot(px - (a.x1 + dx * t), py - (a.y1 + dy * t));
+  return Math.hypot(px - (x1 + dx * t), py - (y1 + dy * t));
+}
+/* 点と矢印(直線 or 曲線)の距離。曲線はポリライン近似で最短距離。 */
+function distToSeg(px, py, a){
+  if (!arrowIsCurved(a)) return distToLineSeg(px, py, a.x1, a.y1, a.x2, a.y2);
+  const pts = sampleCurvePts(a, 22);
+  let best = Infinity;
+  for (let i = 0; i < pts.length - 1; i++){
+    const d = distToLineSeg(px, py, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y);
+    if (d < best) best = d;
+  }
+  return best;
 }
 function hitArrow(mx, my){
   const hr = 14 / scaleB, as = board().arrows;
   for (let i = as.length - 1; i >= 0; i--) if (distToSeg(mx, my, as[i]) < hr) return as[i];
   return null;
+}
+/* 選択中矢印の曲線ハンドル(中点)を掴めるか。掴めれば true。 */
+function hitArrowHandle(a, mx, my){
+  if (!a) return false;
+  const h = curveHandlePt(a);
+  const hr = Math.max(9, scaleB * 0.7) / scaleB; // ピクセル半径をメートルへ
+  return Math.hypot(mx - h.x, my - h.y) < hr + 6 / scaleB;
 }
 function nextNum(team){ let n = 0; for (const p of board().players) if (p.team === team && p.num > n) n = p.num; return n + 1; }
 function eraseAt(mx, my){
@@ -2019,6 +2165,12 @@ function pointerDown(e){
   }
   // 選択ツール: 矢印→コメント→ゾーンの順でタップ対象を判定
   if (tool === "select"){
+    // 選択中の矢印は、まず曲線ハンドル(中点)を掴めるように(その下の別矢印より優先)
+    if (selectedArrow && hitArrowHandle(selectedArrow, m.x, m.y)){
+      dragArrow = { a: selectedArrow, moved: false };
+      setCurveByHandle(selectedArrow, m.x, m.y);
+      drawBoard(); return;
+    }
     const a = hitArrow(m.x, m.y);
     if (a){ openArrowProp(a); return; }
     closeArrowProp();
@@ -2054,6 +2206,12 @@ function pointerMove(e){
   const m = evPos(e);
   if (tempZone){ tempZone.w = m.x - tempZone.x; tempZone.h = m.y - tempZone.y; drawBoard(); return; }
   if (tempArrow){ tempArrow.x2 = m.x; tempArrow.y2 = m.y; drawBoard(); return; }
+  if (dragArrow){
+    dragArrow.moved = true;
+    setCurveByHandle(dragArrow.a, m.x, m.y);
+    tlState.model = null; _tl2dBackup = null; // 曲線変更で再生モデルを無効化
+    refreshTimeline(); drawBoard(); return;
+  }
   if (tempSeg){ tempSeg.x2 = m.x; tempSeg.y2 = m.y; drawBoard(); return; }
   if (dragSeg){
     dragSeg.moved = true;
@@ -2119,6 +2277,11 @@ function pointerUp(e){
       pushUndo();   // 矢印追加を確定
     }
     tempArrow = null; drawBoard();
+  }
+  if (dragArrow){
+    const moved = dragArrow.moved; dragArrow = null;
+    if (moved){ refreshTimeline(); pushUndo(); }  // 曲線調整を1操作として確定
+    drawBoard();
   }
   if (dragAnno){
     const da = dragAnno; dragAnno = null;
@@ -2645,7 +2808,7 @@ function attachBlockDrag(el, blk, hl, hr, pps){
 }
 /* speedScale を考慮した所要時間。arrowDur は基本値なので speedScale を掛ける */
 function baseDur(a){
-  const len = Math.hypot(a.x2 - a.x1, a.y2 - a.y1);
+  const len = arrowLen(a);
   const spd = a.kind === "pass" ? 16 : (a.kind === "dribble" ? 6 : 8);
   return Math.max(0.45, Math.min(3.2, len / spd));
 }
@@ -3256,7 +3419,9 @@ function chainSegs(segs){
 }
 function makeSeg(a, sched){
   const it = sched.map.get(a.id);
-  return { a, startAt:it.startAt, dur:it.dur, endAt:it.endAt, sx:a.x1, sy:a.y1, ex:a.x2, ey:a.y2, kind:a.kind };
+  // 曲線の弧長テーブルを1回だけ計算(再生中の毎フレーム再計算を避ける)
+  const arc = arrowIsCurved(a) ? curveArcTable(a, 28) : null;
+  return { a, startAt:it.startAt, dur:it.dur, endAt:it.endAt, sx:a.x1, sy:a.y1, ex:a.x2, ey:a.y2, kind:a.kind, arc };
 }
 const _ease2d = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 /* 時刻 t におけるジョブ対象の座標(未開始は起点, 進行中は補間, 完了は終点) */
@@ -3269,6 +3434,8 @@ function sampleJob2d(job, t){
   for (const s of segs){
     if (t >= s.startAt && t < s.endAt){
       const f = _ease2d(Math.max(0, Math.min(1, (t - s.startAt) / Math.max(s.dur, 1e-4))));
+      // 曲線は弧長基準で追従(等速に近い)。直線は従来の線形補間。
+      if (s.arc){ const p = curvePtByArc(s.a, f, s.arc); return { x:p.x, y:p.y }; }
       return { x:s.sx + (s.ex - s.sx) * f, y:s.sy + (s.ey - s.sy) * f };
     }
   }
@@ -3354,6 +3521,8 @@ function loadBoardData(d, switchView){
         if (a.delay != null && isFinite(a.delay)) na.delay = Math.max(0, +a.delay);
         if (typeof a.trigger === "string") na.trigger = a.trigger;
         if (a.speedScale != null && isFinite(a.speedScale) && +a.speedScale > 0) na.speedScale = +a.speedScale;
+        // 曲線の制御点 mid={x,y}(後方互換: 無い旧JSONは直線のまま)
+        if (a.mid && isFinite(+a.mid.x) && isFinite(+a.mid.y)) na.mid = { x:+a.mid.x, y:+a.mid.y };
         return normalizeArrow(na);
       });
       // 注釈(annotations): 追加フィールド。無い旧JSONは空配列(後方互換)。
@@ -3864,6 +4033,7 @@ const SHARE_DICT = [
   // ライン/グリッド枠(line/rect)用の追加キー・値。x1..y2 は矢印でも共有され圧縮に寄与。
   ['"x1"','"§X1"'],['"y1"','"§Y1"'],['"x2"','"§X2"'],['"y2"','"§Y2"'],
   ['"style"','"§ss"'],['"thickness"','"§tk"'],
+  ['"mid"','"§Mi"'],  // 矢印の曲線制御点 {x,y}
   ['"line"','"§Kn"'],['"rect"','"§Kr"'],
   ['"solid"','"§So"'],['"dashed"','"§Da"'],
   ['"thin"','"§Wt"'],['"medium"','"§Wm"'],['"thick"','"§Ww"'],['"white"','"§Ow"']
@@ -4969,11 +5139,21 @@ function buildImportedScene(d){
   const rawArrows = (b.arrows || []).filter(a => ["move","pass","dribble"].includes(a.kind) && [a.x1,a.y1,a.x2,a.y2].every(v => valid(+v)));
   // タイムラインで解決済みのスケジュール(startAt/dur)。無ければ従来の一律タイミングにフォールバック
   const SCHED = (d.__schedule && typeof d.__schedule === "object") ? d.__schedule : null;
-  const arrows = rawArrows.map(a => ({
-    id: a.id, kind: a.kind, step: (a.step >= 1 ? a.step : 1),
-    s: clampPitch(conv(+a.x1, +a.y1)), e: clampPitch(conv(+a.x2, +a.y2)), used: false,
-    sched: (SCHED && a.id && SCHED[a.id]) ? SCHED[a.id] : null
-  }));
+  const arrows = rawArrows.map(a => {
+    // 曲線は複数点にサンプリングして 3D waypoint 化。直線は始点・終点のみ。
+    const curved = (typeof arrowIsCurved === "function") && arrowIsCurved(a);
+    let curvePts = null;
+    if (curved){
+      const mpts = sampleCurvePts(a, 14);   // メートル座標のポリライン
+      curvePts = mpts.map(p => clampPitch(conv(p.x, p.y))); // 3Dピッチ座標(x,z)
+    }
+    return {
+      id: a.id, kind: a.kind, step: (a.step >= 1 ? a.step : 1),
+      s: clampPitch(conv(+a.x1, +a.y1)), e: clampPitch(conv(+a.x2, +a.y2)), used: false,
+      curvePts,
+      sched: (SCHED && a.id && SCHED[a.id]) ? SCHED[a.id] : null
+    };
+  });
   const players = [];
   const counters = { atk:0, def:0 };
   const T_MOVE_START = 0.7, T_MOVE_END = 3.6;
@@ -4996,7 +5176,20 @@ function buildImportedScene(d){
       else { startT = T_MOVE_START; endT = T_MOVE_END; }
       // 直前位置で待機してから開始点へ(既に起点にいる想定)、startで発進しendで到達
       wp.push({ t:startT, x:cx, z:cz });
-      wp.push({ t:Math.max(startT + 0.05, endT), x:best.e.x, z:best.e.z });
+      const endTclamp = Math.max(startT + 0.05, endT);
+      if (best.curvePts && best.curvePts.length > 2){
+        // 曲線: 中間点を弧長比で時間配分して waypoint 追加(3Dでも曲線に沿う)
+        const cp = best.curvePts, seglen = [], L = [0];
+        let tot = 0;
+        for (let k = 1; k < cp.length; k++){ const dl = Math.hypot(cp[k].x - cp[k-1].x, cp[k].z - cp[k-1].z); seglen.push(dl); tot += dl; L.push(tot); }
+        tot = tot || 1e-6;
+        for (let k = 1; k < cp.length; k++){
+          const tt = startT + (endTclamp - startT) * (L[k] / tot);
+          wp.push({ t:tt, x:cp[k].x, z:cp[k].z });
+        }
+      } else {
+        wp.push({ t:endTclamp, x:best.e.x, z:best.e.z });
+      }
       schedMaxEnd = Math.max(schedMaxEnd, endT);
       cx = best.e.x; cz = best.e.z;
     }
@@ -5017,15 +5210,33 @@ function buildImportedScene(d){
       best.used = true;
       const d0 = Math.sqrt(dist2(best.s, best.e));
       const h = best.kind === "pass" ? Math.max(0.25, Math.min(5, d0*0.15)) : 0;
+      const cp = (best.curvePts && best.curvePts.length > 2) ? best.curvePts : null;
+      // 曲線パス: [t0,t1] 区間へ中間点を弧長比で配置。放物線の高さは y で全体に1山かける
+      // (h をサブセグメント毎に与えると小刻みに跳ねるため、y に一括プロファイル)。
+      const pushCurve = (t0, t1) => {
+        const seglen = [], L = [0]; let tot = 0;
+        for (let k = 1; k < cp.length; k++){ const dl = Math.hypot(cp[k].x - cp[k-1].x, cp[k].z - cp[k-1].z); seglen.push(dl); tot += dl; L.push(tot); }
+        tot = tot || 1e-6;
+        for (let k = 1; k < cp.length; k++){
+          const f = L[k] / tot;                       // 0..1 弧長進捗
+          const tt = t0 + (t1 - t0) * f;
+          const yArc = BALL_R + 4 * h * f * (1 - f);   // 放物線(1山)
+          ballWp.push({ t:tt, x:cp[k].x, z:cp[k].z, y:yArc });
+        }
+      };
       if (best.sched){
         // スケジュールに沿ってボールも発火。開始で起点にいて、終了で到達点へ
         const st = best.sched.startAt, en = best.sched.startAt + best.sched.dur;
         if (st > t){ ballWp.push({ t:st, x:cur.x, z:cur.z }); }
-        ballWp.push({ t:Math.max(en, st + 0.05), x:best.e.x, z:best.e.z, h });
-        t = Math.max(en, st + 0.05);
+        const enT = Math.max(en, st + 0.05);
+        if (cp) pushCurve(st, enT);
+        else ballWp.push({ t:enT, x:best.e.x, z:best.e.z, h });
+        t = enT;
       } else {
         const dt = Math.max(0.5, Math.min(1.6, d0/12));
-        t += dt; ballWp.push({ t, x:best.e.x, z:best.e.z, h }); t += 0.25; ballWp.push({ t, x:best.e.x, z:best.e.z });
+        if (cp){ pushCurve(t, t + dt); t += dt; }
+        else { t += dt; ballWp.push({ t, x:best.e.x, z:best.e.z, h }); }
+        t += 0.25; ballWp.push({ t, x:best.e.x, z:best.e.z });
       }
       cur = best.e;
     }
