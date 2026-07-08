@@ -214,6 +214,14 @@
   #equipPop .eq-rotnote{font-size:10px;color:var(--sub);}
   #equipPop.no-color #eqColorField{display:none;}
   #equipPop.no-rot #eqRotField{display:none;}
+  #equipPop .eq-styles,#equipPop .eq-thicks{display:flex;gap:6px;flex-wrap:wrap;}
+  #equipPop .eq-style,#equipPop .eq-thick{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1;}
+  #equipPop .eq-thick{min-width:34px;text-align:center;}
+  #equipPop .eq-style:hover,#equipPop .eq-thick:hover{border-color:#f0a94a;}
+  #equipPop .eq-style.on,#equipPop .eq-thick.on{border-color:#f0a94a;background:#3a2a10;color:#ffd9a0;font-weight:700;}
+  /* ライン/枠でないときはスタイル/太さフィールドを隠す */
+  #equipPop:not(.is-seg) #eqStyleField,#equipPop:not(.is-seg) #eqThickField{display:none;}
   .anno-legend .ebox{width:14px;height:12px;border-radius:2px;display:inline-block;}
 
   /* ---------- 注釈レイヤー(スペース/コメント) ---------- */
@@ -598,7 +606,7 @@
         <!-- 備品パレット(種類・色を選ぶ。備品ツール選択時に表示) -->
         <div id="equipPop">
           <div class="eq-ttl"><span>&#128312; 練習備品を置く</span></div>
-          <div class="eq-hint">種類と色を選び、ピッチをタップで配置。ドラッグで移動、消しゴム/ダブルクリックで削除。</div>
+          <div class="eq-hint">コーン等: タップで配置。ライン/グリッド枠: ドラッグで描画。選択ツールで端点をつまんで調整。ドラッグで移動、消しゴム/ダブルクリックで削除。</div>
           <div class="eq-field">
             <label>種類</label>
             <div class="eq-kinds" id="eqKinds">
@@ -607,11 +615,28 @@
               <button type="button" class="eq-kind" data-ekind="minigoal">&#129349; ミニゴール</button>
               <button type="button" class="eq-kind" data-ekind="ladder">&#127993; ラダー</button>
               <button type="button" class="eq-kind" data-ekind="pole">&#128681; ポール</button>
+              <button type="button" class="eq-kind" data-ekind="line">&#9585; ライン</button>
+              <button type="button" class="eq-kind" data-ekind="rect">&#9645; グリッド枠</button>
             </div>
           </div>
           <div class="eq-field" id="eqColorField">
             <label>色</label>
             <div class="eq-colors" id="eqColors"></div>
+          </div>
+          <div class="eq-field" id="eqStyleField">
+            <label>線のスタイル</label>
+            <div class="eq-styles" id="eqStyles">
+              <button type="button" class="eq-style on" data-estyle="solid">&#9473; 実線</button>
+              <button type="button" class="eq-style" data-estyle="dashed">&#9548; 破線</button>
+            </div>
+          </div>
+          <div class="eq-field" id="eqThickField">
+            <label>線の太さ</label>
+            <div class="eq-thicks" id="eqThicks">
+              <button type="button" class="eq-thick" data-ethick="thin">細</button>
+              <button type="button" class="eq-thick on" data-ethick="medium">中</button>
+              <button type="button" class="eq-thick" data-ethick="thick">太</button>
+            </div>
           </div>
           <div class="eq-field" id="eqRotField">
             <label>向き（ミニゴール・ラダーは回転できます）</label>
@@ -1001,7 +1026,10 @@ let scaleB = 10;
 let tempArrow = null, dragP = null, animating = false, activePresetBtn = null;
 let tempZone = null, selectedAnno = null, dragAnno = null;
 let selectedEquip = null, dragEquip = null;
+let tempSeg = null;              // ライン/枠のドラッグ描画中の一時オブジェクト
+let dragSeg = null;              // ライン/枠の端点/全体ドラッグ状態
 let equipKindCurrent = "cone", equipColorCurrent = "red";
+let equipStyleCurrent = "solid", equipThickCurrent = "medium";
 const board = () => boards[view];
 const V = () => VIEWS[view];
 
@@ -1480,17 +1508,27 @@ const EQUIP_TYPES = {
   marker:   { label:"マーカー",   hasColor:true,  canRotate:false, r:0.5  },
   minigoal: { label:"ミニゴール", hasColor:false, canRotate:true,  r:1.4  },
   ladder:   { label:"ラダー",     hasColor:false, canRotate:true,  r:2.2  },
-  pole:     { label:"ポール",     hasColor:true,  canRotate:false, r:0.45 }
+  pole:     { label:"ポール",     hasColor:true,  canRotate:false, r:0.45 },
+  // ライン/グリッド枠: 線分として {x1,y1,x2,y2,style,thickness} を持つ(x,y,rot は持たない)
+  line:     { label:"ライン",     hasColor:true,  canRotate:false, r:0,    isSegment:true },
+  rect:     { label:"グリッド枠", hasColor:true,  canRotate:false, r:0,    isSegment:true }
 };
 const EQUIP_COLORS = {
   red:    { key:"red",    body:"#e5484d", dark:"#a8282c", label:"赤" },
   blue:   { key:"blue",   body:"#3e7bfa", dark:"#2456c8", label:"青" },
   yellow: { key:"yellow", body:"#f0c649", dark:"#b8901f", label:"黄" },
   green:  { key:"green",  body:"#4ade80", dark:"#2a9d55", label:"緑" },
-  orange: { key:"orange", body:"#ff8c42", dark:"#c85f1a", label:"橙" }
+  orange: { key:"orange", body:"#ff8c42", dark:"#c85f1a", label:"橙" },
+  white:  { key:"white",  body:"#f4f6f8", dark:"#c8ccd0", label:"白" }
 };
+// ライン/枠のスタイル・太さ
+const LINE_STYLES = { solid:{ key:"solid", label:"実線" }, dashed:{ key:"dashed", label:"破線" } };
+const LINE_THICKS  = { thin:{ key:"thin", label:"細", mul:0.12 }, medium:{ key:"medium", label:"中", mul:0.2 }, thick:{ key:"thick", label:"太", mul:0.3 } };
+function isSegmentType(t){ return !!(EQUIP_TYPES[t] && EQUIP_TYPES[t].isSegment); }
 function equipType(t){ return EQUIP_TYPES[t] || EQUIP_TYPES.cone; }
 function equipColor(k){ return EQUIP_COLORS[k] || EQUIP_COLORS.red; }
+function lineStyle(s){ return LINE_STYLES[s] ? s : "solid"; }
+function lineThick(t){ return LINE_THICKS[t] ? t : "medium"; }
 /* equipment 配列を無くても壊れないよう保証(後方互換) */
 function equips(){ const b = board(); if (!Array.isArray(b.equipment)) b.equipment = []; return b.equipment; }
 /* 読み込んだ備品を検証・正規化(不正値は除去) */
@@ -1500,6 +1538,19 @@ function normalizeEquipment(b){
   for (const it of b.equipment){
     if (!it || typeof it !== "object") continue;
     if (!EQUIP_TYPES[it.type]) continue;
+    if (isSegmentType(it.type)){
+      // ライン/枠: 端点2つを検証。色は白既定(白線がデフォルト)。
+      if (![it.x1, it.y1, it.x2, it.y2].every(v => typeof v === "number" && isFinite(v))) continue;
+      out.push({
+        type: it.type,
+        color: EQUIP_COLORS[it.color] ? it.color : "white",
+        x1: +it.x1, y1: +it.y1, x2: +it.x2, y2: +it.y2,
+        style: lineStyle(it.style),
+        thickness: lineThick(it.thickness),
+        id: typeof it.id === "string" ? it.id : newEquipId()
+      });
+      continue;
+    }
     if (![it.x, it.y].every(v => typeof v === "number" && isFinite(v))) continue;
     let rot = Number(it.rot); if (!isFinite(rot)) rot = 0; rot = ((rot % 360) + 360) % 360;
     out.push({
@@ -1517,8 +1568,66 @@ function normalizeEquipment(b){
   }
   b.equipment = out;
 }
+/* ---------- ライン/グリッド枠の描画(メートル座標→px) ---------- */
+function drawSegmentEquip(it){
+  const col = equipColor(it.color);
+  const isSel = selectedEquip === it;
+  const px1 = m2x(it.x1), py1 = m2y(it.y1), px2 = m2x(it.x2), py2 = m2y(it.y2);
+  const mul = (LINE_THICKS[it.thickness] || LINE_THICKS.medium).mul;
+  const w = Math.max(1.6, scaleB * mul);
+  const dash = it.style === "dashed" ? [Math.max(6, scaleB * 0.7), Math.max(4, scaleB * 0.5)] : [];
+  ctx.save();
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  // 影(視認性)
+  ctx.save();
+  ctx.setLineDash(dash);
+  ctx.lineWidth = w + Math.max(1.4, scaleB * 0.12);
+  ctx.strokeStyle = "rgba(0,0,0,.35)";
+  if (it.type === "rect"){ ctx.strokeRect(px1, py1, px2 - px1, py2 - py1); }
+  else { ctx.beginPath(); ctx.moveTo(px1, py1); ctx.lineTo(px2, py2); ctx.stroke(); }
+  ctx.restore();
+  // 本体
+  ctx.setLineDash(dash);
+  ctx.lineWidth = w;
+  ctx.strokeStyle = col.body;
+  if (it.type === "rect"){ ctx.strokeRect(px1, py1, px2 - px1, py2 - py1); }
+  else { ctx.beginPath(); ctx.moveTo(px1, py1); ctx.lineTo(px2, py2); ctx.stroke(); }
+  ctx.setLineDash([]);
+  // 長さ表示(ライン、描画中や選択中)
+  if (it.type === "line" && (isSel || it === tempSeg)){
+    const len = Math.hypot(it.x2 - it.x1, it.y2 - it.y1);
+    const mx = (px1 + px2) / 2, my = (py1 + py2) / 2;
+    const txt = len.toFixed(1) + "m";
+    ctx.font = "700 " + Math.max(10, scaleB * 0.85) + "px sans-serif";
+    const tw = ctx.measureText(txt).width;
+    ctx.fillStyle = "rgba(12,16,22,.82)";
+    ctx.beginPath();
+    const pad = 4, bw = tw + pad * 2, bh = Math.max(15, scaleB * 1.3);
+    (ctx.roundRect ? ctx.roundRect(mx - bw / 2, my - bh / 2 - scaleB * 0.9, bw, bh, 4)
+                   : ctx.rect(mx - bw / 2, my - bh / 2 - scaleB * 0.9, bw, bh));
+    ctx.fill();
+    ctx.fillStyle = "#ffe9c2"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, mx, my - scaleB * 0.9);
+    ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+  }
+  // 選択時: 端点ハンドル
+  if (isSel){
+    const hr = Math.max(5, scaleB * 0.5);
+    const pts = it.type === "rect"
+      ? [[px1, py1], [px2, py1], [px2, py2], [px1, py2]]
+      : [[px1, py1], [px2, py2]];
+    ctx.setLineDash([]);
+    for (const [hx, hy] of pts){
+      ctx.beginPath(); ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+      ctx.fillStyle = "#0c1016"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = "#ffd9a0"; ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
 /* ---------- 備品の描画(メートル座標→px) ---------- */
 function drawEquipItem(it){
+  if (isSegmentType(it.type)){ drawSegmentEquip(it); return; }
   const x = m2x(it.x), y = m2y(it.y);
   const isSel = selectedEquip === it;
   const col = equipColor(it.color);
@@ -1613,11 +1722,41 @@ function drawEquipItem(it){
     ctx.setLineDash([]); ctx.restore();
   }
 }
+/* 点→線分の距離(メートル) */
+function ptSegDist(px, py, x1, y1, x2, y2){
+  const dx = x2 - x1, dy = y2 - y1, L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - x1) * dx + (py - y1) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + dx * t), py - (y1 + dy * t));
+}
+/* ライン/枠の本体ヒット(メートル座標) */
+function hitSegBody(it, mx, my){
+  const hr = 0.7;
+  if (it.type === "line") return ptSegDist(mx, my, it.x1, it.y1, it.x2, it.y2) < hr;
+  // rect: 4辺のいずれかに近ければヒット(塗りは無いので枠のみ)
+  const x1 = it.x1, y1 = it.y1, x2 = it.x2, y2 = it.y2;
+  return ptSegDist(mx, my, x1, y1, x2, y1) < hr || ptSegDist(mx, my, x2, y1, x2, y2) < hr ||
+         ptSegDist(mx, my, x2, y2, x1, y2) < hr || ptSegDist(mx, my, x1, y2, x1, y1) < hr;
+}
+/* ライン/枠の端点ハンドル判定。返り値は掴んだ端点の識別子(または null) */
+function hitSegHandle(it, mx, my){
+  const hr = 0.9;
+  if (it.type === "line"){
+    if (Math.hypot(it.x1 - mx, it.y1 - my) < hr) return "p1";
+    if (Math.hypot(it.x2 - mx, it.y2 - my) < hr) return "p2";
+    return null;
+  }
+  // rect: 四隅
+  const corners = [["tl", it.x1, it.y1], ["tr", it.x2, it.y1], ["br", it.x2, it.y2], ["bl", it.x1, it.y2]];
+  for (const [id, cx, cy] of corners) if (Math.hypot(cx - mx, cy - my) < hr) return id;
+  return null;
+}
 /* 備品のヒットテスト(メートル座標)。上に描かれたものを優先 */
 function hitEquip(mx, my){
   const list = equips();
   for (let i = list.length - 1; i >= 0; i--){
     const it = list[i];
+    if (isSegmentType(it.type)){ if (hitSegBody(it, mx, my)) return it; continue; }
     const hr = equipType(it.type).r + 0.4;
     if (Math.hypot(it.x - mx, it.y - my) < hr) return it;
   }
@@ -1642,6 +1781,7 @@ function drawBoard(){
   }
   // 練習備品: 芝(とゾーン)の上・駒/矢印の下に描画
   for (const it of equips()) drawEquipItem(it);
+  if (tempSeg) drawSegmentEquip(tempSeg);
   for (const a of board().arrows) drawArrowB(a, false);
   if (tempArrow) drawArrowB(tempArrow, true);
   for (const p of board().players) drawPlayerB(p);
@@ -1733,11 +1873,27 @@ function pointerDown(e){
   // 備品ツール: 既存備品があれば掴んで移動、無ければ選択中の種類/色で1つ配置してドラッグ
   if (tool === "equip"){
     closeArrowProp(); closeZonePop(); closeCmtPop();
+    // ライン/枠の選択中はまず端点ハンドルを掴めるように
+    if (selectedEquip && isSegmentType(selectedEquip.type)){
+      const h = hitSegHandle(selectedEquip, m.x, m.y);
+      if (h){ dragSeg = { it:selectedEquip, handle:h, mx:m.x, my:m.y, moved:false, created:false }; return; }
+    }
     const exist = hitEquip(m.x, m.y);
     if (exist){
       selectedEquip = exist;
-      dragEquip = { it:exist, ox:exist.x, oy:exist.y, mx:m.x, my:m.y, moved:false };
+      if (isSegmentType(exist.type)){
+        dragSeg = { it:exist, handle:"body", mx:m.x, my:m.y,
+          ox1:exist.x1, oy1:exist.y1, ox2:exist.x2, oy2:exist.y2, moved:false, created:false };
+      } else {
+        dragEquip = { it:exist, ox:exist.x, oy:exist.y, mx:m.x, my:m.y, moved:false };
+      }
       syncEquipPop(); drawBoard(); return;
+    }
+    // ライン/枠: ドラッグで新規に線分/矩形を描く
+    if (isSegmentType(equipKindCurrent)){
+      tempSeg = { type: equipKindCurrent, color: equipColorCurrent,
+        x1:m.x, y1:m.y, x2:m.x, y2:m.y, style: equipStyleCurrent, thickness: equipThickCurrent };
+      return;
     }
     const et = equipType(equipKindCurrent);
     const it = { type: equipKindCurrent, color: et.hasColor ? equipColorCurrent : "red",
@@ -1768,9 +1924,23 @@ function pointerDown(e){
       const z = hitZone(m.x, m.y);
       if (z){ selectedAnno = z; dragAnno = { a:z, part:"zone", ox:z.x, oy:z.y, mx:m.x, my:m.y, moved:false }; drawBoard(); return; }
     }
+    // 選択中のライン/枠は端点ハンドルを優先して掴む
+    if (selectedEquip && isSegmentType(selectedEquip.type)){
+      const h = hitSegHandle(selectedEquip, m.x, m.y);
+      if (h){ dragSeg = { it:selectedEquip, handle:h, mx:m.x, my:m.y, moved:false, created:false }; return; }
+    }
     // 備品も選択・ドラッグ可能(選択ツール)
     const eq = hitEquip(m.x, m.y);
-    if (eq){ selectedEquip = eq; dragEquip = { it:eq, ox:eq.x, oy:eq.y, mx:m.x, my:m.y, moved:false }; syncEquipPop(); drawBoard(); return; }
+    if (eq){
+      selectedEquip = eq;
+      if (isSegmentType(eq.type)){
+        dragSeg = { it:eq, handle:"body", mx:m.x, my:m.y,
+          ox1:eq.x1, oy1:eq.y1, ox2:eq.x2, oy2:eq.y2, moved:false, created:false };
+      } else {
+        dragEquip = { it:eq, ox:eq.x, oy:eq.y, mx:m.x, my:m.y, moved:false };
+      }
+      syncEquipPop(); drawBoard(); return;
+    }
     if (selectedAnno){ selectedAnno = null; drawBoard(); }
     if (selectedEquip){ selectedEquip = null; drawBoard(); }
   }
@@ -1780,6 +1950,28 @@ function pointerMove(e){
   const m = evPos(e);
   if (tempZone){ tempZone.w = m.x - tempZone.x; tempZone.h = m.y - tempZone.y; drawBoard(); return; }
   if (tempArrow){ tempArrow.x2 = m.x; tempArrow.y2 = m.y; drawBoard(); return; }
+  if (tempSeg){ tempSeg.x2 = m.x; tempSeg.y2 = m.y; drawBoard(); return; }
+  if (dragSeg){
+    dragSeg.moved = true;
+    const it = dragSeg.it;
+    const clampX = v => Math.max(-V().ml, Math.min(V().fw + V().mr, v));
+    const clampY = v => Math.max(-V().mt, Math.min(V().fh + V().mb, v));
+    const h = dragSeg.handle;
+    if (h === "body"){
+      const dx = m.x - dragSeg.mx, dy = m.y - dragSeg.my;
+      it.x1 = clampX(dragSeg.ox1 + dx); it.y1 = clampY(dragSeg.oy1 + dy);
+      it.x2 = clampX(dragSeg.ox2 + dx); it.y2 = clampY(dragSeg.oy2 + dy);
+    } else if (it.type === "line"){
+      if (h === "p1"){ it.x1 = clampX(m.x); it.y1 = clampY(m.y); }
+      else { it.x2 = clampX(m.x); it.y2 = clampY(m.y); }
+    } else { // rect の四隅
+      if (h === "tl"){ it.x1 = clampX(m.x); it.y1 = clampY(m.y); }
+      else if (h === "tr"){ it.x2 = clampX(m.x); it.y1 = clampY(m.y); }
+      else if (h === "br"){ it.x2 = clampX(m.x); it.y2 = clampY(m.y); }
+      else if (h === "bl"){ it.x1 = clampX(m.x); it.y2 = clampY(m.y); }
+    }
+    drawBoard(); return;
+  }
   if (dragP === "erasing"){ eraseAt(m.x, m.y); return; }
   if (dragAnno){
     dragAnno.moved = true;
@@ -1829,6 +2021,20 @@ function pointerUp(e){
     }
     drawBoard();
   }
+  if (tempSeg){
+    const seg = tempSeg; tempSeg = null;
+    const len = Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1);
+    // 極小はキャンセル。rect は幅・高さの最小も要求。
+    let ok = len > 1.0;
+    if (seg.type === "rect") ok = Math.abs(seg.x2 - seg.x1) > 1.0 && Math.abs(seg.y2 - seg.y1) > 1.0;
+    if (ok){
+      seg.id = newEquipId();
+      equips().push(seg); selectedEquip = seg; clearPresetSel(); syncEquipPop();
+    }
+    drawBoard();
+    return;
+  }
+  if (dragSeg){ dragSeg = null; drawBoard(); }
   if (dragEquip){ dragEquip = null; drawBoard(); }
   // 選手/オブジェクトのドラッグ確定で位置が変わったら、再生モデルのキャッシュを無効化。
   // 次回再生/スクラブ時に現在位置から再構築させ、ドラッグ結果が旧バックアップで上書き破棄されるのを防ぐ。
@@ -1836,7 +2042,7 @@ function pointerUp(e){
   dragP = null;
 }
 cv.addEventListener("mousedown", pointerDown);
-window.addEventListener("mousemove", e => { if ((dragP || tempArrow || tempZone || dragAnno || dragEquip) && currentScreen === "board") pointerMove(e); });
+window.addEventListener("mousemove", e => { if ((dragP || tempArrow || tempZone || dragAnno || dragEquip || tempSeg || dragSeg) && currentScreen === "board") pointerMove(e); });
 window.addEventListener("mouseup", e => { if (currentScreen === "board") pointerUp(e); });
 /* ダブルクリック = 選手なら名前編集 / 備品なら削除。 */
 cv.addEventListener("dblclick", e => {
@@ -1853,7 +2059,7 @@ cv.addEventListener("touchstart", e => {
   const sx = t.clientX - rc.left, sy = t.clientY - rc.top;
   if (now - lastTap.t < 350 && Math.hypot(sx - lastTap.x, sy - lastTap.y) < 28){
     // ダブルタップ = 名前編集(選手)。注釈は単タップで編集できるのでここでは選手のみ。
-    lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; tempZone = null; dragAnno = null; dragEquip = null;
+    lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; tempZone = null; dragAnno = null; dragEquip = null; tempSeg = null; dragSeg = null;
     if (!hitPlayer(m.x, m.y)){
       const eq = hitEquip(m.x, m.y);
       if (eq){ removeEquip(eq); toast("備品を削除しました"); return; }
@@ -2382,8 +2588,8 @@ document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
   b.addEventListener("click", () => {
     tool = b.dataset.tool;
     document.querySelectorAll("#toolbar [data-tool]").forEach(x => x.classList.toggle("active", x === b));
-    // ツール変更時は注釈編集を閉じ、選択を解除(選択ツール以外)
-    closeZonePop(); closeCmtPop();
+    // ツール変更時は注釈編集を閉じ、選択を解除(選択ツール以外)。描画中のライン/枠も破棄。
+    closeZonePop(); closeCmtPop(); tempSeg = null; dragSeg = null;
     if (tool !== "select" && selectedAnno){ selectedAnno = null; drawBoard(); }
     // 備品パレットは備品ツール時のみ表示。備品ツール/選択ツール以外に切替時は備品選択も解除
     if (tool === "equip"){ openEquipPop(); }
@@ -2397,7 +2603,7 @@ $("clearBtn").addEventListener("click", () => {
   if (animating) return;
   board().players = []; board().arrows = []; board().annotations = []; board().equipment = []; clearPresetSel();
   currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
-  selectedAnno = null; selectedEquip = null; _cmtBoxes.clear();
+  selectedAnno = null; selectedEquip = null; tempSeg = null; dragSeg = null; _cmtBoxes.clear();
   renderPhaseChips(); refreshTimeline();
   setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
   drawBoard();
@@ -2408,6 +2614,7 @@ document.querySelectorAll("#bViews .vtab").forEach(t => {
     // ビューを変える前に注釈ポップを閉じ・選択解除する。
     // (空コメント自動削除などが新ビューでなく旧ビューを対象にするよう順序を保つ)
     closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null; selectedEquip = null;
+    tempSeg = null; dragSeg = null;
     _cmtBoxes.clear();
     view = t.dataset.view;
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x === t));
@@ -2436,7 +2643,7 @@ const equipPop = $("equipPop");
     sw.addEventListener("click", () => {
       equipColorCurrent = k;
       document.querySelectorAll("#eqColors .eq-sw").forEach(x => x.classList.toggle("on", x === sw));
-      // 選択中の備品にも即反映(色を持つ種類のみ)
+      // 選択中の備品にも即反映(色を持つ種類のみ。ライン/枠も含む)
       if (selectedEquip && equipType(selectedEquip.type).hasColor){ selectedEquip.color = k; drawBoard(); }
     });
     box.appendChild(sw);
@@ -2447,16 +2654,34 @@ document.querySelectorAll("#eqKinds .eq-kind").forEach(b => {
   b.addEventListener("click", () => {
     equipKindCurrent = b.dataset.ekind;
     document.querySelectorAll("#eqKinds .eq-kind").forEach(x => x.classList.toggle("on", x === b));
+    // ライン/枠に切替時、白既定でない色から白へ寄せる必要はないが、既定色を選びやすく維持
     reflectEquipPopMode();
   });
 });
-/* 種類に応じて色/回転フィールドの表示を切替 */
+/* 線スタイル(実線/破線)ボタン */
+document.querySelectorAll("#eqStyles .eq-style").forEach(b => {
+  b.addEventListener("click", () => {
+    equipStyleCurrent = b.dataset.estyle;
+    document.querySelectorAll("#eqStyles .eq-style").forEach(x => x.classList.toggle("on", x === b));
+    if (selectedEquip && isSegmentType(selectedEquip.type)){ selectedEquip.style = equipStyleCurrent; drawBoard(); }
+  });
+});
+/* 線の太さボタン */
+document.querySelectorAll("#eqThicks .eq-thick").forEach(b => {
+  b.addEventListener("click", () => {
+    equipThickCurrent = b.dataset.ethick;
+    document.querySelectorAll("#eqThicks .eq-thick").forEach(x => x.classList.toggle("on", x === b));
+    if (selectedEquip && isSegmentType(selectedEquip.type)){ selectedEquip.thickness = equipThickCurrent; drawBoard(); }
+  });
+});
+/* 種類に応じて色/回転/スタイルフィールドの表示を切替 */
 function reflectEquipPopMode(){
   const et = equipType(equipKindCurrent);
   equipPop.classList.toggle("no-color", !et.hasColor);
   equipPop.classList.toggle("no-rot", !et.canRotate);
+  equipPop.classList.toggle("is-seg", !!et.isSegment);
 }
-/* 選択中の備品の種類/色にパレットUIを同期 */
+/* 選択中の備品の種類/色/スタイルにパレットUIを同期 */
 function syncEquipPop(){
   if (!selectedEquip) return;
   equipKindCurrent = selectedEquip.type;
@@ -2464,6 +2689,12 @@ function syncEquipPop(){
   if (equipType(selectedEquip.type).hasColor){
     equipColorCurrent = selectedEquip.color;
     document.querySelectorAll("#eqColors .eq-sw").forEach(x => x.classList.toggle("on", x.dataset.ecolor === selectedEquip.color));
+  }
+  if (isSegmentType(selectedEquip.type)){
+    equipStyleCurrent = lineStyle(selectedEquip.style);
+    equipThickCurrent = lineThick(selectedEquip.thickness);
+    document.querySelectorAll("#eqStyles .eq-style").forEach(x => x.classList.toggle("on", x.dataset.estyle === equipStyleCurrent));
+    document.querySelectorAll("#eqThicks .eq-thick").forEach(x => x.classList.toggle("on", x.dataset.ethick === equipThickCurrent));
   }
   reflectEquipPopMode();
 }
@@ -2946,7 +3177,7 @@ function loadBoardData(d, switchView){
     buildPresetList();
   }
   clearPresetSel(); currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
-  selectedAnno = null; selectedEquip = null; _cmtBoxes.clear(); renderPhaseChips(); refreshTimeline(); resizeBoard();
+  selectedAnno = null; selectedEquip = null; tempSeg = null; dragSeg = null; _cmtBoxes.clear(); renderPhaseChips(); refreshTimeline(); resizeBoard();
 }
 
 /* ---------- マイ戦術ライブラリ (localStorage) ---------- */
@@ -3429,7 +3660,13 @@ const SHARE_DICT = [
   ['"atk"','"§A"'],['"def"','"§D"'],['"ball"','"§B"'],
   ['"move"','"§mv"'],['"pass"','"§ps"'],['"dribble"','"§db"'],['"comment"','"§cm"'],['"zone"','"§zn"'],
   ['"rot"','"§r"'],
-  ['"cone"','"§Kc"'],['"marker"','"§Km"'],['"minigoal"','"§Kg"'],['"ladder"','"§Kl"'],['"pole"','"§Kp"']
+  ['"cone"','"§Kc"'],['"marker"','"§Km"'],['"minigoal"','"§Kg"'],['"ladder"','"§Kl"'],['"pole"','"§Kp"'],
+  // ライン/グリッド枠(line/rect)用の追加キー・値。x1..y2 は矢印でも共有され圧縮に寄与。
+  ['"x1"','"§X1"'],['"y1"','"§Y1"'],['"x2"','"§X2"'],['"y2"','"§Y2"'],
+  ['"style"','"§ss"'],['"thickness"','"§tk"'],
+  ['"line"','"§Kn"'],['"rect"','"§Kr"'],
+  ['"solid"','"§So"'],['"dashed"','"§Da"'],
+  ['"thin"','"§Wt"'],['"medium"','"§Wm"'],['"thick"','"§Ww"'],['"white"','"§Ow"']
 ];
 /* 辞書トークンはすべて "§" を先頭記号に使う。ユーザー入力に "§" が含まれると
    往復で辞書トークンと衝突し破損するため、パック前に生JSON中の "§" を
