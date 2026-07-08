@@ -419,6 +419,20 @@
     font-weight:700;font-size:15px;line-height:1.9;display:none;margin-top:12px;}
   .finish.on{display:block;}
   .finish .big{font-size:20px;color:var(--gold);}
+  .srcline{font-size:11.5px;color:var(--sub);margin-top:6px;line-height:1.5;}
+  .srcline b{color:#f5d87e;font-weight:700;}
+  .refbox{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin:14px 0 4px;overflow:hidden;}
+  .refbox>summary{cursor:pointer;list-style:none;padding:11px 15px;font-weight:700;font-size:13px;color:var(--sub);
+    user-select:none;display:flex;align-items:center;gap:6px;}
+  .refbox>summary::-webkit-details-marker{display:none;}
+  .refbox>summary::after{content:"▼";margin-left:auto;font-size:10px;transition:transform .2s;}
+  .refbox[open]>summary::after{transform:rotate(180deg);}
+  .refbox .refbody{padding:4px 16px 14px;font-size:12px;line-height:1.7;color:#cfd6dd;}
+  .refbox .refbody ol{margin:6px 0 6px 4px;padding-left:18px;}
+  .refbox .refbody li{margin:3px 0;}
+  .refbox .refbody a{color:#8fc7ff;word-break:break-all;}
+  .refbox .refnote{margin-top:8px;padding:8px 10px;background:rgba(240,198,73,.07);border-radius:10px;
+    border:1px dashed var(--gold);color:#f5d87e;font-size:11.5px;line-height:1.6;}
   .star-fly{position:fixed;left:0;top:0;pointer-events:none;font-size:28px;z-index:999;animation:starfly 1.1s ease-out forwards;}
   @keyframes starfly{0%{transform:translate(var(--x),var(--y)) scale(.4) rotate(0deg);opacity:1;}100%{transform:translate(calc(var(--x) + var(--dx)),calc(var(--y) + var(--dy))) scale(1.5) rotate(340deg);opacity:0;}}
 
@@ -832,8 +846,32 @@
     </div>
     <div class="verdict" id="dVerdict"></div>
     <div class="explain" id="dExp"></div>
+    <div class="srcline" id="dSrc"></div>
     <div class="dmap-title">&#128203; 成績マップ（すべて &#127775; でマスター）</div>
     <div class="dmap" id="dMap"></div>
+    <details class="refbox" id="dRefBox">
+      <summary>&#128218; 参考文献（この問題の根拠）</summary>
+      <div class="refbody">
+        <p>各問題は、日本サッカー協会（JFA）の「プレーの原則」と、ジュニア指導で広く使われている基礎原則にもとづいています。正解の演出時には、その問題の出典番号を表示します。</p>
+        <ol>
+          <li>日本サッカー協会（JFA）指導指針／プレーの原則 <a href="https://www.jfa.jp/coach/" target="_blank" rel="noopener">jfa.jp/coach</a></li>
+          <li>PLAYERS FIRST! 守備の三原則 <a href="https://pf-soccer-coaching.com/" target="_blank" rel="noopener">pf-soccer-coaching.com</a></li>
+          <li>ジュニアサッカー大学 マークの3原則 <a href="https://junior-soccer.college/" target="_blank" rel="noopener">junior-soccer.college</a></li>
+          <li>PLAYERS FIRST! チャレンジ&amp;カバー</li>
+          <li>ジュニアサッカー大学 カバーリング</li>
+          <li>telesoccer チャレンジ&amp;カバー</li>
+          <li>あまくさFC サポートの3原則</li>
+          <li>スーペルクラック サポート</li>
+          <li>サングリエ明石 守備の5秒</li>
+          <li>サングリエ明石 守備の優先順位（JFA）</li>
+          <li>Soccer Book Library コーナー守備</li>
+          <li>フットサル大学 CK守備</li>
+          <li>JFA 8人制サッカーをしよう! <a href="https://www.jfa.jp/youth_development/players_first/" target="_blank" rel="noopener">jfa.jp/youth_development</a></li>
+          <li>JFA 8人制サッカー競技規則</li>
+        </ol>
+        <div class="refnote">&#9432; 諸説あり：CK守備の考え方（ゾーン／マンツーマン／併用）はチームの方針で分かれます。切り替えの「5秒」はあくまで目安の数字です。GKからのビルドアップを推奨するかどうかも、指導方針によって考え方が分かれます。</div>
+      </div>
+    </details>
     <div class="finish" id="dFinish"></div>
   </div>
 </section>
@@ -3538,11 +3576,17 @@ refreshTimeline();
 const DW = 700, DH = 440;
 const dpx = v => v / 100 * DW, dpy = v => v / 100 * DH;
 
-/* セーブデータ(★・成績) */
-let dState = { stars:0, d:[] };
-try { const s = localStorage.getItem("soccerStudio_drill_v1"); if (s) dState = Object.assign(dState, JSON.parse(s)); } catch(e){}
-function dSave(){ try { localStorage.setItem("soccerStudio_drill_v1", JSON.stringify(dState)); return true; } catch(e){ return false; } }
-function drankName(s){ return s>=18?"レジェンド 👑":s>=14?"エース 🔥":s>=9?"キャプテン 🎖️":s>=4?"レギュラー ⚽":"ルーキー 🌱"; }
+/* セーブデータ(★・成績)。問題IDキー方式(d はオブジェクト {id:grade})。
+   旧v1(配列)からのセーブは問題構成が変わったため d は引き継がず、安全に無視する(クラッシュしない)。 */
+let dState = { stars:0, d:{} };
+try {
+  const s = localStorage.getItem("soccerStudio_drill_v2");
+  if (s){ const p = JSON.parse(s); dState.stars = (p && typeof p.stars === "number") ? p.stars : 0; dState.d = (p && p.d && typeof p.d === "object" && !Array.isArray(p.d)) ? p.d : {}; }
+} catch(e){ dState = { stars:0, d:{} }; }
+function dSave(){ try { localStorage.setItem("soccerStudio_drill_v2", JSON.stringify(dState)); return true; } catch(e){ return false; } }
+function dGrade(id){ return (dState.d && dState.d[id]) || 0; }
+function dSetGrade(id, g){ dState.d[id] = Math.max(dGrade(id), g); dSave(); }
+function drankName(s){ return s>=28?"レジェンド 👑":s>=22?"エース 🔥":s>=14?"キャプテン 🎖️":s>=6?"レギュラー ⚽":"ルーキー 🌱"; }
 function dUpdateStatus(){ $("statusD").textContent = "⭐" + dState.stars + " " + drankName(dState.stars); }
 function dAwardStar(){ dState.stars++; dSave(); dUpdateStatus(); }
 function dCoachSay(t){ $("dCoachText").textContent = t; }
@@ -3628,113 +3672,268 @@ function dDrawScene(c, spec){
   if (spec.ball) dDrawBall(c, dpx(spec.ball[0]), dpy(spec.ball[1]));
 }
 
-/* ---------- ドリル シナリオ (12問, 通常表記) ---------- */
-/* cat:'d'守備 'o'攻撃 't'切替 / pos:ポジション / players:[x%,y%,'b'|'r'](自分は含まない)
-   you:開始位置 / ideal:理想位置 / geo:線上条件{a,b,perp,hint} / hint,exp / anim:正解プレー */
+/* ---------- ドリル シナリオ (30問, 通常表記) ---------- */
+/* id:安定キー / cat:'d'守備 'o'攻撃 't'切替 / pos:ポジション / src:出典番号配列
+   players:[x%,y%,'b'|'r'](自分は含まない) / you:開始位置 / ideal:理想位置
+   geo:線上条件{a,b,perp,hint}(hint=線専用ヒント) / hint,exp / anim:正解プレー
+   座標系: x%=左右(自ゴール左≒3 / 攻撃右≒97), y%=上下(0上〜100下)。ピッチ外に出さない。 */
 const dQuiz = [
-{ cat:"d", pos:"DF",
-  q:"相手GKがボールを持ち、大きくパントキックを蹴ります。ボールは頭上を越えて飛んできます。どこで待ちますか？",
+/* ===== まもり (d) 12問 ===== */
+{ id:"D1", cat:"d", pos:"DF", src:[1,2],
+  q:"相手GKが大きくパントキックを蹴ります。ボールは頭上を越えて飛んできます。どこで待ちますか？",
   players:[[92,48,"r"],[32,38,"r"],[20,32,"b"],[20,68,"b"],[45,60,"b"]],
   ball:[90,47], arrows:[[90,47,35,48]],
   you:[48,55], ideal:[24,50],
-  hint:"飛んでくるボールの「落下点より後ろ」で待つと、前向きにヘディングできます。",
-  exp:"パントキックは遠くまで飛びます。前に残っているとボールが頭を越えて大ピンチ。ラインを下げ、落下点より後ろで待てば、前向きにヘディングクリアできます。",
-  anim:{ball:[[90,47],[26,50],[52,28]], you:[[26,50],[24,49]], movers:[[1,30,44]], text:"ラインを下げてヘディングクリア成功。"} },
-{ cat:"d", pos:"DF",
-  q:"相手のスローインです。あなたは近くの相手(赤い選手)をマークします。自分のゴールは左。どこに立ちますか？",
+  hint:"ボールの軌道を予測し、「落下点より後ろ」で待つと前向きに競れます。",
+  exp:"パントは遠くまで飛びます。ボールの軌道を予測してラインを下げ、落下点より後ろで待てば前向きにヘディングクリアできます。さらに、味方が競り合う落下点の後方に入ってセカンドボール(こぼれ球)を回収できる位置だと、二重で安全です。",
+  anim:{ball:[[90,47],[26,50],[52,28]], you:[[26,50],[24,49]], movers:[[1,30,44]], text:"ラインを下げてヘディングクリア。セカンドも回収。"} },
+{ id:"D2", cat:"d", pos:"DF", src:[2,3],
+  q:"相手のスローインです。近くの相手(赤)をマークします。自分のゴールは左。どこに立ちますか？",
   players:[[35,3,"r"],[30,24,"r"],[45,40,"r"],[20,50,"b"],[6,50,"b"]],
   ball:[35,2],
   you:[45,38], ideal:[24,30],
-  geo:{a:[30,24], b:[5,48], perp:70, hint:"マークする相手と自分のゴールの「間」に立ちましょう。"},
-  hint:"ボールとマークする相手の両方が見えて、自分のゴール側に立つのがマークの基本です。",
-  exp:"マークの基本は「相手とゴールの間」かつ「ボールと相手が両方見える」こと。これならパスが来てもすぐ守れ、裏に走られてもついていけます。",
+  geo:{a:[30,24], b:[5,48], perp:16, hint:"マークする相手と自分のゴールの「間」に体を入れましょう。"},
+  hint:"相手より自分がゴールに近く、ボールとマークが同一視野に入る半身の姿勢が基本です。",
+  exp:"マークの3原則。①自分が相手よりゴールに近い(相手とゴールの間) ②ボールとマークを同一視野に入れる半身 ③すぐ寄せられる距離。これでパスにも裏抜けにも対応できます。",
   anim:{ball:[[35,2],[29,25],[18,48]], you:[[27,26],[27,26]], text:"ゴール側でマーク。自由にさせませんでした。"} },
-{ cat:"o", pos:"FW",
-  q:"味方のコーナーキック(右上から)です。ニア(近いポスト)へ走り込む「スタート位置」につきましょう。どこですか？",
-  players:[[97,4,"b"],[80,48,"b"],[85,40,"r"],[87,55,"r"],[93,50,"r"]],
-  ball:[97,3],
-  you:[60,55], ideal:[79,27],
-  hint:"ゴールから少し離れた位置から、スピードをつけてニアに飛び込みます。",
-  exp:"ニアへの飛び込みは、少し離れた位置からスピードに乗って走り込むのがコツ。止まって待つより、動きながらの方がずっと合わせやすいです。",
-  anim:{ball:[[97,3],[88,38],[95,47]], you:[[88,38],[90,41]], text:"ニアに飛び込んでヘディングシュート。"} },
-{ cat:"d", pos:"DF",
-  q:"相手のコーナーキック(左上から)です。あなたは「ニアポストのカバー」を任されました。どこに立ちますか？",
+{ id:"D3", cat:"d", pos:"DF", src:[1,5],
+  q:"相手がドリブルで向かってきます。あなたは1人目の守備(ファーストディフェンダー)。自分のゴールは左。どこで対応しますか？",
+  players:[[55,50,"r"],[70,30,"r"],[15,60,"b"]],
+  ball:[53,50], arrows:[[55,50,40,50]],
+  you:[30,30], ideal:[42,54],
+  hint:"まず「遅らせる」。詰めすぎず、外へ追い出す角度で正対します。",
+  exp:"守備の第一原則は「遅らせる」。飛び込まず、間合いを詰めすぎず、相手を外(タッチライン側)へ追い出す角度で正対します。抜かれない距離を保ち、味方が戻る時間をつくります。",
+  anim:{ball:[[53,50],[46,62],[30,70]], you:[[44,55],[36,64]], movers:[[0,44,63]], text:"遅らせて外へ誘導。時間をつくりました。"} },
+{ id:"D4", cat:"d", pos:"DF", src:[4,5,6],
+  q:"味方DFが相手に寄せています(チャレンジ)。あなたは2人目のDF。自分のゴールは左。どこに動きますか？",
+  players:[[50,45,"r"],[40,44,"b"],[60,60,"r"],[10,50,"b"]],
+  ball:[48,45], arrows:[[50,45,40,45]],
+  you:[52,18], ideal:[30,56],
+  hint:"2人目は「斜め後ろ」でカバー。横並びや近すぎはNG。内側を締めます。",
+  exp:"チャレンジ&カバー。1人目が寄せ、2人目のあなたは斜め後ろに立ってカバーします。横並び・近すぎ・ボールばかり見るのは誤り。抜かれた瞬間に止められる位置で、中央(内側)を締めます。",
+  anim:{ball:[[48,45],[36,50],[30,58]], you:[[34,54],[33,55]], movers:[[1,34,49]], text:"斜め後ろでカバー。中央を締めました。"} },
+{ id:"D5", cat:"d", pos:"DF", src:[1,5],
+  q:"数的不利の2対3。相手2人がパスをつなぎながら攻めてきます。自分のゴールは左。どこで我慢しますか？",
+  players:[[55,35,"r"],[58,65,"r"],[38,50,"b"],[12,50,"b"]],
+  ball:[53,35], arrows:[[55,35,55,63]],
+  you:[45,20], ideal:[46,48],
+  hint:"飛び込まず、保持者と次のパス先の「中間」で後退しながら時間を稼ぎます。",
+  exp:"数的不利では飛び込むと一発でやられます。ボール保持者と次のパス先の中間に立ち、後退しながら遅らせて味方の帰りを待ちます。無理に奪いにいかない我慢が大切です。",
+  anim:{ball:[[53,35],[52,55],[40,60]], you:[[46,45],[42,52]], movers:[[0,50,45]], text:"中間で遅らせ、味方が戻る時間を確保。"} },
+{ id:"D6", cat:"d", pos:"DF", src:[2,3],
+  q:"あなたはマーク中。ボールは逆サイドにありますが、担当の相手(赤)が背後に動こうとしています。どこに立てば両方見えますか？",
+  players:[[70,25,"r"],[45,70,"r"],[80,45,"r"],[10,50,"b"]],
+  ball:[68,25],
+  you:[40,72], ideal:[38,62],
+  hint:"ボールと自分のマークを同一視野に入れる「半身」の向きが大切です。",
+  exp:"ボールばかり見るボールウォッチャーは、背後を取られます。体を半身に開き、ボールと自分のマークを同一視野に入れて立てば、パスが出た瞬間に反応できます。",
+  anim:{ball:[[68,25],[50,65],[42,66]], you:[[40,64],[44,66]], movers:[[1,46,66]], text:"半身で両方を視野に。背後を取られませんでした。"} },
+{ id:"D7", cat:"d", pos:"DF", src:[11,12],
+  q:"相手のコーナーキック(左上から)。あなたは「ニアの番人(ストーン)」を任されました。どこに立ちますか？",
   players:[[3,4,"r"],[15,42,"r"],[18,56,"r"],[14,44,"b"],[17,57,"b"],[6,52,"b"]],
   ball:[3,3],
-  you:[30,30], ideal:[7,40],
-  hint:"ニアポスト(ボールに近いゴールポスト)の横は、速いボールが飛び込む危険な場所です。",
-  exp:"ニアポストの横は、速いボールが飛び込む最も危険な場所。ここに1人立ってカバーするだけで、ゴールはぐっと守りやすくなります。",
-  anim:{ball:[[3,3],[8,41],[30,18]], you:[[8,41],[11,38]], text:"ニアポストでクリア。ゴールを守りました。"} },
-{ cat:"o", pos:"MF",
-  q:"味方のサイドバックが下のサイドをドリブルで前進しています。斜め前のパスコースでサポートしましょう。どこに動きますか？",
-  players:[[55,80,"b"],[63,78,"r"],[70,50,"r"],[93,50,"r"],[50,35,"b"]],
-  ball:[57,80], arrows:[[52,80,63,80]],
-  you:[48,60], ideal:[70,62],
-  hint:"ドリブルする味方の「斜め前」にいると、パスを受けてすぐゴールへ向かえます。",
-  exp:"ドリブルする味方の「斜め前」は、パスを受けてすぐ前を向ける絶好の位置。相手DFは2人を同時に見られず対応に困ります。",
-  anim:{ball:[[57,80],[70,62],[82,52]], you:[[70,62],[82,52]], movers:[[0,60,75]], text:"斜め前で受けてチャンス。"} },
-{ cat:"o", pos:"FW",
-  q:"味方がシュートを打ちます。GKが弾くかもしれません。「こぼれ球」を狙う位置はどこですか？",
-  players:[[72,62,"b"],[93,50,"r"],[84,38,"r"],[65,30,"b"]],
-  ball:[74,61], arrows:[[74,60,90,52]],
-  you:[60,40], ideal:[85,47],
-  hint:"シュートの後、GKが弾いたボールを最も速く触れるゴール前です。",
-  exp:"シュートはGKが弾くことが多いです。ゴール前に詰めておけば、こぼれ球を押し込むだけでゴール。「シュートで終わらず詰める」が得点の秘訣です。",
-  anim:{ball:[[74,61],[91,50],[85,46],[95,49]], you:[[85,47],[85,46],[88,47]], movers:[[1,92,54]], text:"詰めていたのでこぼれ球でゴール。"} },
-{ cat:"t", pos:"DF",
-  q:"相手がカウンターでドリブル。味方のDFが1人で遅らせています。あなたはもう1人のDFです。自分のゴールは左。どこに動きますか？",
-  players:[[45,52,"r"],[35,50,"b"],[50,25,"r"],[6,50,"b"]],
-  ball:[43,52], arrows:[[45,52,35,52]],
-  you:[45,15], ideal:[27,44],
-  hint:"ボールに寄せた味方の「斜め後ろ」がカバーの位置。抜かれてもあなたが止められます。",
-  exp:"寄せる味方が「チャレンジ」、あなたが「カバー」。斜め後ろにいれば、味方が抜かれた瞬間にすぐ止められます。2人で1つのドアに鍵を2つ掛けるイメージです。",
-  anim:{ball:[[43,52],[31,57],[45,35]], you:[[31,56],[35,50]], movers:[[0,32,58]], text:"カバー成功。2つ目の鍵が効きました。"} },
-{ cat:"o", pos:"DF",
-  q:"味方のGKがボールを持ちました。マイボールです。ビルドアップの合言葉は「広がる」。どこでパスを受けますか？",
-  players:[[7,50,"b"],[20,25,"b"],[28,45,"r"],[40,60,"r"],[40,40,"b"]],
-  ball:[9,50],
-  you:[18,40], ideal:[20,82],
-  hint:"コートを広く使いましょう。サイドいっぱいに広がれば、相手から遠い場所で受けられます。",
-  exp:"マイボールになったら「広がる」。サイドいっぱいに広がれば、相手から遠くで安全にパスを受けられ、攻撃のスタートが切れます。",
-  anim:{ball:[[9,50],[21,81],[38,78]], you:[[21,81],[38,78]], text:"広がって受けた。ビルドアップ成功。"} },
-{ cat:"o", pos:"FW",
-  q:"逆サイド(上の方)で味方が1対1を仕掛けています。クロスに備えて、あなたはどこに走り込みますか？",
-  players:[[78,14,"b"],[83,18,"r"],[85,45,"r"],[93,50,"r"],[70,35,"b"]],
-  ball:[79,15],
-  you:[65,50], ideal:[88,60],
-  hint:"全員の頭上を越えたボールが落ちてくる「ファーポスト(遠い方のポスト)」が狙い目です。",
-  exp:"クロスはニアだけではありません。全員の頭を越えたボールが落ちてくるファーポストは、フリーになりやすいゴールへの近道です。",
-  anim:{ball:[[79,15],[89,58],[95,52]], you:[[89,58],[91,55]], movers:[[0,82,20]], text:"ファーポストでどんぴしゃ。ゴール。"} },
-{ cat:"t", pos:"MF",
-  q:"相手が縦パスを狙っています。パスカット(インターセプト)できる位置につきましょう。自分のゴールは左。どこですか？",
-  players:[[60,30,"r"],[35,30,"r"],[55,60,"r"],[30,55,"b"]],
-  ball:[58,30], arrows:[[56,30,38,30]],
-  you:[50,58], ideal:[44,30],
-  geo:{a:[56,30], b:[37,30], perp:60, hint:"パスの通り道(ボールと相手を結ぶ線)の上に立ちましょう。"},
-  hint:"相手がパスしたい「道」を予測して、その途中で待ち伏せします。",
-  exp:"パスカットのコツは、相手が蹴りたい「パスの道」の上で待ち伏せすること。奪った瞬間に攻撃へ切り替わる、最も価値の高い守備です。",
-  anim:{ball:[[58,30],[44,30],[60,18]], you:[[44,30],[52,24]], text:"インターセプト。攻撃へ切り替えです。"} },
-{ cat:"t", pos:"MF",
-  q:"味方がドリブルでボールを失った瞬間です。あなたは最も近いMF。5秒が勝負。どこへ行きますか？",
-  players:[[62,55,"r"],[57,58,"b"],[50,30,"r"],[40,60,"b"]],
-  ball:[61,55],
-  you:[38,30], ideal:[56,51],
-  hint:"失った瞬間、相手はまだ準備ができていません。すぐ近寄ってプレッシャーです。",
-  exp:"ボールを失った後の5秒は、相手もまだ準備ができていません。最も近い人がすぐプレスに行けば、奪い返せるチャンスが大きくなります。",
-  anim:{ball:[[61,55],[59,53],[45,40]], you:[[60,54],[56,50]], movers:[[3,44,45]], text:"すぐプレスで奪い返し。良い切り替えです。"} },
-{ cat:"d", pos:"MF",
-  q:"相手のフリーキックです。味方が壁を作っています。壁の横で「セカンドボール」を拾う位置につきましょう。自分のゴールは左。",
+  you:[30,30], ideal:[10,36],
+  geo:{a:[6,25], b:[9,45], perp:14, hint:"ニアポストの延長線上、ゴールライン上ではなく1〜2歩前に立ちましょう。"},
+  hint:"ニアが最優先。ニアポスト延長線上で、ゴールラインに貼りつかず1〜2歩前に立ちます。",
+  exp:"CK守備はニア最優先(ストーン)。ニアポストの延長線上、ゴールラインに貼りつかず1〜2歩前に立つと、速いニアへのボールに触れる角度を確保できます。ラインに貼りつくと触りにくくなります。",
+  anim:{ball:[[3,3],[9,38],[28,20]], you:[[10,37],[12,35]], text:"ニアで触ってクリア。危険を消しました。"} },
+{ id:"D8", cat:"d", pos:"MF", src:[1,5],
+  q:"相手にプレスをかけます。中央は危険なので、パスコースを限定したい。自分のゴールは左。どこから寄せますか？",
+  players:[[62,50,"r"],[70,25,"r"],[70,75,"r"],[20,50,"b"]],
+  ball:[60,50], arrows:[[62,50,72,72]],
+  you:[45,50], ideal:[52,40],
+  hint:"相手の中央側を消し、外(サイド)へ追い出す角度で寄せます。",
+  exp:"やみくもに正面から行くと、どこにでも運ばれます。体の向きで中央を消し、外へ追い出す角度で寄せると、危険な中央を通させずサイドに限定できます。追い込む方向をチームで揃えるのがコツです。",
+  anim:{ball:[[60,50],[64,68],[70,78]], you:[[52,44],[58,58]], movers:[[0,66,72]], text:"中央を消して外へ限定。狙いどおり。"} },
+{ id:"D9", cat:"d", pos:"MF", src:[5],
+  q:"味方の1人目がサイドで相手を追い込みました。あなたはサイドで挟む2人目。自分のゴールは左。どこを塞ぎますか？",
+  players:[[70,78,"r"],[62,80,"b"],[80,55,"r"],[20,55,"b"]],
+  ball:[68,78], arrows:[[70,78,62,80]],
+  you:[55,45], ideal:[58,66],
+  hint:"1人目が追い込んだら、内側(中央)への逃げ道を塞いで挟み込みます。",
+  exp:"サイドは味方(タッチライン)を壁として使える奪いどころ。1人目が外へ追い込んだら、2人目は内側への逃げ道を塞いで挟み込みます。中を空けると簡単に逃げられます。",
+  anim:{ball:[[68,78],[64,70],[60,72]], you:[[58,62],[61,68]], movers:[[0,62,74]], text:"内を塞いで挟み込み、奪取成功。"} },
+{ id:"D10", cat:"d", pos:"DF", src:[11,12],
+  q:"相手が下サイドからクロスを上げます。あなたはゴール前で守ります。全員がボールに寄りすぎないよう、どこを守りますか？",
+  players:[[75,80,"r"],[70,45,"r"],[85,55,"r"],[5,50,"b"],[30,55,"b"]],
+  ball:[73,80], arrows:[[75,80,80,50]],
+  you:[45,40], ideal:[62,52],
+  hint:"担当ゾーンを守り、マークとボールを同一視野に。全員がボールに寄らないこと。",
+  exp:"クロス対応は、自分の担当ゾーンを守るのが基本。マークとボールを同一視野に入れ、味方全員がボールに寄りすぎないようにします。全員がボールに集まると、逆に空いた選手に決められます。",
+  anim:{ball:[[73,80],[78,52],[70,54]], you:[[60,50],[66,53]], movers:[[2,72,54]], text:"ゾーンを守って弾き返しました。"} },
+{ id:"D11", cat:"d", pos:"MF", src:[11],
+  q:"相手のフリーキック。味方が壁を作っています。壁の横で「セカンドボール」を拾う位置につきます。自分のゴールは左。",
   players:[[30,42,"r"],[21,44,"b"],[21,49,"b"],[21,54,"b"],[6,54,"b"],[26,68,"r"],[28,25,"r"]],
   ball:[29,42],
   you:[13,25], ideal:[16,62],
-  hint:"シュートは壁やGKに弾かれることが多いです。跳ね返りが落ちてきそうな壁の横で待ちましょう。",
-  exp:"フリーキックのシュートは壁やGKに跳ね返って「セカンドボール」になりやすいです。壁の横で待てば、いち早く拾ってピンチを脱出できます。",
-  anim:{ball:[[29,42],[8,48],[16,61],[36,75]], you:[[16,61],[16,61],[20,68]], movers:[[4,7,50]], text:"セカンドボールを回収。ピンチ脱出です。"} }
+  hint:"跳ね返りが落ちてきそうな壁の横で待ちます。飛び出す味方のオフサイドにも注意。",
+  exp:"FKのシュートは壁やGKに跳ね返って「セカンドボール」になりやすいです。跳ね返りの落下方向を読み、壁の横で待てばいち早く拾えます。奪って前に出るときは、味方のオフサイドにも気を配ります。",
+  anim:{ball:[[29,42],[8,48],[16,61],[36,75]], you:[[16,61],[16,61],[20,68]], movers:[[4,7,50]], text:"セカンドを回収。ピンチ脱出です。"} },
+{ id:"D12", cat:"d", pos:"DF", src:[1],
+  q:"あなたは最終ラインのDF。相手FWが裏を狙っています。オフサイドを取れる立ち位置はどこですか？自分のゴールは左。",
+  players:[[55,35,"r"],[52,62,"r"],[35,35,"b"],[35,65,"b"],[10,50,"b"]],
+  ball:[60,25], arrows:[[58,26,50,40]],
+  you:[25,50], ideal:[43,50],
+  hint:"相手FWより高い位置(ゴールから遠い側)で、味方DFと横一線に揃えます。",
+  exp:"最終ラインは、相手FWより高い位置(ゴールから遠い側)を保つと相手をオフサイドにできます。大切なのは味方DFと横一線に揃うこと。1人だけ下がると相手をオンサイドにしてしまいます。",
+  anim:{ball:[[60,25],[50,42],[48,48]], you:[[43,50],[45,50]], movers:[[0,47,46]], text:"ラインを揃えてオフサイド。ピンチ回避。"} },
+/* ===== こうげき (o) 12問 ===== */
+{ id:"O1", cat:"o", pos:"MF", src:[7,8],
+  q:"味方がボールを持っています。あなたはサポート。パスコースが開く「角度」をつくるにはどこへ動きますか？攻撃は右。",
+  players:[[40,50,"b"],[55,45,"r"],[70,55,"r"],[85,50,"r"]],
+  ball:[42,50],
+  you:[42,30], ideal:[58,72],
+  hint:"味方の真横・真後ろでは相手に消されます。「斜め前」の角度をつくります。",
+  exp:"サポートの角度。味方の真横や真後ろだと相手1人にパスコースを消されます。斜めの位置に立てば、相手の背後にパスコースが開き、受けてすぐ前を向けます。",
+  anim:{ball:[[42,50],[58,70],[72,64]], you:[[58,70],[70,64]], movers:[[0,50,55]], text:"斜めの角度で受けて前進。"} },
+{ id:"O2", cat:"o", pos:"MF", src:[7,8],
+  q:"味方がボールを持っています。サポートの「距離」を考えます。近すぎず遠すぎず、ちょうど良い位置はどこですか？攻撃は右。",
+  players:[[35,50,"b"],[45,45,"r"],[60,55,"r"]],
+  ball:[37,50],
+  you:[40,48], ideal:[55,64],
+  hint:"近すぎると2人まとめて潰され、遠すぎるとパスがカットされます。中間の距離です。",
+  exp:"サポートの距離。近すぎると相手1人に2人まとめて潰され、遠すぎるとパスがカットされます。10〜15mほどの、味方が余裕を持って蹴れて相手が届かない距離が理想です。",
+  anim:{ball:[[37,50],[55,63],[68,60]], you:[[55,63],[66,60]], movers:[[0,45,53]], text:"良い距離でつないで前進。"} },
+{ id:"O3", cat:"o", pos:"FW", src:[1,8],
+  q:"味方が中央でボールを持っています。攻撃の「幅」をつくりたい。あなたはどこへ開きますか？攻撃は右。",
+  players:[[45,50,"b"],[55,45,"r"],[60,55,"r"],[70,50,"r"]],
+  ball:[47,50],
+  you:[50,45], ideal:[60,15],
+  hint:"タッチライン際まで大きく開くと、相手の守備が横に広がって中央が空きます。",
+  exp:"攻撃の幅。タッチライン際まで大きく開くと、相手の守備を横に広げられ、中央にスペースが生まれます。全員が中央に固まると、相手も守りやすくなります。",
+  anim:{ball:[[47,50],[60,18],[74,22]], you:[[60,18],[72,22]], movers:[[0,55,45]], text:"幅をとって中央を空けました。"} },
+{ id:"O4", cat:"o", pos:"FW", src:[1,8],
+  q:"味方が攻めています。攻撃に「深さ」をつくりたい。相手の最終ラインの背後を狙う位置はどこですか？攻撃は右。",
+  players:[[45,50,"b"],[70,40,"r"],[70,60,"r"],[80,50,"r"]],
+  ball:[47,50],
+  you:[50,50], ideal:[76,50],
+  hint:"最終ラインの背後(裏)に1人が構えると、相手は下がらざるをえません。",
+  exp:"攻撃の深さ。相手の最終ラインの背後を狙う選手が1人いると、相手DFは後ろを気にして下がり、味方の前にスペースが生まれます。全員が同じ高さだと攻撃は窮屈になります。",
+  anim:{ball:[[47,50],[78,50],[88,50]], you:[[78,50],[86,50]], movers:[[3,84,50]], text:"背後を取って抜け出しました。"} },
+{ id:"O5", cat:"o", pos:"DF", src:[7,8],
+  q:"味方GKがボールを持ちました。あなたはビルドアップで受けます。良い「立ち位置」はどこですか？攻撃は右。",
+  players:[[7,50,"b"],[25,30,"r"],[30,55,"r"],[45,45,"b"]],
+  ball:[9,50],
+  you:[15,42], ideal:[22,68],
+  hint:"GKに対し斜めの角度をつくり、相手第一列の脇で受けます。タッチライン最奥の浅い角度は危険。",
+  exp:"「広がる」だけでは誤解。正しくはGKに対し斜めの角度をつくり、相手第一列(FW)の脇で受けること。タッチライン最奥まで開くと角度が浅くなり、追い込まれて危険です。幅とサポートの角度を両立させます。",
+  anim:{ball:[[9,50],[22,66],[38,60]], you:[[22,66],[35,60]], movers:[[0,18,55]], text:"斜めの角度で前進の起点に。"} },
+{ id:"O6", cat:"o", pos:"MF", src:[7,8],
+  q:"味方2人がパスできる関係にあります。あなたは3人目。「三角形」をつくる頂点はどこですか？攻撃は右。",
+  players:[[40,35,"b"],[55,35,"b"],[55,60,"r"],[70,45,"r"]],
+  ball:[42,35],
+  you:[45,55], ideal:[62,52],
+  hint:"味方2人と結んで三角形になる頂点に入ると、常に2方向のパスコースができます。",
+  exp:"サポートは三角形をつくるのが基本。味方2人と三角形の頂点に立てば、常に2方向のパスコースが生まれ、相手は的を絞れません。一直線に並ぶとコースは1本だけになります。",
+  anim:{ball:[[42,35],[60,50],[74,46]], you:[[60,50],[72,46]], movers:[[1,58,40]], text:"三角形の頂点で受けて前進。"} },
+{ id:"O7", cat:"o", pos:"FW", src:[1],
+  q:"味方が縦パスを受けて「落とし」ます。あなたは3人目(サードマン)。落としを受ける前向きの味方の先へ抜けます。どこへ走りますか？攻撃は右。",
+  players:[[45,50,"b"],[60,50,"b"],[62,45,"r"],[75,50,"r"]],
+  ball:[47,50], arrows:[[47,50,60,50]],
+  you:[50,35], ideal:[72,30],
+  hint:"落としを受けた前向きの味方が、次に蹴る「その先」へ走り込みます。",
+  exp:"第3の動き(サードマンラン)。味方Aが縦パス→Bが落とす→前を向いたAやCがその先へ。あなたは落としを受ける味方の先に走り込むと、前向きのパスを引き出せます。動き出しのタイミングが命です。",
+  anim:{ball:[[47,50],[60,50],[70,34]], you:[[62,42],[72,32]], movers:[[1,58,50]], text:"サードマンで抜け出しました。"} },
+{ id:"O8", cat:"o", pos:"FW", src:[7,8],
+  q:"味方がボールを持ち、顔を上げました。相手ラインの裏へ抜け出すタイミングと方向は？攻撃は右。",
+  players:[[45,50,"b"],[65,40,"r"],[65,60,"r"],[80,50,"r"]],
+  ball:[47,50],
+  you:[55,50], ideal:[70,50],
+  hint:"味方が顔を上げてパスを出せる瞬間に、相手2人の間(ゲート)から背後へ。",
+  exp:"裏抜けはタイミングが命。味方が顔を上げてパスを出せる瞬間に走り出します。早すぎるとオフサイド、遅いと間に合いません。相手DF2人の間(ゲート)を通ると、追いつかれにくいです。",
+  anim:{ball:[[47,50],[74,50],[86,50]], you:[[72,50],[84,50]], movers:[[2,80,52]], text:"ちょうどの間合いで裏へ抜けました。"} },
+{ id:"O9", cat:"o", pos:"FW", src:[11],
+  q:"味方のコーナーキック(右上から)。あなたはニアへ飛び込みます。走り出す「スタート位置」はどこですか？攻撃は右。",
+  players:[[97,4,"b"],[80,48,"b"],[85,40,"r"],[87,55,"r"],[93,50,"r"]],
+  ball:[97,3],
+  you:[60,55], ideal:[76,30],
+  hint:"ゴールから少し離れて助走をとり、動きながらニアへ飛び込みます。",
+  exp:"CK攻撃のニアは、少し離れた位置から助走をとり、スピードに乗って動きながら飛び込むのがコツ。止まって待つより、動きながらの方がマークを外して合わせやすくなります。",
+  anim:{ball:[[97,3],[88,38],[95,47]], you:[[86,38],[90,42]], text:"ニアに飛び込んでヘディングシュート。"} },
+{ id:"O10", cat:"o", pos:"FW", src:[11],
+  q:"逆サイド(上)で味方が1対1。クロスに備えます。全員の頭を越えたボールが落ちる場所はどこですか？攻撃は右。",
+  players:[[78,14,"b"],[83,18,"r"],[85,45,"r"],[93,50,"r"],[70,35,"b"]],
+  ball:[79,15],
+  you:[65,50], ideal:[88,62],
+  hint:"全員の頭上を越えたボールが落ちてくる「ファーポスト(遠い方)」で待ちます。",
+  exp:"クロスはニアだけではありません。全員の頭を越えたボールが落ちてくるファーポストは、マークが外れてフリーになりやすい絶好の得点機会です。",
+  anim:{ball:[[79,15],[89,60],[95,54]], you:[[89,60],[91,57]], movers:[[0,82,20]], text:"ファーでどんぴしゃ。ゴール。"} },
+{ id:"O11", cat:"o", pos:"FW", src:[1],
+  q:"味方がシュートを打ちます。GKが弾くかもしれません。「こぼれ球」に詰める位置はどこですか？攻撃は右。",
+  players:[[72,62,"b"],[93,50,"r"],[84,38,"r"],[65,30,"b"]],
+  ball:[74,61], arrows:[[74,60,90,52]],
+  you:[60,40], ideal:[85,47],
+  hint:"シュート後、GK正面に弾かれたボールを最も速く触れるゴール前に詰めます。",
+  exp:"シュートはGKが前へ弾くことが多いです。ゴール前(特にGK正面)に詰めておけば、こぼれ球を押し込むだけ。「シュートで終わらず詰める」が得点の秘訣です。",
+  anim:{ball:[[74,61],[91,50],[85,46],[95,49]], you:[[85,47],[85,46],[88,47]], movers:[[1,92,54]], text:"詰めていたのでこぼれ球でゴール。"} },
+{ id:"O12", cat:"o", pos:"MF", src:[1],
+  q:"味方SBが下サイドをドリブル。あなたはその外側を追い越して「オーバーラップ」します。受ける位置はどこですか？攻撃は右。",
+  players:[[55,80,"b"],[63,78,"r"],[75,55,"r"],[90,50,"r"]],
+  ball:[57,80], arrows:[[52,80,63,80]],
+  you:[48,68], ideal:[74,80],
+  hint:"味方の外側を追い越し、幅と深さを同時にとってサイド最奥で受けます。",
+  exp:"オーバーラップは、ボールを持つ味方の外側を追い越す動き。幅と深さを同時にとってサイド最奥で受ければ、相手を引きつけた味方から良い角度でパスをもらえます。内側を追い越すと味方と重なります。",
+  anim:{ball:[[57,80],[74,80],[86,66]], you:[[72,80],[84,68]], movers:[[0,64,78]], text:"外を追い越して深い位置で受けました。"} },
+/* ===== きりかえ (t) 6問 ===== */
+{ id:"T1", cat:"t", pos:"MF", src:[9,10],
+  q:"味方がボールを失った瞬間。あなたは最も近いMF。5秒が勝負です。どう動きますか？自分のゴールは左。",
+  players:[[62,55,"r"],[57,58,"b"],[50,30,"r"],[40,60,"b"]],
+  ball:[61,55],
+  you:[38,30], ideal:[56,51],
+  hint:"最も近い自分がすぐ5秒プレス。ただし奪えそうになければ深追いせず撤退します。",
+  exp:"失った直後の約5秒は即時奪回のチャンス。最も近い自分がすぐプレスに行きます。ただし奪えないと判断したら、深追いせず素早く撤退してブロックを作り直すこと。プレスと撤退の判断はセットです(5秒は目安)。",
+  anim:{ball:[[61,55],[59,53],[45,40]], you:[[60,54],[56,50]], movers:[[3,44,45]], text:"すぐプレスで奪い返し。良い切り替えです。"} },
+{ id:"T2", cat:"t", pos:"DF", src:[9,10],
+  q:"即時奪回に失敗し、相手にボールを運ばれます。あなたは撤退して守備ブロックをつくります。どこへ戻りますか？自分のゴールは左。",
+  players:[[55,35,"r"],[55,65,"r"],[60,50,"r"],[25,60,"b"],[10,50,"b"]],
+  ball:[53,35], arrows:[[55,50,35,50]],
+  you:[55,25], ideal:[32,44],
+  hint:"自陣へ素早く戻り、味方とコンパクトに中央を締めてブロックをつくります。",
+  exp:"奪えなければ、無理をせず全員で自陣へ撤退。味方と距離を詰めてコンパクトなブロックをつくり、まず中央(危険地帯)を締めます。バラバラに下がると間を割られます。",
+  anim:{ball:[[53,35],[45,48],[38,52]], you:[[40,46],[34,46]], movers:[[2,44,50]], text:"素早く撤退。コンパクトなブロック完成。"} },
+{ id:"T3", cat:"t", pos:"MF", src:[2,3],
+  q:"相手が横パス・斜めパスを狙っています。インターセプト(パスカット)できる位置につきます。自分のゴールは左。どこですか？",
+  players:[[60,30,"r"],[35,30,"r"],[55,60,"r"],[30,55,"b"]],
+  ball:[58,30], arrows:[[56,30,38,30]],
+  you:[50,58], ideal:[44,30],
+  geo:{a:[56,30], b:[37,30], perp:14, hint:"ボールと相手を結ぶ線の上に体を入れて、パスを狙いましょう。"},
+  hint:"ボールと相手を結ぶ線上に立ち、横・斜めのパスを狙います。奪えば一気に攻撃へ。",
+  exp:"インターセプトは、ボールと相手を結ぶ線の上で待ち伏せするのがコツ。特に横・斜めのパスは読みやすく狙い目です。奪った瞬間に攻撃へ切り替わる、最も価値の高い守備です。",
+  anim:{ball:[[58,30],[44,30],[60,18]], you:[[44,30],[52,24]], text:"インターセプト。攻撃へ切り替えです。"} },
+{ id:"T4", cat:"t", pos:"MF", src:[9],
+  q:"ボールを奪った直後です(ポジティブトランジション)。相手が守備を整える前に前進したい。どこへ動いてパスを引き出しますか？攻撃は右。",
+  players:[[40,50,"b"],[35,55,"r"],[55,45,"r"],[75,50,"b"]],
+  ball:[42,50],
+  you:[45,55], ideal:[60,60],
+  hint:"相手が整う前が最大の好機。前向きの味方へつなげる前方の位置に動きます。",
+  exp:"奪った直後は、相手の守備が崩れている最大の好機。素早く前向きの味方につなぐと、一気にチャンスになります。ここでゆっくり回すと相手が整い、好機を逃します。",
+  anim:{ball:[[42,50],[60,58],[76,54]], you:[[58,58],[72,55]], movers:[[2,64,52]], text:"素早く前進。相手が整う前に好機。"} },
+{ id:"T5", cat:"t", pos:"MF", src:[1],
+  q:"味方GKがパントを蹴り、前線で味方が競ります。あなたは中盤。セカンドボールを回収する位置はどこですか？自分のゴールは左。",
+  players:[[70,45,"b"],[72,50,"r"],[55,60,"r"],[30,50,"b"]],
+  ball:[15,50], arrows:[[16,50,68,48]],
+  you:[40,35], ideal:[58,50],
+  hint:"味方が競り合う落下点の「後方」で待ち、こぼれてくるボールを回収します。",
+  exp:"パントの競り合いは五分五分。味方が競る落下点の後方に構えれば、どちらに落ちても素早くセカンドボールを回収できます。前に出すぎると、こぼれ球を相手に拾われます。",
+  anim:{ball:[[15,50],[68,48],[58,55]], you:[[56,50],[59,53]], movers:[[2,60,54]], text:"セカンドを回収。攻撃を続けました。"} },
+{ id:"T6", cat:"t", pos:"DF", src:[1,5],
+  q:"味方が前線でボールを失い、相手のカウンター。あなたは戻る1人目です。自分のゴールは左。どこで遅らせますか？",
+  players:[[60,50,"r"],[75,45,"r"],[20,50,"b"]],
+  ball:[58,50], arrows:[[60,50,40,50]],
+  you:[70,30], ideal:[45,52],
+  hint:"最速で自陣に戻り、ボールと自ゴールの間に入って遅らせます。飛び込まないこと。",
+  exp:"カウンターの1人目は、とにかく最速で戻り、ボールと自分のゴールの間に体を入れて遅らせます。飛び込まず、味方が戻る時間を稼ぐのが役目。ここで抜かれると大ピンチです。",
+  anim:{ball:[[58,50],[50,56],[44,60]], you:[[48,54],[42,56]], movers:[[0,48,58]], text:"間に入って遅らせ、味方の帰りを待ちました。"} }
 ];
 const dCatName = { d:"🛡️ 守備", o:"⚔️ 攻撃", t:"⚡ 切替" };
 const D = { order: dQuiz.map((q,i)=>i), ptr:0, filter:"all", you:{x:0,y:0}, drag:false, phase:"place", attempts:0, reveal:null, lastGrade:0 };
 const cvD = $("cvD");
-const dRad = q => q.rad || [40,75,125];
+/* --- 正規化%空間ヘルパー: ピクセル座標(x/DW, y/DH)を各軸フルスケールで割り比率(%)に。
+   これで横長ピクセル空間による縦横バイアス(横に厳しく縦に甘い)を解消する。 --- */
+function toPct(p){ return { x: p.x / DW * 100, y: p.y / DH * 100 }; }
+function distPct(a, b){ return Math.hypot(a.x-b.x, a.y-b.y); }   // %空間ユークリッド距離
+/* 判定しきい値も%基準。だいせいかい/せいかい/おしい を半径(%)で。 */
+const dRad = q => q.rad || [10, 16, 26];
 function easeOutD(t){ return 1-(1-t)*(1-t); }
 function pathPosD(pts, t){
   const segs = pts.length-1;
@@ -3742,24 +3941,28 @@ function pathPosD(pts, t){
   const ft = Math.min(0.99999, Math.max(0, t))*segs, i = Math.floor(ft), st = ft-i;
   return { x:pts[i].x+(pts[i+1].x-pts[i].x)*st, y:pts[i].y+(pts[i+1].y-pts[i].y)*st, st:st };
 }
+/* 線上判定も%空間。geo.perp は%単位のしきい値。p はピクセル座標。 */
 function nearLineD(p, geo){
-  const a = { x:dpx(geo.a[0]), y:dpy(geo.a[1]) }, b = { x:dpx(geo.b[0]), y:dpy(geo.b[1]) };
+  const pp = toPct(p);
+  const a = { x:geo.a[0], y:geo.a[1] }, b = { x:geo.b[0], y:geo.b[1] };
   const abx = b.x-a.x, aby = b.y-a.y;
-  const t = ((p.x-a.x)*abx+(p.y-a.y)*aby)/(abx*abx+aby*aby);
+  const t = ((pp.x-a.x)*abx+(pp.y-a.y)*aby)/(abx*abx+aby*aby);
   if (t < 0 || t > 1) return false;
-  return Math.hypot(p.x-(a.x+abx*t), p.y-(a.y+aby*t)) <= geo.perp;
+  return Math.hypot(pp.x-(a.x+abx*t), pp.y-(a.y+aby*t)) <= (geo.perp || 15);
 }
+/* 方向ヒントも%空間で比較(縦横バイアスなし)。ideal はピクセル座標で渡される。 */
 function dirHintD(q, ideal){
-  const you = D.you, atk = q.cat === "o";
-  const goal = { x:dpx(atk?97:3), y:dpy(50) }, ball = { x:dpx(q.ball[0]), y:dpy(q.ball[1]) };
-  const gYou = Math.hypot(you.x-goal.x, you.y-goal.y), gId = Math.hypot(ideal.x-goal.x, ideal.y-goal.y);
-  const bYou = Math.hypot(you.x-ball.x, you.y-ball.y), bId = Math.hypot(ideal.x-ball.x, ideal.y-ball.y);
+  const you = toPct(D.you), id = toPct(ideal), atk = q.cat === "o";
+  const goal = { x:atk?97:3, y:50 }, ball = { x:q.ball[0], y:q.ball[1] };
+  const TH = 8; // %しきい値
+  const gYou = distPct(you, goal), gId = distPct(id, goal);
+  const bYou = distPct(you, ball), bId = distPct(id, ball);
   const gname = atk ? "相手のゴール" : "自分のゴール";
-  if (gId < gYou-40) return "もう少し" + gname + "の近くです。";
-  if (gId > gYou+40) return gname + "から少し離れてみましょう。";
-  if (bId < bYou-40) return "もっとボールに寄りましょう。";
-  if (bId > bYou+40) return "ボールから少し離れてみましょう。";
-  const dx = ideal.x-you.x, dy = ideal.y-you.y;
+  if (gId < gYou-TH) return "もう少し" + gname + "の近くです。";
+  if (gId > gYou+TH) return gname + "から少し離れてみましょう。";
+  if (bId < bYou-TH) return "もっとボールに寄りましょう。";
+  if (bId > bYou+TH) return "ボールから少し離れてみましょう。";
+  const dx = id.x-you.x, dy = id.y-you.y;
   if (Math.abs(dx) >= Math.abs(dy)) return dx>0 ? "もう少し右の方です。" : "もう少し左の方です。";
   return dy>0 ? "もう少し下の方です。" : "もう少し上の方です。";
 }
@@ -3775,7 +3978,7 @@ function renderDMap(){
     const btn = document.createElement("button");
     const cur = D.ptr < D.order.length && D.order[D.ptr] === i;
     btn.className = "dcell" + (cur ? " cur" : "");
-    const g = dState.d[i] || 0;
+    const g = dGrade(q.id);
     btn.innerHTML = '<span class="em">' + (g>=3?"🌟":g===2?"⭕":g===1?"😅":"⬜") + "</span>" + (i+1) + ". " + dCatName[q.cat].slice(2);
     btn.title = q.pos;
     btn.addEventListener("click", () => jumpD(i));
@@ -3799,6 +4002,7 @@ function renderD(){
   $("dQ").innerHTML = '<span class="poschip">あなたは ' + q.pos + '</span><span class="catchip">' + dCatName[q.cat] + "</span>" + q.q;
   $("dVerdict").textContent = ""; $("dVerdict").className = "verdict";
   $("dExp").classList.remove("on"); $("dExp").textContent = "";
+  $("dSrc").innerHTML = "";
   $("dNext").style.display = "none"; $("dWatch3d").style.display = "none";
   $("dCheck").style.display = "inline-block"; $("dCheck").disabled = false;
   $("dReset").style.display = "inline-block";
@@ -3807,6 +4011,8 @@ function renderD(){
   if (currentScreen === "drill") dCoachSay("あなたは " + q.pos + " です。" + q.q + " ★を動かして決めましょう。");
   renderDMap(); dUpdateStatus();
 }
+/* %半径→描画用ピクセル半径(円のため両軸平均スケールを使用)。判定は%空間、描画のみ換算。 */
+const dRadPx = q => dRad(q)[1] / 100 * ((DW+DH)/2);
 function drawD(){
   if (D.ptr >= D.order.length) return;
   const q = dQuiz[D.order[D.ptr]], now = performance.now();
@@ -3840,17 +4046,17 @@ function drawD(){
   if (D.phase === "place" && D.attempts > 0){
     const gp = 0.5+0.5*Math.sin(now/300);
     ctxD.save(); ctxD.globalAlpha = 0.10+0.16*gp;
-    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRad(q)[1], 0, Math.PI*2); ctxD.fillStyle = "#fff176"; ctxD.fill();
+    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRadPx(q), 0, Math.PI*2); ctxD.fillStyle = "#fff176"; ctxD.fill();
     ctxD.globalAlpha = 0.25+0.3*gp; ctxD.setLineDash([8,8]); ctxD.strokeStyle = "#fff176"; ctxD.lineWidth = 3; ctxD.stroke();
     ctxD.restore();
   }
   if (D.reveal){
     const e2 = easeOutD(circT);
     ctxD.save(); ctxD.globalAlpha = 0.85*circT;
-    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRad(q)[1]*e2, 0, Math.PI*2); ctxD.fillStyle = "#ffd60030"; ctxD.fill();
+    ctxD.beginPath(); ctxD.arc(idealX, idealY, dRadPx(q)*e2, 0, Math.PI*2); ctxD.fillStyle = "#ffd60030"; ctxD.fill();
     ctxD.lineWidth = 4; ctxD.strokeStyle = "#ffd600"; ctxD.stroke();
     ctxD.font = "28px sans-serif"; ctxD.textAlign = "center"; ctxD.textBaseline = "middle";
-    ctxD.fillText("⭕", idealX, idealY - dRad(q)[1]*e2 - 18);
+    ctxD.fillText("⭕", idealX, idealY - dRadPx(q)*e2 - 18);
     ctxD.restore();
   }
   dDrawBall(ctxD, ballPos.x, ballPos.y);
@@ -3864,6 +4070,8 @@ function finishRevealD(q){
   D.phase = "done";
   $("dExp").textContent = "解説： " + q.exp;
   $("dExp").classList.add("on");
+  const st = dSrcText(q);
+  $("dSrc").innerHTML = st ? "📚 <b>" + st + "</b>（下の「参考文献」で番号を確認できます）" : "";
   $("dNext").style.display = "inline-block";
   $("dWatch3d").style.display = "inline-block";
   dCoachSay(q.anim.text + " その場所が正解です。「🎬 この動きを3Dで見る」で立体でも確認できます。");
@@ -3887,19 +4095,24 @@ $("dReset").addEventListener("click", () => {
   if (D.phase !== "place" || D.ptr >= D.order.length) return;
   const q = dQuiz[D.order[D.ptr]]; D.you = { x:dpx(q.you[0]), y:dpy(q.you[1]) }; dPop();
 });
+/* 出典表示テキスト。q.src(番号配列) から「出典: 1, 5」を返す。 */
+function dSrcText(q){ return (q.src && q.src.length) ? "出典: " + q.src.join(", ") : ""; }
 $("dCheck").addEventListener("click", () => {
   if (D.phase !== "place" || D.ptr >= D.order.length) return;
   dAudio();
   const gi = D.order[D.ptr], q = dQuiz[gi];
   const ideal = { x:dpx(q.ideal[0]), y:dpy(q.ideal[1]) };
-  const dist = Math.hypot(D.you.x-ideal.x, D.you.y-ideal.y), rad = dRad(q);
-  let grade;
-  if (q.geo && !nearLineD(D.you, q.geo)) grade = -1;
-  else grade = dist<=rad[0] ? 3 : dist<=rad[1] ? 2 : dist<=rad[2] ? 1 : 0;
+  /* --- 判定は正規化%空間で(縦横バイアスなし) --- */
+  const dist = distPct(toPct(D.you), toPct(ideal)), rad = dRad(q);
+  let grade = dist<=rad[0] ? 3 : dist<=rad[1] ? 2 : dist<=rad[2] ? 1 : 0;
+  /* --- geo(線上)問題: 線から外れても距離が近ければ「惜しい」に到達できる。
+       線を外していれば最大でも1(惜しい)に抑え、線専用ヒントを併用する。「線に乗るまで0点」を解消。 --- */
+  const onLine = q.geo ? nearLineD(D.you, q.geo) : true;
+  if (q.geo && !onLine && grade >= 2) grade = 1;
   const v = $("dVerdict");
   if (grade >= 2){
-    const prev = dState.d[gi] || 0;
-    dState.d[gi] = Math.max(prev, grade); dSave();
+    const prev = dGrade(q.id);
+    dSetGrade(q.id, grade);
     v.textContent = grade === 3 ? "🌟 大正解！完璧なポジションです！" : "⭕ 正解！良い場所です！";
     v.className = "verdict good";
     D.phase = "reveal";
@@ -3912,12 +4125,16 @@ $("dCheck").addEventListener("click", () => {
   } else {
     D.attempts++;
     if (grade === 1){
-      dState.d[gi] = Math.max(dState.d[gi]||0, 1); dSave(); renderDMap();
+      dSetGrade(q.id, 1); renderDMap();
       v.textContent = "😅 惜しい！あと少し！"; v.className = "verdict bad";
-      dCoachSay("💡 " + dirHintD(q, ideal) + " ★を置き直してもう一度。");
+      /* 距離のヒント + geo外しなら線ヒントも併せて出す(部分点+方向ヒントに到達) */
+      let msg = dirHintD(q, ideal);
+      if (q.geo && !onLine) msg += " また、" + q.geo.hint;
+      dCoachSay("💡 " + msg + " ★を置き直してもう一度。");
     } else {
       v.textContent = "🤔 もう一度！"; v.className = "verdict bad";
-      dCoachSay("💡 " + (grade === -1 ? q.geo.hint : q.hint) + " ★を動かして再挑戦です。");
+      /* 大きく外れているとき: geo外しなら線ヒント、そうでなければ通常ヒント */
+      dCoachSay("💡 " + ((q.geo && !onLine) ? q.geo.hint : q.hint) + " ★を動かして再挑戦です。");
     }
     dSad();
   }
@@ -3933,10 +4150,10 @@ $("dWatch3d").addEventListener("click", () => {
 });
 function showFinishD(){
   $("dQ").innerHTML = ""; $("dVerdict").textContent = "";
-  $("dExp").classList.remove("on"); $("dNext").style.display = "none"; $("dWatch3d").style.display = "none";
+  $("dExp").classList.remove("on"); $("dSrc").innerHTML = ""; $("dNext").style.display = "none"; $("dWatch3d").style.display = "none";
   $("dCheck").style.display = "none"; $("dReset").style.display = "none";
   $("dNum").textContent = "クリア！";
-  const master = dQuiz.every((q,i) => (dState.d[i]||0) >= 3);
+  const master = dQuiz.every(q => dGrade(q.id) >= 3);
   const f = $("dFinish");
   f.innerHTML = '<div class="big">' + (master ? "👑 ポジショニングマスター！" : "🏆 すべて終わりました！") + "</div>"
     + (master ? "全問 🌟 大正解！本物のマスターです。<br>" : "マップの ⬜ や 😅 をタップして、🌟 をそろえましょう。<br>")
