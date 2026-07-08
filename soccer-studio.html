@@ -188,6 +188,34 @@
   #arrowProp .ap-del{color:#ff9d9d !important;}
   #arrowProp .ap-close{background:#0e3b23 !important;border-color:var(--accent) !important;color:var(--accent) !important;font-weight:700;}
 
+  /* ---------- 練習備品パレット ---------- */
+  .tbtn.equip{color:#ffcf8a;}
+  .tbtn.equip.active{background:#3a2a10;border-color:#f0a94a;color:#ffd9a0;font-weight:700;}
+  #equipPop{position:absolute;z-index:43;display:none;flex-direction:column;gap:10px;
+    background:rgba(16,22,30,.98);border:1px solid var(--line);border-radius:12px;padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.6);width:250px;backdrop-filter:blur(5px);}
+  #equipPop.on{display:flex;}
+  #equipPop .eq-ttl{font-size:12px;color:#ffcf8a;font-weight:700;}
+  #equipPop .eq-hint{font-size:10.5px;color:var(--sub);line-height:1.5;}
+  #equipPop label{font-size:11px;color:var(--sub);display:block;margin-bottom:5px;}
+  #equipPop .eq-kinds{display:flex;flex-wrap:wrap;gap:6px;}
+  #equipPop .eq-kind{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:6px 9px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1;}
+  #equipPop .eq-kind.on{border-color:#f0a94a;background:#3a2a10;color:#ffd9a0;font-weight:700;}
+  #equipPop .eq-colors{display:flex;gap:8px;flex-wrap:wrap;}
+  #equipPop .eq-sw{width:30px;height:30px;border-radius:8px;cursor:pointer;border:2px solid transparent;
+    transition:transform .1s;}
+  #equipPop .eq-sw:hover{transform:scale(1.08);}
+  #equipPop .eq-sw.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25);}
+  #equipPop .eq-rotrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  #equipPop .eq-rot{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:6px 9px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1;}
+  #equipPop .eq-rot:hover{border-color:#f0a94a;}
+  #equipPop .eq-rotnote{font-size:10px;color:var(--sub);}
+  #equipPop.no-color #eqColorField{display:none;}
+  #equipPop.no-rot #eqRotField{display:none;}
+  .anno-legend .ebox{width:14px;height:12px;border-radius:2px;display:inline-block;}
+
   /* ---------- 注釈レイヤー(スペース/コメント) ---------- */
   .tbtn.anno{color:#ffe1a0;}
   .tbtn.anno.active{background:#3a2e0c;border-color:var(--gold);color:#ffe9a8;}
@@ -507,6 +535,7 @@
         <button class="tbtn" data-tool="atk">&#128308; 攻撃+</button>
         <button class="tbtn" data-tool="def">&#128309; 守備+</button>
         <button class="tbtn" data-tool="ball">&#9917; ボール+</button>
+        <button class="tbtn equip" data-tool="equip" title="コーン・マーカー・ミニゴール等を配置">&#128312; 備品</button>
         <div class="sep"></div>
         <button class="tbtn" data-tool="move">&#8594; 移動</button>
         <button class="tbtn" data-tool="pass">&#8674; パス</button>
@@ -550,6 +579,33 @@
           <div class="ap-foot">
             <button class="ap-del" id="apDel">&#128465; 削除</button>
             <button class="ap-close" id="apClose">OK</button>
+          </div>
+        </div>
+        <!-- 備品パレット(種類・色を選ぶ。備品ツール選択時に表示) -->
+        <div id="equipPop">
+          <div class="eq-ttl"><span>&#128312; 練習備品を置く</span></div>
+          <div class="eq-hint">種類と色を選び、ピッチをタップで配置。ドラッグで移動、消しゴム/ダブルクリックで削除。</div>
+          <div class="eq-field">
+            <label>種類</label>
+            <div class="eq-kinds" id="eqKinds">
+              <button type="button" class="eq-kind on" data-ekind="cone">&#128312; コーン</button>
+              <button type="button" class="eq-kind" data-ekind="marker">&#128993; マーカー</button>
+              <button type="button" class="eq-kind" data-ekind="minigoal">&#129349; ミニゴール</button>
+              <button type="button" class="eq-kind" data-ekind="ladder">&#127993; ラダー</button>
+              <button type="button" class="eq-kind" data-ekind="pole">&#128681; ポール</button>
+            </div>
+          </div>
+          <div class="eq-field" id="eqColorField">
+            <label>色</label>
+            <div class="eq-colors" id="eqColors"></div>
+          </div>
+          <div class="eq-field" id="eqRotField">
+            <label>向き（ミニゴール・ラダーは回転できます）</label>
+            <div class="eq-rotrow">
+              <button type="button" class="eq-rot" id="eqRotL" title="左に回転">&#8630; -45&deg;</button>
+              <button type="button" class="eq-rot" id="eqRotR" title="右に回転">&#8631; +45&deg;</button>
+              <span class="eq-rotnote" id="eqRotNote">配置後、選択して回転</span>
+            </div>
           </div>
         </div>
         <div id="namePop">
@@ -608,6 +664,8 @@
         <span><i class="zbox" style="background:rgba(62,123,250,.30);border-color:#3e7bfa"></i>好機</span>
         <span><i class="zbox" style="background:rgba(74,222,128,.30);border-color:#4ade80"></i>スペース</span>
         <span><i class="dot" style="background:#ffd54a;border:1px solid #fff"></i>&#128172; コメント</span>
+        <span class="al-lbl" style="margin-left:6px;">&#128312; 備品:</span>
+        <span>コーン / マーカー / ミニゴール / ラダー / ポール</span>
       </div>
       <!-- ============ タイムライン(動きの順序・タイミング) ============ -->
       <div id="timeline" class="hidden">
@@ -894,14 +952,16 @@ const VIEWS = {
 };
 let view = "eight";
 const boards = {
-  eight:   { players:[], arrows:[], annotations:[] },
-  corner:  { players:[], arrows:[], annotations:[] },
-  throwin: { players:[], arrows:[], annotations:[] }
+  eight:   { players:[], arrows:[], annotations:[], equipment:[] },
+  corner:  { players:[], arrows:[], annotations:[], equipment:[] },
+  throwin: { players:[], arrows:[], annotations:[], equipment:[] }
 };
 let tool = "select";
 let scaleB = 10;
 let tempArrow = null, dragP = null, animating = false, activePresetBtn = null;
 let tempZone = null, selectedAnno = null, dragAnno = null;
+let selectedEquip = null, dragEquip = null;
+let equipKindCurrent = "cone", equipColorCurrent = "red";
 const board = () => boards[view];
 const V = () => VIEWS[view];
 
@@ -1365,6 +1425,170 @@ function removeAnno(a){
   closeZonePop(); closeCmtPop(); drawBoard();
 }
 
+/* ============================================================
+   練習備品レイヤー(コーン・マーカー・ミニゴール・ラダー・ポール)
+   ・item: {type, color, x, y, rot, id}  座標はメートル座標
+   ・rot は度(0〜360)。ミニゴール/ラダー/ポールで意味を持つ。
+   描画順: 芝の上・注釈ゾーンの上・駒/矢印の下(視認性のため駒より背面)。
+   3Dシアターは players/arrows のみ参照するため equipment は安全に無視される。
+============================================================ */
+let equipIdSeq = 1;
+function newEquipId(){ return "e" + (equipIdSeq++) + "_" + Math.random().toString(36).slice(2, 7); }
+const EQUIP_TYPES = {
+  cone:     { label:"コーン",     hasColor:true,  canRotate:false, r:0.55 },
+  marker:   { label:"マーカー",   hasColor:true,  canRotate:false, r:0.5  },
+  minigoal: { label:"ミニゴール", hasColor:false, canRotate:true,  r:1.4  },
+  ladder:   { label:"ラダー",     hasColor:false, canRotate:true,  r:2.2  },
+  pole:     { label:"ポール",     hasColor:true,  canRotate:false, r:0.45 }
+};
+const EQUIP_COLORS = {
+  red:    { key:"red",    body:"#e5484d", dark:"#a8282c", label:"赤" },
+  blue:   { key:"blue",   body:"#3e7bfa", dark:"#2456c8", label:"青" },
+  yellow: { key:"yellow", body:"#f0c649", dark:"#b8901f", label:"黄" },
+  green:  { key:"green",  body:"#4ade80", dark:"#2a9d55", label:"緑" },
+  orange: { key:"orange", body:"#ff8c42", dark:"#c85f1a", label:"橙" }
+};
+function equipType(t){ return EQUIP_TYPES[t] || EQUIP_TYPES.cone; }
+function equipColor(k){ return EQUIP_COLORS[k] || EQUIP_COLORS.red; }
+/* equipment 配列を無くても壊れないよう保証(後方互換) */
+function equips(){ const b = board(); if (!Array.isArray(b.equipment)) b.equipment = []; return b.equipment; }
+/* 読み込んだ備品を検証・正規化(不正値は除去) */
+function normalizeEquipment(b){
+  if (!Array.isArray(b.equipment)){ b.equipment = []; return; }
+  const out = [];
+  for (const it of b.equipment){
+    if (!it || typeof it !== "object") continue;
+    if (!EQUIP_TYPES[it.type]) continue;
+    if (![it.x, it.y].every(v => typeof v === "number" && isFinite(v))) continue;
+    let rot = Number(it.rot); if (!isFinite(rot)) rot = 0; rot = ((rot % 360) + 360) % 360;
+    out.push({
+      type: it.type,
+      color: EQUIP_COLORS[it.color] ? it.color : "red",
+      x: +it.x, y: +it.y, rot,
+      id: typeof it.id === "string" ? it.id : newEquipId()
+    });
+  }
+  const seen = new Set();
+  for (const it of out){
+    if (seen.has(it.id)) it.id = newEquipId();
+    seen.add(it.id);
+    const m = /^e(\d+)_/.exec(it.id); if (m && +m[1] >= equipIdSeq) equipIdSeq = +m[1] + 1;
+  }
+  b.equipment = out;
+}
+/* ---------- 備品の描画(メートル座標→px) ---------- */
+function drawEquipItem(it){
+  const x = m2x(it.x), y = m2y(it.y);
+  const isSel = selectedEquip === it;
+  const col = equipColor(it.color);
+  const rad = (it.rot || 0) * Math.PI / 180;
+  ctx.save();
+  // 接地影(共通)
+  ctx.save(); ctx.globalAlpha = 0.28; ctx.fillStyle = "#000";
+  ctx.beginPath(); ctx.ellipse(x, y + Math.max(2, scaleB * 0.18), Math.max(6, scaleB * 0.55), Math.max(3, scaleB * 0.24), 0, 0, Math.PI * 2);
+  ctx.fill(); ctx.restore();
+
+  if (it.type === "cone"){
+    const w = Math.max(9, scaleB * 0.9), h = Math.max(13, scaleB * 1.25);
+    // 三角コーン本体
+    ctx.beginPath();
+    ctx.moveTo(x, y - h * 0.7);
+    ctx.lineTo(x - w / 2, y + h * 0.3);
+    ctx.lineTo(x + w / 2, y + h * 0.3);
+    ctx.closePath();
+    ctx.fillStyle = col.body; ctx.fill();
+    ctx.lineWidth = 1.4; ctx.strokeStyle = col.dark; ctx.stroke();
+    // 反射帯
+    ctx.beginPath(); ctx.moveTo(x - w * 0.22, y - h * 0.05); ctx.lineTo(x + w * 0.22, y - h * 0.05);
+    ctx.lineWidth = Math.max(2, scaleB * 0.18); ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.stroke();
+    // 底面
+    ctx.beginPath(); ctx.ellipse(x, y + h * 0.3, w * 0.62, Math.max(2, scaleB * 0.16), 0, 0, Math.PI * 2);
+    ctx.fillStyle = col.dark; ctx.fill();
+  } else if (it.type === "marker"){
+    const rx = Math.max(7, scaleB * 0.7), ry = Math.max(3.5, scaleB * 0.32);
+    // 平たいディスク(楕円)
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = col.body; ctx.fill();
+    ctx.lineWidth = 1.4; ctx.strokeStyle = col.dark; ctx.stroke();
+    // 中央のくぼみ
+    ctx.beginPath(); ctx.ellipse(x, y, rx * 0.5, ry * 0.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = col.dark; ctx.globalAlpha = 0.6; ctx.fill(); ctx.globalAlpha = 1;
+  } else if (it.type === "minigoal"){
+    ctx.translate(x, y); ctx.rotate(rad);
+    const gw = Math.max(20, scaleB * 2.4), gd = Math.max(8, scaleB * 0.95);
+    // ネット(簡易グリッド)
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 1;
+    for (let gx = -gw / 2; gx <= gw / 2 + 0.1; gx += gw / 5){
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx * 0.72, gd); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(-gw / 2, 0); ctx.lineTo(-gw * 0.36, gd);
+    ctx.lineTo(gw * 0.36, gd); ctx.lineTo(gw / 2, 0); ctx.stroke();
+    ctx.restore();
+    // 枠(前面バー)
+    ctx.lineWidth = Math.max(2.4, scaleB * 0.22); ctx.strokeStyle = "#f4f4f4"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(-gw / 2, 0); ctx.lineTo(gw / 2, 0); ctx.stroke();
+    // 側面の斜め支柱
+    ctx.lineWidth = Math.max(1.8, scaleB * 0.16);
+    ctx.beginPath(); ctx.moveTo(-gw / 2, 0); ctx.lineTo(-gw * 0.36, gd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gw / 2, 0); ctx.lineTo(gw * 0.36, gd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-gw * 0.36, gd); ctx.lineTo(gw * 0.36, gd);
+    ctx.strokeStyle = "rgba(230,230,230,.85)"; ctx.stroke();
+  } else if (it.type === "ladder"){
+    ctx.translate(x, y); ctx.rotate(rad);
+    const lw2 = Math.max(9, scaleB * 0.9), llen = Math.max(24, scaleB * 3.6), rungs = 5;
+    ctx.strokeStyle = "#f3d34a"; ctx.lineWidth = Math.max(2, scaleB * 0.18);
+    // 左右レール
+    ctx.beginPath(); ctx.moveTo(-llen / 2, -lw2 / 2); ctx.lineTo(llen / 2, -lw2 / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-llen / 2, lw2 / 2); ctx.lineTo(llen / 2, lw2 / 2); ctx.stroke();
+    // 横桟
+    for (let i = 0; i <= rungs; i++){
+      const gx = -llen / 2 + (llen / rungs) * i;
+      ctx.beginPath(); ctx.moveTo(gx, -lw2 / 2); ctx.lineTo(gx, lw2 / 2); ctx.stroke();
+    }
+  } else if (it.type === "pole"){
+    // スラロームポール(縦棒+接地台)
+    const ph = Math.max(16, scaleB * 1.6);
+    ctx.lineWidth = Math.max(2.6, scaleB * 0.24); ctx.strokeStyle = col.body; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - ph); ctx.stroke();
+    // 白帯
+    ctx.lineWidth = Math.max(2, scaleB * 0.18); ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.beginPath(); ctx.moveTo(x, y - ph * 0.4); ctx.lineTo(x, y - ph * 0.6); ctx.stroke();
+    // 接地台
+    ctx.beginPath(); ctx.ellipse(x, y, Math.max(5, scaleB * 0.5), Math.max(2.5, scaleB * 0.22), 0, 0, Math.PI * 2);
+    ctx.fillStyle = col.dark; ctx.fill();
+    // 先端
+    ctx.beginPath(); ctx.arc(x, y - ph, Math.max(2, scaleB * 0.18), 0, Math.PI * 2);
+    ctx.fillStyle = col.body; ctx.fill();
+  }
+  ctx.restore();
+  // 選択ハイライト(接地位置に丸)
+  if (isSel){
+    const hr = Math.max(12, scaleB * (equipType(it.type).r + 0.4));
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, hr, 0, Math.PI * 2);
+    ctx.setLineDash([Math.max(4, scaleB * 0.4), Math.max(3, scaleB * 0.3)]);
+    ctx.lineWidth = 2; ctx.strokeStyle = "#ffd9a0"; ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+}
+/* 備品のヒットテスト(メートル座標)。上に描かれたものを優先 */
+function hitEquip(mx, my){
+  const list = equips();
+  for (let i = list.length - 1; i >= 0; i--){
+    const it = list[i];
+    const hr = equipType(it.type).r + 0.4;
+    if (Math.hypot(it.x - mx, it.y - my) < hr) return it;
+  }
+  return null;
+}
+function removeEquip(it){
+  const list = equips(), i = list.indexOf(it);
+  if (i >= 0) list.splice(i, 1);
+  if (selectedEquip === it) selectedEquip = null;
+  drawBoard();
+}
+
 function drawBoard(){
   ctx.clearRect(0, 0, cv.width, cv.height);
   V().draw();
@@ -1375,6 +1599,8 @@ function drawBoard(){
     if (tempZone) drawZone(tempZone, true);
     ctx.restore();
   }
+  // 練習備品: 芝(とゾーン)の上・駒/矢印の下に描画
+  for (const it of equips()) drawEquipItem(it);
   for (const a of board().arrows) drawArrowB(a, false);
   if (tempArrow) drawArrowB(tempArrow, true);
   for (const p of board().players) drawPlayerB(p);
@@ -1420,6 +1646,9 @@ function eraseAt(mx, my){
   if (p){ board().players.splice(board().players.indexOf(p), 1); drawBoard(); return; }
   const a = hitArrow(mx, my);
   if (a){ removeArrow(a); return; }
+  // 備品も消しゴム対象
+  const eq = hitEquip(mx, my);
+  if (eq){ removeEquip(eq); return; }
   // 注釈も消しゴム対象(コメント→ゾーンの順で優先。表示中のみ)
   if (annotationsOn){
     const c = hitComment(mx, my);
@@ -1460,6 +1689,22 @@ function pointerDown(e){
     openCmtPop(a, e); return;
   }
   if (tool === "move" || tool === "pass" || tool === "dribble"){ tempArrow = { kind:tool, x1:m.x, y1:m.y, x2:m.x, y2:m.y }; return; }
+  // 備品ツール: 既存備品があれば掴んで移動、無ければ選択中の種類/色で1つ配置してドラッグ
+  if (tool === "equip"){
+    closeArrowProp(); closeZonePop(); closeCmtPop();
+    const exist = hitEquip(m.x, m.y);
+    if (exist){
+      selectedEquip = exist;
+      dragEquip = { it:exist, ox:exist.x, oy:exist.y, mx:m.x, my:m.y, moved:false };
+      syncEquipPop(); drawBoard(); return;
+    }
+    const et = equipType(equipKindCurrent);
+    const it = { type: equipKindCurrent, color: et.hasColor ? equipColorCurrent : "red",
+      x:m.x, y:m.y, rot:0, id:newEquipId() };
+    equips().push(it); selectedEquip = it;
+    dragEquip = { it, ox:it.x, oy:it.y, mx:m.x, my:m.y, moved:false };
+    clearPresetSel(); syncEquipPop(); drawBoard(); return;
+  }
   const hit = hitPlayer(m.x, m.y);
   if (hit){ dragP = hit; closeArrowProp(); return; }
   if (tool === "atk" || tool === "def" || tool === "ball"){
@@ -1477,7 +1722,11 @@ function pointerDown(e){
       const z = hitZone(m.x, m.y);
       if (z){ selectedAnno = z; dragAnno = { a:z, part:"zone", ox:z.x, oy:z.y, mx:m.x, my:m.y, moved:false }; drawBoard(); return; }
     }
+    // 備品も選択・ドラッグ可能(選択ツール)
+    const eq = hitEquip(m.x, m.y);
+    if (eq){ selectedEquip = eq; dragEquip = { it:eq, ox:eq.x, oy:eq.y, mx:m.x, my:m.y, moved:false }; syncEquipPop(); drawBoard(); return; }
     if (selectedAnno){ selectedAnno = null; drawBoard(); }
+    if (selectedEquip){ selectedEquip = null; drawBoard(); }
   }
 }
 function pointerMove(e){
@@ -1490,6 +1739,12 @@ function pointerMove(e){
     dragAnno.moved = true;
     dragAnno.a.x = dragAnno.ox + (m.x - dragAnno.mx);
     dragAnno.a.y = dragAnno.oy + (m.y - dragAnno.my);
+    drawBoard(); return;
+  }
+  if (dragEquip){
+    dragEquip.moved = true;
+    dragEquip.it.x = Math.max(-V().ml, Math.min(V().fw + V().mr, dragEquip.ox + (m.x - dragEquip.mx)));
+    dragEquip.it.y = Math.max(-V().mt, Math.min(V().fh + V().mb, dragEquip.oy + (m.y - dragEquip.my)));
     drawBoard(); return;
   }
   if (dragP){
@@ -1528,20 +1783,32 @@ function pointerUp(e){
     }
     drawBoard();
   }
+  if (dragEquip){ dragEquip = null; drawBoard(); }
   dragP = null;
 }
 cv.addEventListener("mousedown", pointerDown);
-window.addEventListener("mousemove", e => { if ((dragP || tempArrow || tempZone || dragAnno) && currentScreen === "board") pointerMove(e); });
+window.addEventListener("mousemove", e => { if ((dragP || tempArrow || tempZone || dragAnno || dragEquip) && currentScreen === "board") pointerMove(e); });
 window.addEventListener("mouseup", e => { if (currentScreen === "board") pointerUp(e); });
-/* ダブルクリック = 名前編集(選手のみ)。削除は消しゴムツールで。 */
-cv.addEventListener("dblclick", e => { const m = evPos(e); openNamePopAt(m.x, m.y, e); });
+/* ダブルクリック = 選手なら名前編集 / 備品なら削除。 */
+cv.addEventListener("dblclick", e => {
+  const m = evPos(e);
+  if (!hitPlayer(m.x, m.y)){
+    const eq = hitEquip(m.x, m.y);
+    if (eq){ removeEquip(eq); toast("備品を削除しました"); return; }
+  }
+  openNamePopAt(m.x, m.y, e);
+});
 cv.addEventListener("touchstart", e => {
   e.preventDefault();
   const m = evPos(e), now = Date.now(), rc = cv.getBoundingClientRect(), t = e.touches[0];
   const sx = t.clientX - rc.left, sy = t.clientY - rc.top;
   if (now - lastTap.t < 350 && Math.hypot(sx - lastTap.x, sy - lastTap.y) < 28){
     // ダブルタップ = 名前編集(選手)。注釈は単タップで編集できるのでここでは選手のみ。
-    lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; tempZone = null; dragAnno = null;
+    lastTap = { t:0, x:0, y:0 }; dragP = null; tempArrow = null; tempZone = null; dragAnno = null; dragEquip = null;
+    if (!hitPlayer(m.x, m.y)){
+      const eq = hitEquip(m.x, m.y);
+      if (eq){ removeEquip(eq); toast("備品を削除しました"); return; }
+    }
     openNamePopAt(m.x, m.y, { clientX: t.clientX, clientY: t.clientY });
     return;
   }
@@ -1845,7 +2112,7 @@ document.addEventListener("mousedown", e => {
    タイムラインUI(動画編集風): 行=選手/ボール, ブロック=各動き
 ============================================================ */
 const timelineEl = $("timeline");
-let tlState = { schedule:null, total:0, rows:[], playing:false, t:0, raf:0, prevMs:0 };
+let tlState = { schedule:null, total:0, rows:[], playing:false, t:0, raf:0, prevMs:0, model:null };
 const TL_LABW = 74;
 /* 現在ビューの矢印から行(owner別)を構築し schedule を計算 */
 function computeTimelineModel(){
@@ -1872,6 +2139,7 @@ function computeTimelineModel(){
   tlState.rows = [...rows.values()];
 }
 function refreshTimeline(){
+  tlState.model = null; /* 盤面が変化したので再生モデルのキャッシュを無効化(全編集がここを通る/再生中は呼ばれない) */
   computeTimelineModel();
   const hasArrows = board().arrows.length > 0;
   timelineEl.classList.toggle("hidden", !hasArrows);
@@ -1993,7 +2261,7 @@ function positionPlayhead(){
     t = Math.max(0, Math.min(tlState.total, t));
     tlState.t = t; applyTimelineAt(t); positionPlayhead();
   }
-  function down(e){ if (animating) return; dragging = true; if (!_tl2dBackup) tlBackup2d(); seekAt(e.touches ? e.touches[0].clientX : e.clientX); if (e.cancelable) e.preventDefault(); }
+  function down(e){ if (animating) return; dragging = true; if (!_tl2dBackup) tlBackup2d(); if (!tlState.model) tlBuildModelFromOrigin(); seekAt(e.touches ? e.touches[0].clientX : e.clientX); if (e.cancelable) e.preventDefault(); }
   function move(e){ if (!dragging) return; seekAt(e.touches ? e.touches[0].clientX : e.clientX); if (e.cancelable) e.preventDefault(); }
   function up(){ if (!dragging) return; dragging = false; if (tlState.t <= 0.02){ tlRestore2d(); } }
   scrub.addEventListener("mousedown", down); window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
@@ -2001,7 +2269,10 @@ function positionPlayhead(){
 })();
 /* 任意時刻 t の選手/ボール配置を計算してボードに反映(プレビュー) */
 function applyTimelineAt(t){
-  const model = buildAnim2dModel();
+  /* モデルは再生/スクラブのセッション開始時に元配置から1度だけ構築して再利用する。
+     毎フレーム作り直すと、動いた後の現在位置から矢印を再割り当てし、
+     選手が矢印始点から離れると割り当てを失って途中で停止してしまうため。 */
+  const model = tlState.model || buildAnim2dModel();
   for (const j of model.jobs){
     const pos = sampleJob2d(j, t);
     j.p.x = pos.x; j.p.y = pos.y;
@@ -2009,13 +2280,20 @@ function applyTimelineAt(t){
   if (model.ball){ const bp = sampleJob2d(model.ball, t); model.ball.p.x = bp.x; model.ball.p.y = bp.y; }
   drawBoard();
 }
+/* 元配置に戻してからモデルを構築(矢印→選手/ボールの割り当てを元配置基準で確定) */
+function tlBuildModelFromOrigin(){
+  if (_tl2dBackup){ for (const b of _tl2dBackup){ b.p.x = b.x; b.p.y = b.y; } }
+  tlState.model = buildAnim2dModel();
+}
 /* ---------- タイムライン再生コントロール ---------- */
 function tlPlay(){
   if (!board().arrows.length) return;
-  if (tlState.t >= tlState.total - 0.01) tlState.t = 0;
+  if (!_tl2dBackup) tlBackup2d();
+  const restart = tlState.t >= tlState.total - 0.01;
+  /* 最初から / モデル未構築(編集後など)のときは、元配置からモデルを1度だけ構築 */
+  if (restart || !tlState.model){ tlState.t = 0; tlBuildModelFromOrigin(); }
   tlState.playing = true; $("tlPlay").innerHTML = "&#10074;&#10074;";
   animating = true; $("playBtn2d").disabled = true;
-  if (!_tl2dBackup) tlBackup2d();
   playCheer(1.6, 0.14); spawnCheers(6);
   tlState.prevMs = performance.now();
   cancelAnimationFrame(tlState.raf); tlState.raf = requestAnimationFrame(tlFrame);
@@ -2043,7 +2321,7 @@ function tlFrame(ms){
 }
 let _tl2dBackup = null;
 function tlBackup2d(){ _tl2dBackup = board().players.map(p => ({ p, x:p.x, y:p.y })); }
-function tlRestore2d(){ if (_tl2dBackup){ for (const b of _tl2dBackup) { b.p.x = b.x; b.p.y = b.y; } _tl2dBackup = null; drawBoard(); } }
+function tlRestore2d(){ if (_tl2dBackup){ for (const b of _tl2dBackup) { b.p.x = b.x; b.p.y = b.y; } _tl2dBackup = null; drawBoard(); } tlState.model = null; }
 $("tlPlay").addEventListener("click", () => { if (tlState.playing) tlPause(); else tlPlay(); });
 $("tlRestart").addEventListener("click", () => { tlPause(); tlRestore2d(); tlState.t = 0; applyTimelineAt(0); positionPlayhead(); tlPlay(); });
 window.addEventListener("resize", () => { if (currentScreen === "board" && !timelineEl.classList.contains("hidden")) renderTimeline(); });
@@ -2056,12 +2334,19 @@ document.querySelectorAll("#toolbar [data-tool]").forEach(b => {
     // ツール変更時は注釈編集を閉じ、選択を解除(選択ツール以外)
     closeZonePop(); closeCmtPop();
     if (tool !== "select" && selectedAnno){ selectedAnno = null; drawBoard(); }
+    // 備品パレットは備品ツール時のみ表示。備品ツール/選択ツール以外に切替時は備品選択も解除
+    if (tool === "equip"){ openEquipPop(); }
+    else {
+      closeEquipPop();
+      if (tool !== "select" && selectedEquip){ selectedEquip = null; drawBoard(); }
+    }
   });
 });
 $("clearBtn").addEventListener("click", () => {
   if (animating) return;
-  board().players = []; board().arrows = []; board().annotations = []; clearPresetSel();
-  currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null;
+  board().players = []; board().arrows = []; board().annotations = []; board().equipment = []; clearPresetSel();
+  currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
+  selectedAnno = null; selectedEquip = null;
   renderPhaseChips(); refreshTimeline();
   setDesc("", "盤面をクリアしました。プリセットを選ぶか、自由に配置してください。");
   drawBoard();
@@ -2072,12 +2357,80 @@ document.querySelectorAll("#bViews .vtab").forEach(t => {
     view = t.dataset.view;
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x === t));
     buildPresetList(); clearPresetSel();
-    currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null;
-    normalizeBoardArrows(board()); normalizeAnnotations(board()); renderPhaseChips(); refreshTimeline();
+    currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null; selectedEquip = null;
+    normalizeBoardArrows(board()); normalizeAnnotations(board()); normalizeEquipment(board());
+    renderPhaseChips(); refreshTimeline();
     setDesc("", "プリセットを選ぶと配置と動きが再現されます。");
     resizeBoard();
   });
 });
+
+/* ============================================================
+   練習備品パレット(種類・色選択・回転・表示制御)
+============================================================ */
+const equipPop = $("equipPop");
+/* 色スウォッチを生成 */
+(function buildEquipColorSwatches(){
+  const box = $("eqColors"); if (!box) return;
+  box.innerHTML = "";
+  for (const k of Object.keys(EQUIP_COLORS)){
+    const c = EQUIP_COLORS[k];
+    const sw = document.createElement("button");
+    sw.type = "button"; sw.className = "eq-sw" + (k === equipColorCurrent ? " on" : "");
+    sw.style.background = c.body; sw.dataset.ecolor = k; sw.title = c.label;
+    sw.addEventListener("click", () => {
+      equipColorCurrent = k;
+      document.querySelectorAll("#eqColors .eq-sw").forEach(x => x.classList.toggle("on", x === sw));
+      // 選択中の備品にも即反映(色を持つ種類のみ)
+      if (selectedEquip && equipType(selectedEquip.type).hasColor){ selectedEquip.color = k; drawBoard(); }
+    });
+    box.appendChild(sw);
+  }
+})();
+/* 種類ボタン */
+document.querySelectorAll("#eqKinds .eq-kind").forEach(b => {
+  b.addEventListener("click", () => {
+    equipKindCurrent = b.dataset.ekind;
+    document.querySelectorAll("#eqKinds .eq-kind").forEach(x => x.classList.toggle("on", x === b));
+    reflectEquipPopMode();
+  });
+});
+/* 種類に応じて色/回転フィールドの表示を切替 */
+function reflectEquipPopMode(){
+  const et = equipType(equipKindCurrent);
+  equipPop.classList.toggle("no-color", !et.hasColor);
+  equipPop.classList.toggle("no-rot", !et.canRotate);
+}
+/* 選択中の備品の種類/色にパレットUIを同期 */
+function syncEquipPop(){
+  if (!selectedEquip) return;
+  equipKindCurrent = selectedEquip.type;
+  document.querySelectorAll("#eqKinds .eq-kind").forEach(x => x.classList.toggle("on", x.dataset.ekind === selectedEquip.type));
+  if (equipType(selectedEquip.type).hasColor){
+    equipColorCurrent = selectedEquip.color;
+    document.querySelectorAll("#eqColors .eq-sw").forEach(x => x.classList.toggle("on", x.dataset.ecolor === selectedEquip.color));
+  }
+  reflectEquipPopMode();
+}
+/* 回転(選択中の備品を回す。無ければ既定回転を記憶するだけ) */
+function rotateSelectedEquip(deg){
+  if (selectedEquip && equipType(selectedEquip.type).canRotate){
+    selectedEquip.rot = (((selectedEquip.rot || 0) + deg) % 360 + 360) % 360;
+    drawBoard();
+  } else {
+    toast("回転できるのはミニゴール・ラダーです。備品を選んでから回してください");
+  }
+}
+$("eqRotL").addEventListener("click", () => rotateSelectedEquip(-45));
+$("eqRotR").addEventListener("click", () => rotateSelectedEquip(45));
+/* パレットをボード左上に表示 */
+function openEquipPop(){
+  reflectEquipPopMode();
+  equipPop.classList.add("on");
+  equipPop.style.left = "10px";
+  equipPop.style.top = "10px";
+}
+function closeEquipPop(){ equipPop.classList.remove("on"); }
 
 /* ============================================================
    プリセット定義 (tactics-board + soccer-3d を統合しカテゴリ分け)
@@ -2198,9 +2551,11 @@ function applyPreset(i, btn){
   }
   b.arrows = p.arrows.map(a => normalizeArrow({ kind:a[0], x1:a[1], y1:a[2], x2:a[3], y2:a[4], step:(a[5] || 1), delay:(a[6] || 0), trigger:null }));
   b.annotations = (p.annotations ? JSON.parse(JSON.stringify(p.annotations)) : []);
-  normalizeBoardArrows(b); normalizeAnnotations(b);
+  b.equipment = (p.equipment ? JSON.parse(JSON.stringify(p.equipment)) : []);
+  normalizeBoardArrows(b); normalizeAnnotations(b); normalizeEquipment(b);
   clearPresetSel(); activePresetBtn = btn; btn.classList.add("on");
-  currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); selectedAnno = null;
+  currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
+  selectedAnno = null; selectedEquip = null;
   renderPhaseChips(); refreshTimeline();
   setDesc(p.name, p.desc, p.coach);
   drawBoard();
@@ -2354,8 +2709,11 @@ function loadBoardData(d, switchView){
       });
       // 注釈(annotations): 追加フィールド。無い旧JSONは空配列(後方互換)。
       boards[k].annotations = Array.isArray(d.boards[k].annotations) ? d.boards[k].annotations.slice() : [];
+      // 備品(equipment): 追加フィールド。無い旧JSONは空配列(後方互換)。
+      boards[k].equipment = Array.isArray(d.boards[k].equipment) ? d.boards[k].equipment.slice() : [];
       normalizeBoardArrows(boards[k]);
       normalizeAnnotations(boards[k]);
+      normalizeEquipment(boards[k]);
     }
   }
   if (switchView && d.activeView && VIEWS[d.activeView]){
@@ -2363,8 +2721,8 @@ function loadBoardData(d, switchView){
     document.querySelectorAll("#bViews .vtab").forEach(x => x.classList.toggle("active", x.dataset.view === view));
     buildPresetList();
   }
-  clearPresetSel(); currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop();
-  selectedAnno = null; renderPhaseChips(); refreshTimeline(); resizeBoard();
+  clearPresetSel(); currentPhase = 1; closeArrowProp(); closeZonePop(); closeCmtPop(); closeEquipPop();
+  selectedAnno = null; selectedEquip = null; renderPhaseChips(); refreshTimeline(); resizeBoard();
 }
 
 /* ---------- マイ戦術ライブラリ (localStorage) ---------- */
@@ -2582,12 +2940,13 @@ function snapshotBoards(){
 }
 /* boards スナップショットの中身概要(項目カード用) */
 function boardsSummary(bs){
-  let mk = 0, ar = 0, an = 0;
+  let mk = 0, ar = 0, an = 0, eq = 0;
   for (const k of ["eight","corner","throwin"]){
     const b = bs && bs[k]; if (!b) continue;
-    mk += (b.players || []).length; ar += (b.arrows || []).length; an += (b.annotations || []).length;
+    mk += (b.players || []).length; ar += (b.arrows || []).length;
+    an += (b.annotations || []).length; eq += (b.equipment || []).length;
   }
-  return "駒" + mk + " / 矢印" + ar + " / 注釈" + an;
+  return "駒" + mk + " / 矢印" + ar + " / 注釈" + an + " / 備品" + eq;
 }
 
 /* ---------- メニューの読み書き ---------- */
@@ -2618,10 +2977,11 @@ function normalizeMenuItem(it){
     if (b && typeof b === "object"){
       bs[k] = { players: Array.isArray(b.players) ? b.players : [],
                 arrows:  Array.isArray(b.arrows)  ? b.arrows  : [],
-                annotations: Array.isArray(b.annotations) ? b.annotations : [] };
+                annotations: Array.isArray(b.annotations) ? b.annotations : [],
+                equipment: Array.isArray(b.equipment) ? b.equipment : [] };
       any = true;
     } else {
-      bs[k] = { players:[], arrows:[], annotations:[] };
+      bs[k] = { players:[], arrows:[], annotations:[], equipment:[] };
     }
   }
   if (!any) return null;
@@ -2838,7 +3198,9 @@ const SHARE_DICT = [
   ['"equipment"','"§e"'],['"title"','"§L"'],['"version"','"§V"'],
   ['"soccer-studio-menu"','"§SM"'],['"tactics-board"','"§TB"'],
   ['"atk"','"§A"'],['"def"','"§D"'],['"ball"','"§B"'],
-  ['"move"','"§mv"'],['"pass"','"§ps"'],['"dribble"','"§db"'],['"comment"','"§cm"'],['"zone"','"§zn"']
+  ['"move"','"§mv"'],['"pass"','"§ps"'],['"dribble"','"§db"'],['"comment"','"§cm"'],['"zone"','"§zn"'],
+  ['"rot"','"§r"'],
+  ['"cone"','"§Kc"'],['"marker"','"§Km"'],['"minigoal"','"§Kg"'],['"ladder"','"§Kl"'],['"pole"','"§Kp"']
 ];
 function dictPack(json){ let s = json; for (const [a, b] of SHARE_DICT) s = s.split(a).join(b); return s; }
 function dictUnpack(s){ let json = s; for (const [a, b] of SHARE_DICT) json = json.split(b).join(a); return json; }
