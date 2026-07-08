@@ -2135,7 +2135,9 @@ function computeTimelineModel(){
     const it = sched.map.get(a.id);
     rows.get(rk.key).blocks.push({ arrow:a, startAt:it.startAt, dur:it.dur, endAt:it.endAt });
   }
-  tlState.schedule = sched; tlState.total = sched.total;
+  tlState.schedule = sched;
+  /* 総尺は連鎖(ボール/選手の複数動作の順次実行)で伸びるため、再生モデルの総尺に合わせる */
+  tlState.total = arrows.length ? buildAnim2dModel().total : sched.total;
   tlState.rows = [...rows.values()];
 }
 function refreshTimeline(){
@@ -2586,6 +2588,7 @@ function buildAnim2dModel(){
       if (!best) break;
       usedPass.add(best); segs.push(makeSeg(best, sched)); cx = best.x2; cy = best.y2;
     }
+    chainSegs(segs); /* 連鎖するパスは順番に(1つのボールは同時に2本を辿れない) */
     ballJob = { p:ballP, ox:ballP.x, oy:ballP.y, sx:ballP.x, sy:ballP.y, segs };
   }
   // 選手: move/dribble を1本割り当て(起点近接)
@@ -2600,10 +2603,21 @@ function buildAnim2dModel(){
       if (!best) break;
       usedMove.add(best); best.__assigned = true; segs.push(makeSeg(best, sched)); cx = best.x2; cy = best.y2;
     }
+    chainSegs(segs); /* 連鎖する移動も順番に */
     if (segs.length) jobs.push({ p, ox:p.x, oy:p.y, sx:p.x, sy:p.y, segs });
   }
   for (const a of b.arrows) delete a.__assigned;
-  return { jobs, ball:ballJob, total:sched.total, sched };
+  /* 連鎖で総尺が伸びることがあるので、全segの終端も考慮 */
+  let total = sched.total;
+  if (ballJob) for (const s of ballJob.segs) total = Math.max(total, s.endAt);
+  for (const j of jobs) for (const s of j.segs) total = Math.max(total, s.endAt);
+  return { jobs, ball:ballJob, total, sched };
+}
+function chainSegs(segs){
+  for (let k = 1; k < segs.length; k++){
+    const st = Math.max(segs[k].startAt, segs[k - 1].endAt);
+    segs[k].startAt = st; segs[k].endAt = st + segs[k].dur;
+  }
 }
 function makeSeg(a, sched){
   const it = sched.map.get(a.id);
